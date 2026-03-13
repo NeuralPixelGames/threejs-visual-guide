@@ -1,0 +1,1070 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Three.js Visual Encyclopedia — A Complete Visual Guide</title>
+<meta name="description" content="Every Three.js concept explained visually — 96 illustrated breakdowns covering geometry, materials, cameras, shaders, physics, audio and more.">
+<meta property="og:title" content="Three.js Visual Encyclopedia">
+<meta property="og:description" content="96 visual breakdowns covering every Three.js concept. For visual learners.">
+<meta property="og:image" content="images/encyclopedia/01_hero.png">
+<style>
+  :root {
+    --bg: #050810;
+    --bg2: #0a0e1a;
+    --bg3: #0f1526;
+    --cyan: #00d4ff;
+    --magenta: #ff00cc;
+    --amber: #f5a623;
+    --green: #00ff88;
+    --text: #e0e8ff;
+    --muted: #7a8aaa;
+    --border: rgba(0,212,255,0.15);
+    --glow: 0 0 20px rgba(0,212,255,0.3);
+  }
+  * { margin:0; padding:0; box-sizing:border-box; }
+  html { scroll-behavior: smooth; }
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    line-height: 1.6;
+    overflow-x: hidden;
+  }
+
+  /* ── NAV ── */
+  nav {
+    position: fixed; top:0; left:0; right:0; z-index:100;
+    background: rgba(5,8,16,0.92);
+    backdrop-filter: blur(12px);
+    border-bottom: 1px solid var(--border);
+    padding: 0 2rem;
+    height: 56px;
+    display: flex; align-items: center; gap: 2rem;
+    overflow-x: auto;
+  }
+  nav a {
+    color: var(--muted); text-decoration:none; font-size:0.78rem;
+    letter-spacing:0.05em; text-transform:uppercase; white-space:nowrap;
+    transition: color 0.2s;
+  }
+  nav a:hover { color: var(--cyan); }
+  .nav-logo {
+    font-weight:700; font-size:0.9rem;
+    color: var(--cyan); white-space:nowrap; margin-right:1rem;
+  }
+
+  /* ── HERO ── */
+  .hero {
+    position: relative; min-height: 100vh;
+    display: flex; flex-direction:column; align-items:center; justify-content:center;
+    text-align: center; padding: 80px 2rem 4rem;
+    overflow: hidden;
+  }
+  .hero-video-wrap {
+    width: min(900px, 100%); border-radius: 12px; overflow:hidden;
+    border: 1px solid var(--border);
+    box-shadow: var(--glow), 0 0 80px rgba(0,212,255,0.1);
+    margin-bottom: 3rem;
+  }
+  .hero-video-wrap video { width:100%; display:block; }
+  .hero h1 {
+    font-size: clamp(2rem, 5vw, 3.8rem);
+    font-weight: 800; letter-spacing: -0.02em;
+    background: linear-gradient(135deg, var(--cyan), #ffffff, var(--magenta));
+    -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+    background-clip: text;
+    margin-bottom: 1rem;
+  }
+  .hero p {
+    font-size: clamp(1rem, 2vw, 1.25rem);
+    color: var(--muted); max-width: 640px; margin:0 auto 2.5rem;
+  }
+  .hero-badges {
+    display: flex; flex-wrap:wrap; gap:0.75rem; justify-content:center; margin-bottom:2.5rem;
+  }
+  .badge {
+    padding: 0.35rem 1rem; border-radius:99px; font-size:0.8rem; font-weight:600;
+    letter-spacing:0.04em;
+  }
+  .badge-cyan  { background:rgba(0,212,255,0.1); border:1px solid rgba(0,212,255,0.4); color:var(--cyan); }
+  .badge-magenta { background:rgba(255,0,204,0.1); border:1px solid rgba(255,0,204,0.4); color:var(--magenta); }
+  .badge-amber { background:rgba(245,166,35,0.1); border:1px solid rgba(245,166,35,0.4); color:var(--amber); }
+  .badge-green { background:rgba(0,255,136,0.1); border:1px solid rgba(0,255,136,0.4); color:var(--green); }
+  .hero-actions { display:flex; gap:1rem; flex-wrap:wrap; justify-content:center; }
+  .btn {
+    display:inline-flex; align-items:center; gap:0.5rem;
+    padding: 0.75rem 1.75rem; border-radius:8px; font-weight:600;
+    text-decoration:none; font-size:0.95rem; transition: all 0.2s; cursor:pointer;
+    border: none;
+  }
+  .btn-primary {
+    background: var(--cyan); color: var(--bg);
+    box-shadow: 0 4px 20px rgba(0,212,255,0.4);
+  }
+  .btn-primary:hover { box-shadow: 0 4px 30px rgba(0,212,255,0.7); transform:translateY(-1px); }
+  .btn-secondary {
+    background: transparent; color: var(--text);
+    border: 1px solid var(--border);
+  }
+  .btn-secondary:hover { border-color: var(--cyan); color:var(--cyan); }
+
+  /* ── FULL VIDEO ── */
+  .full-video-section {
+    padding: 5rem 2rem;
+    background: var(--bg2);
+    border-top: 1px solid var(--border);
+    border-bottom: 1px solid var(--border);
+  }
+  .full-video-section .section-inner { max-width:1100px; margin:0 auto; }
+  .full-video-wrap {
+    border-radius:12px; overflow:hidden;
+    border:1px solid var(--border);
+    box-shadow: var(--glow);
+  }
+  .full-video-wrap video { width:100%; display:block; max-height:70vh; }
+
+  /* ── SECTIONS ── */
+  .encyclopedia { padding: 0 2rem 6rem; }
+  .section-block {
+    max-width: 1200px; margin: 5rem auto 0;
+    border-top: 1px solid var(--border); padding-top: 4rem;
+  }
+  .section-block:first-child { border-top: none; }
+  .section-header {
+    display: flex; align-items: flex-start; gap: 2rem;
+    margin-bottom: 2.5rem; flex-wrap:wrap;
+  }
+  .section-num {
+    font-size: 3.5rem; font-weight:900; line-height:1;
+    color: var(--border); font-variant-numeric: tabular-nums;
+    min-width: 3ch;
+  }
+  .section-meta { flex:1; min-width:280px; }
+  .section-meta h2 {
+    font-size: clamp(1.5rem, 3vw, 2rem); font-weight:800;
+    margin-bottom: 0.5rem; letter-spacing:-0.01em;
+  }
+  .section-meta p { color: var(--muted); font-size:0.95rem; max-width:620px; line-height:1.7; }
+  .section-links { display:flex; gap:0.75rem; margin-top:1rem; flex-wrap:wrap; }
+  .doc-link {
+    display:inline-flex; align-items:center; gap:0.4rem;
+    padding:0.3rem 0.9rem; border-radius:6px; font-size:0.8rem;
+    background:rgba(0,212,255,0.08); border:1px solid rgba(0,212,255,0.25);
+    color:var(--cyan); text-decoration:none; transition: all 0.2s;
+  }
+  .doc-link:hover { background:rgba(0,212,255,0.18); }
+  .doc-link svg { width:12px; height:12px; }
+
+  /* ── IMAGE GRID ── */
+  .img-grid {
+    display: grid; gap: 1.25rem;
+    grid-template-columns: repeat(auto-fill, minmax(min(360px, 100%), 1fr));
+  }
+  .img-grid.single { grid-template-columns: 1fr; max-width:900px; }
+  .img-grid.pair { grid-template-columns: repeat(auto-fill, minmax(min(440px,100%), 1fr)); }
+
+  .img-card {
+    background: var(--bg3); border-radius:10px; overflow:hidden;
+    border:1px solid var(--border); transition: all 0.25s;
+    cursor: pointer;
+  }
+  .img-card:hover {
+    border-color: rgba(0,212,255,0.5);
+    box-shadow: var(--glow);
+    transform: translateY(-2px);
+  }
+  .img-card img { width:100%; display:block; }
+  .img-card-body { padding: 1rem 1.25rem 1.25rem; }
+  .img-card-body h3 { font-size:0.95rem; font-weight:700; margin-bottom:0.35rem; }
+  .img-card-body p { font-size:0.82rem; color:var(--muted); line-height:1.55; }
+
+  /* ── LIGHTBOX ── */
+  .lightbox {
+    display:none; position:fixed; inset:0; z-index:1000;
+    background:rgba(0,0,0,0.92); align-items:center; justify-content:center;
+    cursor:zoom-out;
+  }
+  .lightbox.open { display:flex; }
+  .lightbox img { max-width:95vw; max-height:92vh; border-radius:8px; }
+  .lightbox-close {
+    position:fixed; top:1.5rem; right:1.5rem; font-size:2rem; color:white;
+    cursor:pointer; line-height:1; background:none; border:none;
+  }
+
+  /* ── FOOTER ── */
+  footer {
+    background: var(--bg2); border-top:1px solid var(--border);
+    padding: 3rem 2rem; text-align:center;
+  }
+  footer img { max-width:min(900px,100%); border-radius:10px; margin-bottom:2rem; display:block; margin-left:auto; margin-right:auto; }
+  footer p { color:var(--muted); font-size:0.85rem; }
+  footer a { color:var(--cyan); text-decoration:none; }
+
+  /* ── SCROLLBAR ── */
+  ::-webkit-scrollbar { width:6px; }
+  ::-webkit-scrollbar-track { background:var(--bg); }
+  ::-webkit-scrollbar-thumb { background:var(--border); border-radius:3px; }
+
+  @media (max-width:600px) {
+    nav { gap:1rem; padding:0 1rem; }
+    .section-num { font-size:2rem; }
+  }
+</style>
+</head>
+<body>
+
+<!-- NAV -->
+<nav>
+  <span class="nav-logo">⬡ THREE.JS</span>
+  <a href="#video">Full Video</a>
+  <a href="#geometry">Geometry</a>
+  <a href="#materials">Materials</a>
+  <a href="#lights">Lights</a>
+  <a href="#cameras">Cameras</a>
+  <a href="#textures">Textures</a>
+  <a href="#renderer">Renderer</a>
+  <a href="#postfx">Post-FX</a>
+  <a href="#controls">Controls</a>
+  <a href="#tsl">Node/TSL</a>
+  <a href="#animation">Animation</a>
+  <a href="#audio">Audio</a>
+  <a href="#special">Special</a>
+  <a href="#loaders">Loaders</a>
+  <a href="#physics">Physics</a>
+  <a href="#helpers">Helpers</a>
+  <a href="#curves">Curves</a>
+  <a href="#math">Math</a>
+</nav>
+
+<!-- HERO -->
+<section class="hero">
+  <div class="hero-video-wrap">
+    <video autoplay muted loop playsinline>
+      <source src="video/intro.mp4" type="video/mp4">
+    </video>
+  </div>
+  <h1>Three.js — A Visual Guide</h1>
+  <p>Every concept in Three.js explained visually. 96 illustrated breakdowns covering geometry, materials, cameras, shaders, post-processing, physics, audio and more. Built for visual learners.</p>
+  <div class="hero-badges">
+    <span class="badge badge-cyan">96 Visual Breakdowns</span>
+    <span class="badge badge-magenta">r183</span>
+    <span class="badge badge-amber">WebGL + WebGPU</span>
+    <span class="badge badge-green">TSL / Node Shaders</span>
+  </div>
+  <div class="hero-actions">
+    <a href="#video" class="btn btn-primary">▶ Watch Full Video</a>
+    <a href="https://threejs.org/docs/" target="_blank" class="btn btn-secondary">📄 Official Docs</a>
+    <a href="https://github.com/mrdoob/three.js" target="_blank" class="btn btn-secondary">⬡ GitHub</a>
+  </div>
+</section>
+
+<!-- FULL VIDEO -->
+<section class="full-video-section" id="video">
+  <div class="section-inner">
+    <div style="margin-bottom:1.5rem;">
+      <h2 style="font-size:1.6rem;font-weight:800;margin-bottom:0.5rem;">Full Encyclopedia Video</h2>
+      <p style="color:var(--muted);">All 96 slides in sequence — geometry, materials, cameras, shaders, physics and more.</p>
+    </div>
+    <div class="full-video-wrap">
+      <video controls preload="metadata">
+        <source src="video/full_encyclopedia.mp4" type="video/mp4">
+      </video>
+    </div>
+  </div>
+</section>
+
+<!-- ENCYCLOPEDIA SECTIONS -->
+<div class="encyclopedia" id="sections">
+
+  <!-- 01 HERO IMAGE -->
+  <div class="section-block" id="intro">
+    <div class="section-header">
+      <div class="section-num">01</div>
+      <div class="section-meta">
+        <h2 style="color:var(--cyan)">Overview</h2>
+        <p>Three.js is a JavaScript library built on top of WebGL that makes creating 3D graphics in the browser approachable. It abstracts the low-level GPU API into a clean scene graph with objects, cameras, lights, materials and a render loop.</p>
+        <div class="section-links">
+          <a href="https://threejs.org/docs/#manual/en/introduction/Creating-a-scene" target="_blank" class="doc-link">↗ Getting Started</a>
+          <a href="https://github.com/mrdoob/three.js" target="_blank" class="doc-link">↗ Source Code</a>
+        </div>
+      </div>
+    </div>
+    <div class="img-grid single">
+      <div class="img-card" onclick="openLightbox(this)">
+        <img src="images/encyclopedia/01_hero.png" alt="Three.js Overview" loading="lazy">
+        <div class="img-card-body">
+          <h3>Three.js Architecture</h3>
+          <p>The full scene graph — how Scene, Camera, Renderer, Geometry, Material and Mesh all connect to produce a frame on screen.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 02 GEOMETRY -->
+  <div class="section-block" id="geometry">
+    <div class="section-header">
+      <div class="section-num">02</div>
+      <div class="section-meta">
+        <h2 style="color:var(--amber)">Geometry</h2>
+        <p>Geometry defines the shape of a 3D object — the vertices, edges and faces that make up its surface. Three.js provides 21 built-in geometry types covering everything from simple boxes to complex parametric surfaces. All geometry is stored as a <code>BufferGeometry</code> — a flat typed array of vertex attributes (position, normal, UV, color) sent directly to the GPU.</p>
+        <div class="section-links">
+          <a href="https://threejs.org/docs/#api/en/core/BufferGeometry" target="_blank" class="doc-link">↗ BufferGeometry</a>
+          <a href="https://threejs.org/docs/#api/en/geometries/BoxGeometry" target="_blank" class="doc-link">↗ BoxGeometry</a>
+          <a href="https://threejs.org/examples/#webgl_geometries" target="_blank" class="doc-link">↗ Examples</a>
+        </div>
+      </div>
+    </div>
+    <div class="img-grid single">
+      <div class="img-card" onclick="openLightbox(this)">
+        <img src="images/encyclopedia/02_geometry.png" alt="Three.js Geometry Types" loading="lazy">
+        <div class="img-card-body">
+          <h3>All 21 Built-in Geometry Types</h3>
+          <p>BoxGeometry, SphereGeometry, CylinderGeometry, ConeGeometry, TorusGeometry, TorusKnotGeometry, PlaneGeometry, CircleGeometry, RingGeometry, DodecahedronGeometry, IcosahedronGeometry, OctahedronGeometry, TetrahedronGeometry, CapsuleGeometry, LatheGeometry, ExtrudeGeometry, ShapeGeometry, TubeGeometry, EdgesGeometry, WireframeGeometry, PolyhedronGeometry.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 03 MATERIALS -->
+  <div class="section-block" id="materials">
+    <div class="section-header">
+      <div class="section-num">03</div>
+      <div class="section-meta">
+        <h2 style="color:var(--magenta)">Materials</h2>
+        <p>Materials control how geometry looks when rendered — its color, shininess, transparency, how it reacts to light. Three.js has materials for every use case from the cheapest flat-shaded <code>MeshBasicMaterial</code> to the fully physics-based <code>MeshPhysicalMaterial</code> with clearcoat, iridescence, transmission and subsurface scattering.</p>
+        <div class="section-links">
+          <a href="https://threejs.org/docs/#api/en/materials/Material" target="_blank" class="doc-link">↗ Material base</a>
+          <a href="https://threejs.org/docs/#api/en/materials/MeshStandardMaterial" target="_blank" class="doc-link">↗ MeshStandardMaterial</a>
+          <a href="https://threejs.org/docs/#api/en/materials/MeshPhysicalMaterial" target="_blank" class="doc-link">↗ MeshPhysicalMaterial</a>
+        </div>
+      </div>
+    </div>
+    <div class="img-grid single">
+      <div class="img-card" onclick="openLightbox(this)">
+        <img src="images/encyclopedia/03_materials.png" alt="Three.js Materials" loading="lazy">
+        <div class="img-card-body">
+          <h3>All Material Types</h3>
+          <p>MeshBasicMaterial (no lighting), MeshLambertMaterial (diffuse), MeshPhongMaterial (specular), MeshStandardMaterial (PBR), MeshPhysicalMaterial (advanced PBR), MeshToonMaterial (cel-shading), MeshNormalMaterial (debug), MeshDepthMaterial, MeshMatcapMaterial, LineBasicMaterial, LineDashedMaterial, PointsMaterial, SpriteMaterial, ShadowMaterial, ShaderMaterial, RawShaderMaterial.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 04 LIGHTS -->
+  <div class="section-block" id="lights">
+    <div class="section-header">
+      <div class="section-num">04</div>
+      <div class="section-meta">
+        <h2 style="color:var(--amber)">Lighting</h2>
+        <p>Lighting is what makes a 3D scene feel real. Three.js offers 7 light types from the flat uniform <code>AmbientLight</code> to the precise projecting <code>SpotLight</code>. Only <code>DirectionalLight</code>, <code>SpotLight</code> and <code>PointLight</code> cast shadows — each using a shadow map technique where the scene is rendered from the light's perspective to determine what's in shadow.</p>
+        <div class="section-links">
+          <a href="https://threejs.org/docs/#api/en/lights/Light" target="_blank" class="doc-link">↗ Light base</a>
+          <a href="https://threejs.org/docs/#api/en/lights/DirectionalLight" target="_blank" class="doc-link">↗ DirectionalLight</a>
+          <a href="https://threejs.org/docs/#api/en/lights/shadows/LightShadow" target="_blank" class="doc-link">↗ Shadows</a>
+        </div>
+      </div>
+    </div>
+    <div class="img-grid single">
+      <div class="img-card" onclick="openLightbox(this)">
+        <img src="images/encyclopedia/04_lights.png" alt="Three.js Lighting" loading="lazy">
+        <div class="img-card-body">
+          <h3>7 Light Types + Shadow Maps</h3>
+          <p>AmbientLight (uniform fill, no shadows), DirectionalLight (sun — parallel rays, shadows), PointLight (bulb — radiates in all directions, shadows), SpotLight (flashlight — cone shape, shadows), HemisphereLight (sky + ground gradient), RectAreaLight (soft box light, no shadows), LightProbe (spherical harmonics from environment).</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 05 OBJECTS -->
+  <div class="section-block" id="objects">
+    <div class="section-header">
+      <div class="section-num">05</div>
+      <div class="section-meta">
+        <h2 style="color:var(--green)">Scene Objects</h2>
+        <p>Everything in a Three.js scene is an <code>Object3D</code> — the base class that provides position, rotation, scale, and parent-child hierarchy. From basic <code>Mesh</code> to GPU-instanced <code>InstancedMesh</code>, point clouds, billboards and level-of-detail systems, each object type serves a specific purpose.</p>
+        <div class="section-links">
+          <a href="https://threejs.org/docs/#api/en/core/Object3D" target="_blank" class="doc-link">↗ Object3D</a>
+          <a href="https://threejs.org/docs/#api/en/objects/Mesh" target="_blank" class="doc-link">↗ Mesh</a>
+          <a href="https://threejs.org/docs/#api/en/objects/InstancedMesh" target="_blank" class="doc-link">↗ InstancedMesh</a>
+        </div>
+      </div>
+    </div>
+    <div class="img-grid single">
+      <div class="img-card" onclick="openLightbox(this)">
+        <img src="images/encyclopedia/05_objects.png" alt="Three.js Scene Objects" loading="lazy">
+        <div class="img-card-body">
+          <h3>All Object Types</h3>
+          <p>Mesh (geometry + material), InstancedMesh (1 draw call, N instances), BatchedMesh (r159+, mixed geometry batching), SkinnedMesh (skeletal animation), Points (particle clouds), Line / LineSegments / LineLoop, Sprite (always-facing billboard), Group (parent transform container), LOD (level of detail by distance), Scene (root container).</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 07 CAMERAS -->
+  <div class="section-block" id="cameras">
+    <div class="section-header">
+      <div class="section-num">07</div>
+      <div class="section-meta">
+        <h2 style="color:var(--cyan)">Cameras</h2>
+        <p>The camera defines what part of the 3D scene is projected onto the 2D screen. <code>PerspectiveCamera</code> is the standard — it mimics human vision with a field-of-view frustum. <code>OrthographicCamera</code> is used for isometric games and UI because objects don't get smaller with distance. The others are specialised: <code>CubeCamera</code> captures reflections, <code>ArrayCamera</code> renders split-screen, <code>StereoCamera</code> renders VR.</p>
+        <div class="section-links">
+          <a href="https://threejs.org/docs/#api/en/cameras/PerspectiveCamera" target="_blank" class="doc-link">↗ PerspectiveCamera</a>
+          <a href="https://threejs.org/docs/#api/en/cameras/OrthographicCamera" target="_blank" class="doc-link">↗ OrthographicCamera</a>
+          <a href="https://threejs.org/docs/#api/en/cameras/CubeCamera" target="_blank" class="doc-link">↗ CubeCamera</a>
+        </div>
+      </div>
+    </div>
+    <div class="img-grid">
+      <div class="img-card" onclick="openLightbox(this)">
+        <img src="images/encyclopedia/07a_perspective_camera.png" alt="PerspectiveCamera FOV" loading="lazy">
+        <div class="img-card-body">
+          <h3>PerspectiveCamera — Field of View</h3>
+          <p>The most common camera. Takes <code>fov</code>, <code>aspect</code>, <code>near</code>, <code>far</code>. Low FOV (30°) = telephoto zoom, objects look flat and close. High FOV (120°) = ultra-wide, strong perspective distortion, see more of the scene. Standard FPS games use 75–90°.</p>
+        </div>
+      </div>
+      <div class="img-card" onclick="openLightbox(this)">
+        <img src="images/encyclopedia/07b_orthographic_camera.png" alt="OrthographicCamera" loading="lazy">
+        <div class="img-card-body">
+          <h3>OrthographicCamera — No Perspective</h3>
+          <p>Objects the same size regardless of distance. Perfect for isometric games, 2D UIs, CAD-style views and shadow maps. Takes <code>left</code>, <code>right</code>, <code>top</code>, <code>bottom</code>, <code>near</code>, <code>far</code> to define a box-shaped frustum.</p>
+        </div>
+      </div>
+      <div class="img-card" onclick="openLightbox(this)">
+        <img src="images/encyclopedia/07c_cube_camera.png" alt="CubeCamera" loading="lazy">
+        <div class="img-card-body">
+          <h3>CubeCamera — 360° Environment Capture</h3>
+          <p>Renders the scene 6 times (±X, ±Y, ±Z) to create a cubemap. Used for real-time reflections and refractions — position it inside an object to capture what it should reflect.</p>
+        </div>
+      </div>
+      <div class="img-card" onclick="openLightbox(this)">
+        <img src="images/encyclopedia/07d_array_camera.png" alt="ArrayCamera" loading="lazy">
+        <div class="img-card-body">
+          <h3>ArrayCamera — Multiple Viewports</h3>
+          <p>An array of cameras each rendering to a specific viewport region. Used for split-screen multiplayer, security camera UIs, or rendering the same scene from multiple angles simultaneously.</p>
+        </div>
+      </div>
+      <div class="img-card" onclick="openLightbox(this)">
+        <img src="images/encyclopedia/07e_stereo_camera.png" alt="StereoCamera" loading="lazy">
+        <div class="img-card-body">
+          <h3>StereoCamera — VR / 3D Anaglyph</h3>
+          <p>Two cameras with a configurable eye separation offset, rendering left and right eye views. Used with VR headsets or classic red-cyan anaglyph 3D glasses.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 08 TEXTURES -->
+  <div class="section-block" id="textures">
+    <div class="section-header">
+      <div class="section-num">08</div>
+      <div class="section-meta">
+        <h2 style="color:var(--magenta)">Textures</h2>
+        <p>Textures are images mapped onto geometry surfaces to add detail without adding geometry. Three.js supports many texture types: basic colour maps, normal maps for fake surface detail, PBR texture sets, video textures, HDR environments and compressed formats like KTX2 and Basis for smaller file sizes.</p>
+        <div class="section-links">
+          <a href="https://threejs.org/docs/#api/en/textures/Texture" target="_blank" class="doc-link">↗ Texture</a>
+          <a href="https://threejs.org/docs/#api/en/loaders/TextureLoader" target="_blank" class="doc-link">↗ TextureLoader</a>
+          <a href="https://threejs.org/docs/#api/en/textures/CubeTexture" target="_blank" class="doc-link">↗ CubeTexture</a>
+        </div>
+      </div>
+    </div>
+    <div class="img-grid">
+      <div class="img-card" onclick="openLightbox(this)">
+        <img src="images/encyclopedia/08a_texture_basics.png" alt="Texture Basics" loading="lazy">
+        <div class="img-card-body"><h3>Texture Basics & UV Mapping</h3><p>How 2D images are mapped onto 3D surfaces via UV coordinates. Each vertex has a UV coordinate (0–1 range) that tells the GPU which part of the texture to sample there.</p></div>
+      </div>
+      <div class="img-card" onclick="openLightbox(this)">
+        <img src="images/encyclopedia/08b_normal_maps.png" alt="Normal Maps" loading="lazy">
+        <div class="img-card-body"><h3>Normal Maps — Fake Surface Detail</h3><p>RGB images that encode surface normals, tricking the lighting model into thinking there is real surface detail. Dramatically increases visual complexity without adding geometry.</p></div>
+      </div>
+      <div class="img-card" onclick="openLightbox(this)">
+        <img src="images/encyclopedia/08c_pbr_texture_set.png" alt="PBR Texture Set" loading="lazy">
+        <div class="img-card-body"><h3>PBR Texture Set</h3><p>A full physically-based rendering texture set: Albedo (base colour), Normal (surface detail), Roughness (how blurry reflections are), Metalness (is it metal?), Ambient Occlusion (contact shadows). Used by MeshStandardMaterial and MeshPhysicalMaterial.</p></div>
+      </div>
+      <div class="img-card" onclick="openLightbox(this)">
+        <img src="images/encyclopedia/08d_cube_texture_skybox.png" alt="CubeTexture Skybox" loading="lazy">
+        <div class="img-card-body"><h3>CubeTexture — Skybox</h3><p>6 images (±X, ±Y, ±Z faces) assembled into a cubemap. Set as scene.background for a skybox or scene.environment for IBL (image-based lighting).</p></div>
+      </div>
+      <div class="img-card" onclick="openLightbox(this)">
+        <img src="images/encyclopedia/08e_video_texture.png" alt="Video Texture" loading="lazy">
+        <div class="img-card-body"><h3>VideoTexture — Live Video on Surfaces</h3><p>Maps a playing HTML &lt;video&gt; element onto a 3D surface in real time. Used for in-game screens, TVs, portals and video walls.</p></div>
+      </div>
+      <div class="img-card" onclick="openLightbox(this)">
+        <img src="images/encyclopedia/08f_data_texture.png" alt="Data Texture" loading="lazy">
+        <div class="img-card-body"><h3>DataTexture / DataArrayTexture</h3><p>Create textures directly from raw typed array data in JavaScript. Used for scientific visualisations, heatmaps, heightmaps and GPU-computed data.</p></div>
+      </div>
+      <div class="img-card" onclick="openLightbox(this)">
+        <img src="images/encyclopedia/08g_hdr_environment.png" alt="HDR Environment" loading="lazy">
+        <div class="img-card-body"><h3>HDR / EXR Environment Maps</h3><p>High dynamic range images that store light values above 1.0. Used as IBL environments — they realistically light all objects in the scene based on the real lighting captured in the HDRI.</p></div>
+      </div>
+      <div class="img-card" onclick="openLightbox(this)">
+        <img src="images/encyclopedia/08h_compressed_textures.png" alt="Compressed Textures" loading="lazy">
+        <div class="img-card-body"><h3>Compressed Textures — KTX2 / Basis</h3><p>GPU-native compressed formats that stay compressed in VRAM, using 4–8× less memory than PNG. KTX2 with Basis supercompression is the modern standard — transcodes to the best format per device (DXT, ETC, ASTC).</p></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 09 RENDERER -->
+  <div class="section-block" id="renderer">
+    <div class="section-header">
+      <div class="section-num">09</div>
+      <div class="section-meta">
+        <h2 style="color:var(--cyan)">Renderer Features</h2>
+        <p>The renderer is the engine that turns your scene into pixels. Three.js has both <code>WebGLRenderer</code> (the proven standard) and <code>WebGPURenderer</code> (the modern future). Both expose a common abstraction layer so most code works with either. Key features include shadow maps, environment mapping, tone mapping and anti-aliasing.</p>
+        <div class="section-links">
+          <a href="https://threejs.org/docs/#api/en/renderers/WebGLRenderer" target="_blank" class="doc-link">↗ WebGLRenderer</a>
+          <a href="https://threejs.org/docs/#api/en/renderers/WebGPURenderer" target="_blank" class="doc-link">↗ WebGPURenderer</a>
+          <a href="https://threejs.org/docs/#api/en/constants/Renderer" target="_blank" class="doc-link">↗ Constants</a>
+        </div>
+      </div>
+    </div>
+    <div class="img-grid">
+      <div class="img-card" onclick="openLightbox(this)">
+        <img src="images/encyclopedia/09a_shadow_types.png" alt="Shadow Types" loading="lazy">
+        <div class="img-card-body"><h3>Shadow Map Types</h3><p>BasicShadowMap (fast, aliased), PCFShadowMap (smoothed via percentage-closer filtering), PCFSoftShadowMap (softer), VSMShadowMap (variance — soft, no peter-panning). Set via renderer.shadowMap.type.</p></div>
+      </div>
+      <div class="img-card" onclick="openLightbox(this)">
+        <img src="images/encyclopedia/09b_environment_mapping.png" alt="Environment Mapping" loading="lazy">
+        <div class="img-card-body"><h3>Environment Mapping</h3><p>Objects reflecting the surrounding environment via cubemap or PMREM. Set scene.environment to automatically light all PBR materials with IBL (image-based lighting).</p></div>
+      </div>
+      <div class="img-card" onclick="openLightbox(this)">
+        <img src="images/encyclopedia/09c_tone_mapping.png" alt="Tone Mapping" loading="lazy">
+        <div class="img-card-body"><h3>Tone Mapping</h3><p>Converts HDR light values to displayable LDR range. NoToneMapping (clamps), LinearToneMapping, ReinhardToneMapping (photographic), CineonToneMapping, ACESFilmicToneMapping (filmic S-curve), AgXToneMapping (r158+, physically accurate).</p></div>
+      </div>
+      <div class="img-card" onclick="openLightbox(this)">
+        <img src="images/encyclopedia/09d_anti_aliasing.png" alt="Anti-Aliasing" loading="lazy">
+        <div class="img-card-body"><h3>Anti-Aliasing</h3><p>Smooths jagged edges. Built-in: MSAA (pass antialias:true to renderer). Post-process: FXAA (fast, slight blur), SMAA (higher quality). TAA (temporal) available via post-processing for best quality.</p></div>
+      </div>
+      <div class="img-card" onclick="openLightbox(this)">
+        <img src="images/encyclopedia/09e_render_targets.png" alt="Render Targets" loading="lazy">
+        <div class="img-card-body"><h3>Render Targets — Off-screen Rendering</h3><p>Render the scene to a texture instead of the screen. The texture can then be used as input to another pass, applied to a 3D surface (in-game screens), or processed by post-processing effects.</p></div>
+      </div>
+      <div class="img-card" onclick="openLightbox(this)">
+        <img src="images/encyclopedia/09f_webgl_vs_webgpu.png" alt="WebGL vs WebGPU" loading="lazy">
+        <div class="img-card-body"><h3>WebGL vs WebGPU</h3><p>WebGL uses the OpenGL ES 2.0/3.0 API (older, widely supported). WebGPU is the modern GPU API with compute shaders, better multi-threading and explicit resource management. Three.js supports both via a common renderer abstraction.</p></div>
+      </div>
+      <div class="img-card" onclick="openLightbox(this)">
+        <img src="images/encyclopedia/09g_compute_shaders.png" alt="Compute Shaders" loading="lazy">
+        <div class="img-card-body"><h3>Compute Shaders (WebGPU)</h3><p>GPU programs that run outside the graphics pipeline for general computation — simulating millions of particles, fluid dynamics, physics. Available via WebGPURenderer with TSL's compute() node.</p></div>
+      </div>
+      <div class="img-card" onclick="openLightbox(this)">
+        <img src="images/encyclopedia/09h_render_pipeline.png" alt="Render Pipeline" loading="lazy">
+        <div class="img-card-body"><h3>Render Pipeline Overview</h3><p>Scene graph → frustum culling → render list sorted by material → draw calls → vertex shader → rasterisation → fragment shader → framebuffer → screen. Understanding this pipeline is key to performance.</p></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 10 POST-PROCESSING -->
+  <div class="section-block" id="postfx">
+    <div class="section-header">
+      <div class="section-num">10</div>
+      <div class="section-meta">
+        <h2 style="color:var(--magenta)">Post-Processing Effects</h2>
+        <p>Post-processing applies screen-space effects after the scene is rendered. Three.js uses <code>EffectComposer</code> with a chain of passes — the output of one feeds into the next. The library ships with over 20 built-in effects, and you can write custom fullscreen shader passes for complete control.</p>
+        <div class="section-links">
+          <a href="https://threejs.org/docs/#examples/en/postprocessing/EffectComposer" target="_blank" class="doc-link">↗ EffectComposer</a>
+          <a href="https://threejs.org/examples/#webgl_postprocessing" target="_blank" class="doc-link">↗ Examples</a>
+        </div>
+      </div>
+    </div>
+    <div class="img-grid">
+      <div class="img-card" onclick="openLightbox(this)">
+        <img src="images/encyclopedia/10a_effect_composer.png" alt="EffectComposer" loading="lazy">
+        <div class="img-card-body"><h3>EffectComposer — The Pipeline</h3><p>Orchestrates a chain of passes. RenderPass renders the scene. Subsequent passes read from and write to render targets. OutputPass writes the final result to screen. Add passes in order: scene → effects → output.</p></div>
+      </div>
+      <div class="img-card" onclick="openLightbox(this)">
+        <img src="images/encyclopedia/10b_bloom.png" alt="Bloom" loading="lazy">
+        <div class="img-card-body"><h3>Bloom / UnrealBloomPass</h3><p>Bright areas of the scene bleed light into surrounding pixels, simulating the glow of bright lights on a camera lens. Adjust threshold, strength and radius. Essential for neon, HDR and sci-fi aesthetics.</p></div>
+      </div>
+      <div class="img-card" onclick="openLightbox(this)">
+        <img src="images/encyclopedia/10c_ssao.png" alt="SSAO" loading="lazy">
+        <div class="img-card-body"><h3>SSAO — Screen Space Ambient Occlusion</h3><p>Darkens crevices, corners and contact areas where ambient light can't reach. Gives scenes grounding and depth without expensive ray-traced ambient occlusion. SAOPass is the Three.js implementation.</p></div>
+      </div>
+      <div class="img-card" onclick="openLightbox(this)">
+        <img src="images/encyclopedia/10d_depth_of_field.png" alt="Depth of Field" loading="lazy">
+        <div class="img-card-body"><h3>Depth of Field (Bokeh)</h3><p>Blurs objects outside the focal plane, mimicking a physical camera lens. Objects close to the focus distance are sharp; others are blurred with bokeh discs. BokehPass or postprocessing library's DoF effect.</p></div>
+      </div>
+      <div class="img-card" onclick="openLightbox(this)">
+        <img src="images/encyclopedia/10e_film_grain.png" alt="Film Grain" loading="lazy">
+        <div class="img-card-body"><h3>Film Grain</h3><p>Adds animated noise to the final frame, simulating photographic film grain. Softens the overly-clean look of CGI and adds cinematic character. FilmPass in Three.js includes grain + scanlines.</p></div>
+      </div>
+      <div class="img-card" onclick="openLightbox(this)">
+        <img src="images/encyclopedia/10f_glitch.png" alt="Glitch Effect" loading="lazy">
+        <div class="img-card-body"><h3>Glitch Effect</h3><p>Digital corruption effect — random horizontal band shifts, RGB channel separation, noise overlays. GlitchPass generates random glitch bursts. Great for cyberpunk and error/hack aesthetics.</p></div>
+      </div>
+      <div class="img-card" onclick="openLightbox(this)">
+        <img src="images/encyclopedia/10g_outline.png" alt="Outline Effect" loading="lazy">
+        <div class="img-card-body"><h3>Outline — Selection Highlight</h3><p>OutlinePass renders selected objects with a coloured outline. Works by rendering object silhouettes at a slight scale offset. Essential for game selection UIs and highlighting interactive objects.</p></div>
+      </div>
+      <div class="img-card" onclick="openLightbox(this)">
+        <img src="images/encyclopedia/10h_color_grading.png" alt="Color Grading" loading="lazy">
+        <div class="img-card-body"><h3>Color Grading / LUT</h3><p>Applies a 3D Look-Up Table to remap colours in the final frame, matching a specific cinematic colour grade. LUTPass in Three.js — load a .cube or .png LUT file to transform the entire scene's mood instantly.</p></div>
+      </div>
+      <div class="img-card" onclick="openLightbox(this)">
+        <img src="images/encyclopedia/10i_motion_blur.png" alt="Motion Blur" loading="lazy">
+        <div class="img-card-body"><h3>Motion Blur</h3><p>Blurs fast-moving objects along their trajectory, as a real camera shutter would capture. Can be per-object (velocity-based) or camera motion blur. Gives movement weight and speed.</p></div>
+      </div>
+      <div class="img-card" onclick="openLightbox(this)">
+        <img src="images/encyclopedia/10j_god_rays.png" alt="God Rays" loading="lazy">
+        <div class="img-card-body"><h3>God Rays — Volumetric Light</h3><p>Shafts of light visible when a bright source (sun, lamp) is partially occluded. GodraysPass renders the scene from the light's perspective then scatters the result radially toward the screen.</p></div>
+      </div>
+      <div class="img-card" onclick="openLightbox(this)">
+        <img src="images/encyclopedia/10k_chromatic_aberration.png" alt="Chromatic Aberration" loading="lazy">
+        <div class="img-card-body"><h3>Chromatic Aberration</h3><p>Offsets the red, green and blue colour channels by slightly different amounts, creating colour fringing at high-contrast edges — mimicking cheap or damaged camera lenses. Lo-fi and retro aesthetic.</p></div>
+      </div>
+      <div class="img-card" onclick="openLightbox(this)">
+        <img src="images/encyclopedia/10l_pixel_retro.png" alt="Pixel / Retro Effect" loading="lazy">
+        <div class="img-card-body"><h3>Pixel / Retro Effect</h3><p>Downsamples the scene to a low resolution then upscales it with nearest-neighbour filtering, creating a pixel art aesthetic. Combine with a limited colour palette for a full retro game look.</p></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 11 CONTROLS -->
+  <div class="section-block" id="controls">
+    <div class="section-header">
+      <div class="section-num">11</div>
+      <div class="section-meta">
+        <h2 style="color:var(--green)">Controls</h2>
+        <p>Controls add interactivity — they translate mouse, keyboard and touch input into camera or object movement. Three.js ships 8+ control types via the addons (jsm/controls). The right control depends entirely on the use case: exploration, FPS, flight, map viewing or object manipulation.</p>
+        <div class="section-links">
+          <a href="https://threejs.org/docs/#examples/en/controls/OrbitControls" target="_blank" class="doc-link">↗ OrbitControls</a>
+          <a href="https://threejs.org/docs/#examples/en/controls/TransformControls" target="_blank" class="doc-link">↗ TransformControls</a>
+          <a href="https://threejs.org/docs/#examples/en/controls/PointerLockControls" target="_blank" class="doc-link">↗ PointerLockControls</a>
+        </div>
+      </div>
+    </div>
+    <div class="img-grid">
+      <div class="img-card" onclick="openLightbox(this)">
+        <img src="images/encyclopedia/11a_orbit_controls.png" alt="OrbitControls" loading="lazy">
+        <div class="img-card-body"><h3>OrbitControls</h3><p>Camera orbits around a target point. Left-drag rotates, right-drag pans, scroll zooms. The default for 3D model viewers and product configurators. Supports damping for smooth movement.</p></div>
+      </div>
+      <div class="img-card" onclick="openLightbox(this)">
+        <img src="images/encyclopedia/11b_first_person_controls.png" alt="FirstPersonControls" loading="lazy">
+        <div class="img-card-body"><h3>FirstPersonControls</h3><p>Mouse look + WASD movement. The camera moves through the scene from the player's eye perspective. Suitable for walk-throughs and exploration. Note: PointerLockControls is preferred for games.</p></div>
+      </div>
+      <div class="img-card" onclick="openLightbox(this)">
+        <img src="images/encyclopedia/11c_fly_controls.png" alt="FlyControls" loading="lazy">
+        <div class="img-card-body"><h3>FlyControls</h3><p>6 degrees of freedom — move forward/back, strafe, yaw, pitch, roll. No ground plane constraint. Ideal for space exploration, drone views and flight simulators.</p></div>
+      </div>
+      <div class="img-card" onclick="openLightbox(this)">
+        <img src="images/encyclopedia/11d_map_controls.png" alt="MapControls" loading="lazy">
+        <div class="img-card-body"><h3>MapControls</h3><p>Variant of OrbitControls optimised for top-down map panning. Right-click rotates, left-click pans, scroll zooms. The camera always points roughly downward. Ideal for strategy games and GIS apps.</p></div>
+      </div>
+      <div class="img-card" onclick="openLightbox(this)">
+        <img src="images/encyclopedia/11e_transform_controls.png" alt="TransformControls" loading="lazy">
+        <div class="img-card-body"><h3>TransformControls</h3><p>Attaches a gizmo to a 3D object allowing direct manipulation — translate (arrows), rotate (rings), scale (handles). Essential for any in-browser 3D editor. Press T/R/S to switch modes.</p></div>
+      </div>
+      <div class="img-card" onclick="openLightbox(this)">
+        <img src="images/encyclopedia/11f_pointer_lock_controls.png" alt="PointerLockControls" loading="lazy">
+        <div class="img-card-body"><h3>PointerLockControls</h3><p>Locks the mouse cursor (hides it, raw mouse delta only) for a true FPS game feel. The Pointer Lock API must be triggered by a user gesture (click). Mouse movement directly rotates the camera view.</p></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 12 NODE/TSL -->
+  <div class="section-block" id="tsl">
+    <div class="section-header">
+      <div class="section-num">12</div>
+      <div class="section-meta">
+        <h2 style="color:var(--cyan)">Node System / TSL (Three Shading Language)</h2>
+        <p>TSL is Three.js's visual shader authoring system — write shaders in JavaScript using composable node functions that compile to GLSL for WebGL or WGSL for WebGPU. No raw shader strings, no GLSL knowledge required. Nodes are composable functions: <code>color()</code>, <code>texture()</code>, <code>add()</code>, <code>normalMap()</code>, <code>noise()</code>. Chain them to build any shader effect.</p>
+        <div class="section-links">
+          <a href="https://github.com/mrdoob/three.js/wiki/Three.js-Shading-Language" target="_blank" class="doc-link">↗ TSL Wiki</a>
+          <a href="https://threejs.org/docs/#api/en/materials/NodeMaterial" target="_blank" class="doc-link">↗ NodeMaterial</a>
+          <a href="https://threejs.org/examples/#webgpu_tsl_editor" target="_blank" class="doc-link">↗ TSL Editor</a>
+        </div>
+      </div>
+    </div>
+    <div class="img-grid">
+      <div class="img-card" onclick="openLightbox(this)">
+        <img src="images/encyclopedia/12a_tsl_concept.png" alt="TSL Concept" loading="lazy">
+        <div class="img-card-body"><h3>What is TSL?</h3><p>Connect JavaScript node functions → get a compiled GLSL/WGSL shader. No shader strings, no uniform management, no compile errors from typos. Just composable JS functions that describe the shader graph.</p></div>
+      </div>
+      <div class="img-card" onclick="openLightbox(this)">
+        <img src="images/encyclopedia/12b_noise_functions.png" alt="Noise Functions" loading="lazy">
+        <div class="img-card-body"><h3>Noise Functions</h3><p>mx_noise_float() for Perlin-style noise, mx_worley_noise() for cellular patterns, checker(), mx_fractal_noise() for FBM (fractal Brownian motion). All run on GPU, great for terrain, clouds, water, fire.</p></div>
+      </div>
+      <div class="img-card" onclick="openLightbox(this)">
+        <img src="images/encyclopedia/12c_tsl_math_ops.png" alt="TSL Math Operations" loading="lazy">
+        <div class="img-card-body"><h3>Math Operations</h3><p>add(), sub(), mul(), div(), mix(), clamp(), smoothstep(), pow(), abs(), sin(), cos(), floor(), fract(), length(), dot(), cross(), normalize() — all available as TSL nodes that compile to GPU shader code.</p></div>
+      </div>
+      <div class="img-card" onclick="openLightbox(this)">
+        <img src="images/encyclopedia/12d_tsl_fresnel.png" alt="Fresnel" loading="lazy">
+        <div class="img-card-body"><h3>Fresnel / Rim Lighting</h3><p>The Fresnel effect makes surfaces more reflective at glancing angles — water, glass, car paint. In TSL: <code>fresnel()</code> node gives a 0–1 value based on view angle. Mix it into colour or emission for rim glow.</p></div>
+      </div>
+      <div class="img-card" onclick="openLightbox(this)">
+        <img src="images/encyclopedia/12e_tsl_displacement.png" alt="Displacement" loading="lazy">
+        <div class="img-card-body"><h3>Displacement / Vertex Animation</h3><p>Move vertices in the vertex shader based on noise or texture values. Assign a node to material.positionNode to animate geometry on GPU — terrain heightmaps, ocean waves, cloth, breathing characters.</p></div>
+      </div>
+      <div class="img-card" onclick="openLightbox(this)">
+        <img src="images/encyclopedia/12f_tsl_triplanar.png" alt="Triplanar Mapping" loading="lazy">
+        <div class="img-card-body"><h3>Triplanar Mapping</h3><p>Projects texture from X, Y and Z axes simultaneously and blends them — allows texturing complex or irregular geometry without UV unwrapping. triplanarTexture() node in TSL.</p></div>
+      </div>
+      <div class="img-card" onclick="openLightbox(this)">
+        <img src="images/encyclopedia/12g_tsl_pbr_breakdown.png" alt="PBR Breakdown" loading="lazy">
+        <div class="img-card-body"><h3>PBR Node Breakdown</h3><p>How texture nodes feed into MeshPhysicalNodeMaterial properties: texture() → colorNode, normalMap() → normalNode, roughnessMap → roughnessNode, metalnessMap → metalnessNode. Full PBR pipeline in TSL.</p></div>
+      </div>
+      <div class="img-card" onclick="openLightbox(this)">
+        <img src="images/encyclopedia/12h_tsl_gpgpu.png" alt="GPGPU" loading="lazy">
+        <div class="img-card-body"><h3>GPGPU — General Purpose GPU</h3><p>Use compute() nodes in WebGPU mode to run arbitrary GPU computation — simulate millions of particles, fluid, cloth or crowds fully on the GPU. Read results back into render geometry each frame.</p></div>
+      </div>
+      <div class="img-card" onclick="openLightbox(this)">
+        <img src="images/encyclopedia/12i_tsl_procedural.png" alt="Procedural Shaders" loading="lazy">
+        <div class="img-card-body"><h3>Procedural Shaders</h3><p>Generate patterns entirely in the shader with no textures — checkerboards, gradients, grids, mandalas, fractal noise. All computed per-pixel on the GPU from mathematical functions.</p></div>
+      </div>
+      <div class="img-card" onclick="openLightbox(this)">
+        <img src="images/encyclopedia/12j_tsl_custom_shader.png" alt="Custom Shader" loading="lazy">
+        <div class="img-card-body"><h3>Custom Shader — Full Control</h3><p>Assign any TSL expression to colorNode, emissiveNode, positionNode, normalNode etc. Full control over every aspect of the material. Or use ShaderMaterial/RawShaderMaterial with raw GLSL for maximum control.</p></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 13 ANIMATION -->
+  <div class="section-block" id="animation">
+    <div class="section-header">
+      <div class="section-num">13</div>
+      <div class="section-meta">
+        <h2 style="color:var(--amber)">Animation</h2>
+        <p>Three.js has a complete animation system based on keyframes. <code>AnimationClip</code> stores a sequence of keyframe tracks. <code>AnimationMixer</code> plays clips on a specific object, handling blending between multiple clips. Skeletal animation deforms mesh vertices via a bone hierarchy. Morph targets blend between pre-baked vertex positions.</p>
+        <div class="section-links">
+          <a href="https://threejs.org/docs/#api/en/animation/AnimationMixer" target="_blank" class="doc-link">↗ AnimationMixer</a>
+          <a href="https://threejs.org/docs/#api/en/animation/AnimationClip" target="_blank" class="doc-link">↗ AnimationClip</a>
+          <a href="https://threejs.org/docs/#api/en/objects/SkinnedMesh" target="_blank" class="doc-link">↗ SkinnedMesh</a>
+        </div>
+      </div>
+    </div>
+    <div class="img-grid">
+      <div class="img-card" onclick="openLightbox(this)">
+        <img src="images/encyclopedia/13a_keyframes.png" alt="Keyframes" loading="lazy">
+        <div class="img-card-body"><h3>Keyframes & Tracks</h3><p>Keyframes are values at specific times. A KeyframeTrack stores the name of the property (.position.x), an array of times, and an array of values. The interpolant (linear, step, cubic) fills in the gaps between keyframes.</p></div>
+      </div>
+      <div class="img-card" onclick="openLightbox(this)">
+        <img src="images/encyclopedia/13b_walk_cycle.png" alt="Walk Cycle" loading="lazy">
+        <div class="img-card-body"><h3>Walk Cycle</h3><p>A looping animation of roughly 8 key poses that creates the illusion of walking. The poses are keyframed, AnimationMixer plays the clip in a loop, and the transition from last frame to first frame is seamless.</p></div>
+      </div>
+      <div class="img-card" onclick="openLightbox(this)">
+        <img src="images/encyclopedia/13c_blend_crossfade.png" alt="Blend / Crossfade" loading="lazy">
+        <div class="img-card-body"><h3>Blend & Crossfade</h3><p>AnimationMixer can play multiple actions simultaneously and crossfade between them. action.crossFadeTo(other, duration) smoothly transitions weight from one clip to another — walk → run, idle → attack.</p></div>
+      </div>
+      <div class="img-card" onclick="openLightbox(this)">
+        <img src="images/encyclopedia/13d_morph_targets.png" alt="Morph Targets" loading="lazy">
+        <div class="img-card-body"><h3>Morph Targets (Blend Shapes)</h3><p>Pre-baked vertex positions stored on the geometry. mesh.morphTargetInfluences[i] = 0..1 blends between base and target shape. Used for facial expressions, speech lip-sync and secondary deformations.</p></div>
+      </div>
+      <div class="img-card" onclick="openLightbox(this)">
+        <img src="images/encyclopedia/13e_skeletal_animation.png" alt="Skeletal Animation" loading="lazy">
+        <div class="img-card-body"><h3>Skeletal Animation</h3><p>A Skeleton of Bones deforms the SkinnedMesh via skinning weights — each vertex is influenced by 1–4 bones with blended weights. Bone transforms are keyframed via the animation system.</p></div>
+      </div>
+      <div class="img-card" onclick="openLightbox(this)">
+        <img src="images/encyclopedia/13f_additive_animation.png" alt="Additive Animation" loading="lazy">
+        <div class="img-card-body"><h3>Additive Animation</h3><p>An additive clip adds its deltas on top of a base pose rather than replacing it. Breathing, look-around, flinch reactions can all be additive layers on top of the base locomotion — action.blendMode = THREE.AdditiveAnimationBlendMode.</p></div>
+      </div>
+      <div class="img-card" onclick="openLightbox(this)">
+        <img src="images/encyclopedia/13g_animation_curves.png" alt="Animation Curves" loading="lazy">
+        <div class="img-card-body"><h3>Animation Curves — Interpolation</h3><p>How values change between keyframes: InterpolateLinear (straight line), InterpolateSmooth (cubic Catmull-Rom), InterpolateDiscrete (instant step). Ease-in, ease-out and custom cubic bezier easing via AnimationUtils.</p></div>
+      </div>
+      <div class="img-card" onclick="openLightbox(this)">
+        <img src="images/encyclopedia/13h_animation_mixer_concept.png" alt="AnimationMixer" loading="lazy">
+        <div class="img-card-body"><h3>AnimationMixer Concept</h3><p>One mixer per animated object. Call mixer.clipAction(clip) to get an AnimationAction. Set action.play(), action.weight, action.timeScale. Call mixer.update(delta) every frame. Multiple actions blend automatically.</p></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 14 AUDIO -->
+  <div class="section-block" id="audio">
+    <div class="section-header">
+      <div class="section-num">14</div>
+      <div class="section-meta">
+        <h2 style="color:var(--magenta)">Audio</h2>
+        <p>Three.js integrates with the Web Audio API to provide 3D spatial audio. <code>AudioListener</code> is attached to the camera. <code>PositionalAudio</code> sources are attached to 3D objects — they automatically adjust volume and panning based on distance and angle from the listener. <code>AudioAnalyser</code> exposes frequency data for reactive visualisations.</p>
+        <div class="section-links">
+          <a href="https://threejs.org/docs/#api/en/audio/Audio" target="_blank" class="doc-link">↗ Audio</a>
+          <a href="https://threejs.org/docs/#api/en/audio/PositionalAudio" target="_blank" class="doc-link">↗ PositionalAudio</a>
+          <a href="https://threejs.org/docs/#api/en/audio/AudioAnalyser" target="_blank" class="doc-link">↗ AudioAnalyser</a>
+        </div>
+      </div>
+    </div>
+    <div class="img-grid pair">
+      <div class="img-card" onclick="openLightbox(this)">
+        <img src="images/encyclopedia/14a_spatial_audio.png" alt="Spatial Audio" loading="lazy">
+        <div class="img-card-body"><h3>Spatial Audio — 3D Positioning</h3><p>AudioListener on camera, PositionalAudio on each sound source. The Web Audio PannerNode automatically pans and attenuates based on the relative position. Walk closer — louder. Walk around — panning shifts.</p></div>
+      </div>
+      <div class="img-card" onclick="openLightbox(this)">
+        <img src="images/encyclopedia/14b_audio_falloff.png" alt="Audio Falloff" loading="lazy">
+        <div class="img-card-body"><h3>Audio Falloff — Distance Curves</h3><p>Controls how volume drops with distance. rolloffFactor and distanceModel (linear, inverse, exponential) set the shape of the curve. refDistance is where volume starts dropping; maxDistance is where it reaches 0.</p></div>
+      </div>
+      <div class="img-card" onclick="openLightbox(this)">
+        <img src="images/encyclopedia/14c_audio_analyser.png" alt="AudioAnalyser" loading="lazy">
+        <div class="img-card-body"><h3>AudioAnalyser — Frequency Data</h3><p>Wraps Web Audio AnalyserNode to extract FFT frequency data as a Uint8Array. getFrequencyData() each frame — use the values to animate geometry, particle sizes, emissive intensity or anything else that should react to music.</p></div>
+      </div>
+      <div class="img-card" onclick="openLightbox(this)">
+        <img src="images/encyclopedia/14d_audio_cones.png" alt="Audio Cones" loading="lazy">
+        <div class="img-card-body"><h3>Audio Cones — Directional Sound</h3><p>PositionalAudio supports cone-based directional audio. coneInnerAngle (full volume zone), coneOuterAngle (volume transitions), coneOuterGain (volume at and beyond outer cone). Perfect for directional speakers, NPCs, vehicles.</p></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 15 SPECIAL OBJECTS -->
+  <div class="section-block" id="special">
+    <div class="section-header">
+      <div class="section-num">15</div>
+      <div class="section-meta">
+        <h2 style="color:var(--green)">Special Objects & Effects</h2>
+        <p>Three.js addons include high-level objects for common visual needs — ocean water, procedural sky, mirror reflections, lens flares, HTML-in-3D, and powerful rendering utilities. These are in <code>jsm/objects/</code> and work with both WebGL and WebGPU renderers.</p>
+        <div class="section-links">
+          <a href="https://threejs.org/examples/#webgl_shaders_ocean" target="_blank" class="doc-link">↗ Water Example</a>
+          <a href="https://threejs.org/examples/#webgl_lights_hemisphere" target="_blank" class="doc-link">↗ Sky Example</a>
+          <a href="https://threejs.org/examples/#webgl_mirror" target="_blank" class="doc-link">↗ Reflector</a>
+        </div>
+      </div>
+    </div>
+    <div class="img-grid">
+      <div class="img-card" onclick="openLightbox(this)">
+        <img src="images/encyclopedia/15a_water.png" alt="Water" loading="lazy">
+        <div class="img-card-body"><h3>Water</h3><p>Ocean/lake water with animated normal maps, reflections and refractions. Water2 supports two normal map textures for more complex wave patterns. Can adjust waterColor, sunDirection, distortionScale, size.</p></div>
+      </div>
+      <div class="img-card" onclick="openLightbox(this)">
+        <img src="images/encyclopedia/15b_sky.png" alt="Sky" loading="lazy">
+        <div class="img-card-body"><h3>Sky</h3><p>Procedural Preetham sky model. turbidity, rayleigh, mieCoefficient, mieDirectionalG and sunPosition parameters control everything from dawn pink to midday blue to sunset orange. Works without any textures.</p></div>
+      </div>
+      <div class="img-card" onclick="openLightbox(this)">
+        <img src="images/encyclopedia/15c_reflector.png" alt="Reflector" loading="lazy">
+        <div class="img-card-body"><h3>Reflector — Mirror Effect</h3><p>Renders the scene from a reflected camera perspective onto a plane, creating a real-time mirror. Used for floors, mirrors, water surfaces. ReflectorForSSRPass adds screen-space reflections.</p></div>
+      </div>
+      <div class="img-card" onclick="openLightbox(this)">
+        <img src="images/encyclopedia/15d_lensflare.png" alt="Lensflare" loading="lazy">
+        <div class="img-card-body"><h3>Lensflare</h3><p>Adds lens flare artefacts around bright lights — the hexagonal aperture shapes seen when a bright light hits a camera lens. Attach Lensflare to a light source with textured flare elements at different offsets.</p></div>
+      </div>
+      <div class="img-card" onclick="openLightbox(this)">
+        <img src="images/encyclopedia/15e_css3d.png" alt="CSS3D" loading="lazy">
+        <div class="img-card-body"><h3>CSS3DObject — HTML in 3D Space</h3><p>CSS3DRenderer overlays HTML elements transformed to match 3D scene positions. Embed live web pages, interactive UI, video iframes and DOM elements directly into your 3D scene.</p></div>
+      </div>
+      <div class="img-card" onclick="openLightbox(this)">
+        <img src="images/encyclopedia/15f_instancing.png" alt="Instancing" loading="lazy">
+        <div class="img-card-body"><h3>Instancing — 100k Objects, 1 Draw Call</h3><p>InstancedMesh renders N copies of the same geometry+material in a single GPU draw call. Each instance has its own matrix (position, rotation, scale) and optional colour. Rendering forests, crowds, particles, asteroids.</p></div>
+      </div>
+      <div class="img-card" onclick="openLightbox(this)">
+        <img src="images/encyclopedia/15g_lod.png" alt="LOD" loading="lazy">
+        <div class="img-card-body"><h3>LOD — Level of Detail</h3><p>Automatically swaps between high/medium/low poly versions of an object based on camera distance. LOD.addLevel(mesh, distance) — the closest level uses the most detailed geometry; far objects use simplified versions.</p></div>
+      </div>
+      <div class="img-card" onclick="openLightbox(this)">
+        <img src="images/encyclopedia/15h_particles.png" alt="Particles" loading="lazy">
+        <div class="img-card-body"><h3>Sprite Particles</h3><p>Points geometry + PointsMaterial renders each vertex as a billboard sprite. size, sizeAttenuation (perspective scaling), map (texture), vertexColors allow rich particle systems — fire, smoke, rain, sparkles, explosions.</p></div>
+      </div>
+      <div class="img-card" onclick="openLightbox(this)">
+        <img src="images/encyclopedia/15i_raycaster.png" alt="Raycaster" loading="lazy">
+        <div class="img-card-body"><h3>Raycaster — Mouse Picking</h3><p>Cast a ray from camera through the mouse pointer into the scene. raycaster.setFromCamera(pointer, camera) then intersectObjects() returns hit objects sorted by distance. The basis for all 3D mouse interaction: hover, click, drag.</p></div>
+      </div>
+      <div class="img-card" onclick="openLightbox(this)">
+        <img src="images/encyclopedia/15j_clipping_planes.png" alt="Clipping Planes" loading="lazy">
+        <div class="img-card-body"><h3>Clipping Planes</h3><p>Discard fragments on one side of a mathematical plane. renderer.clippingPlanes clips globally. material.clippingPlanes clips per material. Combine planes to cut complex cross-sections through objects — great for medical/architecture visualisation.</p></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 16 LOADERS -->
+  <div class="section-block" id="loaders">
+    <div class="section-header">
+      <div class="section-num">16</div>
+      <div class="section-meta">
+        <h2 style="color:var(--cyan)">Loaders</h2>
+        <p>Loaders import external assets — 3D models, textures, environments. Three.js ships with a base <code>Loader</code> class and dozens of format-specific loaders in the addons. <code>GLTFLoader</code> is the recommended format for 3D models — it's the "JPEG of 3D", compact, supports PBR materials, animation, morphs and extensions.</p>
+        <div class="section-links">
+          <a href="https://threejs.org/docs/#examples/en/loaders/GLTFLoader" target="_blank" class="doc-link">↗ GLTFLoader</a>
+          <a href="https://threejs.org/docs/#api/en/loaders/Loader" target="_blank" class="doc-link">↗ Loader base</a>
+          <a href="https://threejs.org/docs/#examples/en/loaders/DRACOLoader" target="_blank" class="doc-link">↗ DRACOLoader</a>
+        </div>
+      </div>
+    </div>
+    <div class="img-grid">
+      <div class="img-card" onclick="openLightbox(this)">
+        <img src="images/encyclopedia/16a_gltf_loader.png" alt="GLTF Loader" loading="lazy">
+        <div class="img-card-body"><h3>GLTFLoader — The Standard Format</h3><p>.gltf (JSON + binary + images) or .glb (single binary blob). Supports PBR materials, skeletal animation, morph targets, multiple meshes, lights, cameras, custom extensions. Use Draco or meshopt compression for smaller files.</p></div>
+      </div>
+      <div class="img-card" onclick="openLightbox(this)">
+        <img src="images/encyclopedia/16b_fbx_loader.png" alt="FBX Loader" loading="lazy">
+        <div class="img-card-body"><h3>FBXLoader — Autodesk Format</h3><p>Autodesk FBX format common in game pipelines (Maya, 3ds Max, MotionBuilder). Supports skeletal animation and morph targets. Large files — prefer exporting to GLTF from DCC tools when possible.</p></div>
+      </div>
+      <div class="img-card" onclick="openLightbox(this)">
+        <img src="images/encyclopedia/16c_obj_loader.png" alt="OBJ Loader" loading="lazy">
+        <div class="img-card-body"><h3>OBJLoader — Universal Legacy Format</h3><p>The most widely supported 3D format. Human-readable text, paired with .mtl for materials. No animation, no PBR, large files. Good for static geometry interchange with any 3D application.</p></div>
+      </div>
+      <div class="img-card" onclick="openLightbox(this)">
+        <img src="images/encyclopedia/16d_draco_compression.png" alt="Draco Compression" loading="lazy">
+        <div class="img-card-body"><h3>Draco Compression</h3><p>Google's open-source mesh compression — reduces geometry file size by 90%+ with minimal visual loss. Embed in GLTF via KHR_draco_mesh_compression. Requires DRACOLoader + decoder WASM loaded separately.</p></div>
+      </div>
+      <div class="img-card" onclick="openLightbox(this)">
+        <img src="images/encyclopedia/16e_hdr_loader.png" alt="HDR Loader" loading="lazy">
+        <div class="img-card-body"><h3>RGBELoader / EXRLoader — HDR Environments</h3><p>Load .hdr (Radiance RGBE format) or .exr (OpenEXR) HDRI environment maps. Pass to PMREMGenerator.fromEquirectangular() to prefilter for physically-based IBL lighting and reflections.</p></div>
+      </div>
+      <div class="img-card" onclick="openLightbox(this)">
+        <img src="images/encyclopedia/16f_svg_loader.png" alt="SVG Loader" loading="lazy">
+        <div class="img-card-body"><h3>SVGLoader — Vector Graphics in 3D</h3><p>Parses SVG paths into Three.js ShapePaths. Extrude shapes with ExtrudeGeometry for 3D logos and text, or render flat as ShapeGeometry. Preserves curves and fill colours from the SVG.</p></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 17 PHYSICS -->
+  <div class="section-block" id="physics">
+    <div class="section-header">
+      <div class="section-num">17</div>
+      <div class="section-meta">
+        <h2 style="color:var(--amber)">Physics</h2>
+        <p>Three.js doesn't include a physics engine — but it pairs seamlessly with popular libraries. <strong>Rapier</strong> (WASM, very fast), <strong>Cannon.js / cannon-es</strong> (pure JS), <strong>Ammo.js</strong> (Bullet physics port), and <strong>Jolt</strong> are the most common choices. The pattern is always the same: physics world runs the simulation, Three.js renders the result.</p>
+        <div class="section-links">
+          <a href="https://rapier.rs/" target="_blank" class="doc-link">↗ Rapier</a>
+          <a href="https://github.com/pmndrs/cannon-es" target="_blank" class="doc-link">↗ cannon-es</a>
+          <a href="https://github.com/nicktindall/cyclon.js" target="_blank" class="doc-link">↗ Ammo.js</a>
+        </div>
+      </div>
+    </div>
+    <div class="img-grid pair">
+      <div class="img-card" onclick="openLightbox(this)">
+        <img src="images/encyclopedia/17a_rigid_body.png" alt="Rigid Body" loading="lazy">
+        <div class="img-card-body"><h3>Rigid Body Physics</h3><p>Objects with mass that fall, bounce, slide and collide. Each physics body has a shape (box, sphere, convex hull), mass, friction, restitution. Every frame: physics.step() → copy body.position to mesh.position.</p></div>
+      </div>
+      <div class="img-card" onclick="openLightbox(this)">
+        <img src="images/encyclopedia/17b_cloth_simulation.png" alt="Cloth Simulation" loading="lazy">
+        <div class="img-card-body"><h3>Cloth Simulation</h3><p>A grid of connected particles with spring constraints. Pin some particles (corners), apply gravity and wind forces, resolve constraints iteratively each frame. Drapes naturally over objects. Ammo.js soft body or custom verlet integration.</p></div>
+      </div>
+      <div class="img-card" onclick="openLightbox(this)">
+        <img src="images/encyclopedia/17c_vehicle_physics.png" alt="Vehicle Physics" loading="lazy">
+        <div class="img-card-body"><h3>Vehicle Physics</h3><p>Ray-cast vehicle simulation: a chassis rigid body with ray-cast wheels. Rays cast downward detect the ground surface; suspension compresses accordingly. Engine force applied to driven wheels, steering to front wheels.</p></div>
+      </div>
+      <div class="img-card" onclick="openLightbox(this)">
+        <img src="images/encyclopedia/17d_constraints_ragdoll.png" alt="Constraints / Ragdoll" loading="lazy">
+        <div class="img-card-body"><h3>Constraints & Ragdoll</h3><p>Constraints connect two rigid bodies with limits on their relative movement — hinge (door), slider (piston), lock (weld), cone-twist (shoulder joint). Chain them to build ragdolls, wrecking balls, robotic arms.</p></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 18 HELPERS -->
+  <div class="section-block" id="helpers">
+    <div class="section-header">
+      <div class="section-num">18</div>
+      <div class="section-meta">
+        <h2 style="color:var(--cyan)">Helpers & Debug Tools</h2>
+        <p>Helper objects are added to the scene during development to visualise invisible things — camera frustums, light directions, bone positions, bounding boxes. They are Object3D instances you add and remove like any other object. Always remove them before shipping.</p>
+        <div class="section-links">
+          <a href="https://threejs.org/docs/#api/en/helpers/GridHelper" target="_blank" class="doc-link">↗ GridHelper</a>
+          <a href="https://threejs.org/docs/#api/en/helpers/CameraHelper" target="_blank" class="doc-link">↗ CameraHelper</a>
+          <a href="https://threejs.org/docs/#api/en/helpers/SkeletonHelper" target="_blank" class="doc-link">↗ SkeletonHelper</a>
+        </div>
+      </div>
+    </div>
+    <div class="img-grid pair">
+      <div class="img-card" onclick="openLightbox(this)">
+        <img src="images/encyclopedia/18a_grid_axes.png" alt="Grid and Axes Helpers" loading="lazy">
+        <div class="img-card-body"><h3>GridHelper + AxesHelper</h3><p>GridHelper draws a flat grid at Y=0 — orient yourself in 3D space. AxesHelper draws the XYZ axes as red/green/blue lines from origin. Combine them to instantly visualise the coordinate system.</p></div>
+      </div>
+      <div class="img-card" onclick="openLightbox(this)">
+        <img src="images/encyclopedia/18b_camera_helper.png" alt="Camera Helper" loading="lazy">
+        <div class="img-card-body"><h3>CameraHelper</h3><p>Renders the wireframe frustum of a camera as lines in the scene. Attach to any camera to visualise its field of view, near plane and far plane. Essential when debugging shadow cameras and splitscreen setups.</p></div>
+      </div>
+      <div class="img-card" onclick="openLightbox(this)">
+        <img src="images/encyclopedia/18c_light_helpers.png" alt="Light Helpers" loading="lazy">
+        <div class="img-card-body"><h3>Light Helpers</h3><p>DirectionalLightHelper (arrow + target line), PointLightHelper (wireframe sphere), SpotLightHelper (cone wireframe), HemisphereLightHelper (two hemispheres), RectAreaLightHelper (outlined rectangle).</p></div>
+      </div>
+      <div class="img-card" onclick="openLightbox(this)">
+        <img src="images/encyclopedia/18d_skeleton_helper.png" alt="Skeleton Helper" loading="lazy">
+        <div class="img-card-body"><h3>SkeletonHelper</h3><p>Renders the bone hierarchy of a SkinnedMesh as coloured lines showing each bone's position and orientation. Essential for debugging animation rigs, verifying bone names and checking skeleton hierarchy.</p></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 19 CURVES -->
+  <div class="section-block" id="curves">
+    <div class="section-header">
+      <div class="section-num">19</div>
+      <div class="section-meta">
+        <h2 style="color:var(--magenta)">Curves, Shapes & Extras</h2>
+        <p>Three.js has a rich 2D/3D curve and shape system. Curves define smooth paths — use them for camera paths, tube geometry, spline animations. Shapes define 2D outlines that can be extruded into 3D geometry. <code>PMREMGenerator</code> prefilters environment maps for physically-based rendering.</p>
+        <div class="section-links">
+          <a href="https://threejs.org/docs/#api/en/extras/curves/CatmullRomCurve3" target="_blank" class="doc-link">↗ CatmullRomCurve3</a>
+          <a href="https://threejs.org/docs/#api/en/extras/core/Shape" target="_blank" class="doc-link">↗ Shape</a>
+          <a href="https://threejs.org/docs/#api/en/extras/PMREMGenerator" target="_blank" class="doc-link">↗ PMREMGenerator</a>
+        </div>
+      </div>
+    </div>
+    <div class="img-grid pair">
+      <div class="img-card" onclick="openLightbox(this)">
+        <img src="images/encyclopedia/19a_bezier_curves.png" alt="Bezier Curves" loading="lazy">
+        <div class="img-card-body"><h3>Bezier Curves</h3><p>QuadraticBezierCurve3 (1 control point) and CubicBezierCurve3 (2 control points). Define smooth curves through 3D space. .getPoints(n) samples N points along the curve — use with TubeGeometry to render them.</p></div>
+      </div>
+      <div class="img-card" onclick="openLightbox(this)">
+        <img src="images/encyclopedia/19b_catmullrom_spline.png" alt="CatmullRom Spline" loading="lazy">
+        <div class="img-card-body"><h3>CatmullRom Spline — Camera Paths</h3><p>Smooth curve that passes through all control points (unlike bezier which may not). Perfect for cinematic camera paths — sample getPointAt(t) each frame where t goes 0→1 over the animation duration.</p></div>
+      </div>
+      <div class="img-card" onclick="openLightbox(this)">
+        <img src="images/encyclopedia/19c_shapes_extrude.png" alt="Shapes and Extrude" loading="lazy">
+        <div class="img-card-body"><h3>Shape + ExtrudeGeometry</h3><p>Define a 2D outline with Shape (moveTo, lineTo, bezierCurveTo, arc). Pass to ShapeGeometry for flat 2D, or ExtrudeGeometry to add depth and bevel. Great for custom logos, text, architectural elements.</p></div>
+      </div>
+      <div class="img-card" onclick="openLightbox(this)">
+        <img src="images/encyclopedia/19d_pmrem.png" alt="PMREMGenerator" loading="lazy">
+        <div class="img-card-body"><h3>PMREMGenerator</h3><p>Pre-filters a raw environment map (HDRI or cubemap) into a Prefiltered Mipmapped Radiance Environment Map. The different mip levels correspond to different roughness values — rough surfaces sample blurry mips, mirrors sample sharp ones. Required for correct PBR rendering.</p></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- MATH -->
+  <div class="section-block" id="math">
+    <div class="section-header">
+      <div class="section-num">14</div>
+      <div class="section-meta">
+        <h2 style="color:var(--green)">Math Library</h2>
+        <p>Three.js includes a complete 3D math library. These classes are used everywhere — setting positions, rotating objects, computing transforms, raycasting. Understanding Vector3, Quaternion and Matrix4 is fundamental to working with Three.js at any level beyond the basics.</p>
+        <div class="section-links">
+          <a href="https://threejs.org/docs/#api/en/math/Vector3" target="_blank" class="doc-link">↗ Vector3</a>
+          <a href="https://threejs.org/docs/#api/en/math/Quaternion" target="_blank" class="doc-link">↗ Quaternion</a>
+          <a href="https://threejs.org/docs/#api/en/math/Matrix4" target="_blank" class="doc-link">↗ Matrix4</a>
+          <a href="https://threejs.org/docs/#api/en/math/Euler" target="_blank" class="doc-link">↗ Euler</a>
+          <a href="https://threejs.org/docs/#api/en/math/Box3" target="_blank" class="doc-link">↗ Box3</a>
+        </div>
+      </div>
+    </div>
+    <div class="img-grid single">
+      <div class="img-card" onclick="openLightbox(this)">
+        <img src="images/encyclopedia/14_math.png" alt="Three.js Math Library" loading="lazy">
+        <div class="img-card-body">
+          <h3>Complete Math Library</h3>
+          <p>Vector2/3/4, Matrix3/4, Quaternion (rotation without gimbal lock), Euler (human-readable rotation angles), Color (RGB + HSL), Ray (origin + direction for raycasting), Plane (infinite mathematical plane), Box2/3 (axis-aligned bounding boxes), Sphere, Frustum, Triangle, Line3, MathUtils (lerp, clamp, degToRad, seededRandom, etc.)</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div><!-- /encyclopedia -->
+
+<!-- FOOTER -->
+<footer>
+  <img src="images/encyclopedia/99_footer.png" alt="Three.js Footer" loading="lazy">
+  <p>
+    Built with <a href="https://threejs.org/" target="_blank">Three.js r183</a> ·
+    Visual guide by <a href="https://github.com/NeuralPixelGames" target="_blank">NeuralPixelGames</a> ·
+    <a href="https://github.com/NeuralPixelGames/threejs-visual-guide" target="_blank">View on GitHub</a> ·
+    <a href="https://github.com/mrdoob/three.js" target="_blank">Three.js Source</a> ·
+    <a href="https://threejs.org/docs/" target="_blank">Official Docs</a>
+  </p>
+</footer>
+
+<!-- LIGHTBOX -->
+<div class="lightbox" id="lightbox" onclick="closeLightbox()">
+  <button class="lightbox-close" onclick="closeLightbox()">✕</button>
+  <img id="lightbox-img" src="" alt="">
+</div>
+
+<script>
+function openLightbox(card) {
+  const img = card.querySelector('img');
+  document.getElementById('lightbox-img').src = img.src;
+  document.getElementById('lightbox-img').alt = img.alt;
+  document.getElementById('lightbox').classList.add('open');
+  document.body.style.overflow = 'hidden';
+}
+function closeLightbox() {
+  document.getElementById('lightbox').classList.remove('open');
+  document.body.style.overflow = '';
+}
+document.addEventListener('keydown', e => { if (e.key === 'Escape') closeLightbox(); });
+</script>
+</body>
+</html>
