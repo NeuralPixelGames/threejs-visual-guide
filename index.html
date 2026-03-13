@@ -3,8 +3,8 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Three.js Visual Encyclopedia — A Complete Visual Guide</title>
-<meta name="description" content="Every Three.js concept explained visually — 96 illustrated breakdowns covering geometry, materials, cameras, shaders, physics, audio and more. Built for visual learners.">
+<title>Three.js Visual Encyclopedia - A Complete Visual Guide</title>
+<meta name="description" content="Every Three.js concept explained visually - 96 illustrated breakdowns covering geometry, materials, cameras, shaders, physics, audio and more. Built for visual learners.">
 <meta property="og:title" content="Three.js Visual Encyclopedia">
 <meta property="og:description" content="96 visual breakdowns covering every Three.js concept. For visual learners.">
 <meta property="og:image" content="images/encyclopedia/01_hero.webp">
@@ -82,10 +82,11 @@ nav a.active { color: var(--cyan); box-shadow: inset 0 -2px 0 var(--cyan); }
 .hero-video-wrap video { width:100%; display:block; }
 .hero h1 {
   font-size: clamp(2.2rem, 6vw, 4.5rem);
-  font-weight: 900; letter-spacing: -0.03em; line-height: 1.05;
+  font-weight: 900; letter-spacing: -0.03em; line-height: 1.1;
   background: linear-gradient(135deg, var(--cyan) 0%, #ffffff 45%, var(--magenta) 100%);
   -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
   margin-bottom: 1.25rem;
+  padding-bottom: 0.08em;
 }
 .hero-sub {
   font-size: clamp(1rem, 2.5vw, 1.3rem); color: #ccdaee;
@@ -173,9 +174,13 @@ nav a.active { color: var(--cyan); box-shadow: inset 0 -2px 0 var(--cyan); }
   width: 100%; max-width: 100%; display:block; border-radius:14px;
   border: 1px solid var(--border);
   box-shadow: 0 8px 60px rgba(0,0,0,0.5);
-  transition: box-shadow 0.3s, transform 0.3s;
+  transition: box-shadow 0.3s, transform 0.3s, opacity 0.4s;
   cursor: zoom-in;
+  aspect-ratio: 16/9;
+  background: #0a0e1a;
+  opacity: 1;
 }
+.img-entry img.lazy-pending { opacity: 0.25; }
 .img-entry img:hover {
   box-shadow: var(--glow-c), 0 12px 80px rgba(0,0,0,0.7);
   transform: translateY(-3px);
@@ -335,8 +340,8 @@ footer p { color:var(--muted); font-size:0.82rem; }
       <source src="video/intro.mp4" type="video/mp4">
     </video>
   </div>
-  <h1>Three.js — A Visual Guide</h1>
-  <p class="hero-sub">Every concept in Three.js explained visually. 96 illustrated breakdowns covering geometry, materials, cameras, shaders, post-processing, physics, audio and more. No prior 3D experience required — just scroll.</p>
+  <h1>Three.js - A Visual Guide</h1>
+  <p class="hero-sub">Every concept in Three.js explained visually. 96 illustrated breakdowns covering geometry, materials, cameras, shaders, post-processing, physics, audio and more. No prior 3D experience required - just scroll.</p>
   <div class="hero-badges">
     <span class="badge bc">96 Visual Breakdowns</span>
     <span class="badge bm">r183</span>
@@ -358,7 +363,7 @@ footer p { color:var(--muted); font-size:0.82rem; }
 <!-- ── FULL VIDEO ── -->
 <div class="full-video-wrap" id="video">
   <h2 style="color:var(--cyan)">Full Encyclopedia Video</h2>
-  <p>All 96 slides in sequence — 7 minutes covering every Three.js concept from geometry to shaders.</p>
+  <p>All 96 slides in sequence - 7 minutes covering every Three.js concept from geometry to shaders.</p>
   <div class="video-player">
     <video controls preload="metadata">
       <source src="video/full_encyclopedia.mp4" type="video/mp4">
@@ -367,14 +372,14 @@ footer p { color:var(--muted); font-size:0.82rem; }
 </div>
 
 <!-- ══════════════════════════════════════════════
-     01 — OVERVIEW
+     01 - OVERVIEW
 ══════════════════════════════════════════════ -->
 <div class="section-break" id="overview">
   <div class="section-break-header">
     <span class="section-num bc">01</span>
     <h2 style="color:var(--cyan)">Overview &amp; Architecture</h2>
   </div>
-  <p class="section-intro">Three.js is a JavaScript library that wraps WebGL (and now WebGPU) into an approachable scene graph API. The core idea: you describe <em>what</em> you want to show — objects, lights, a camera — and the renderer figures out <em>how</em> to draw it on the GPU. The architecture is simple: a Scene holds Object3Ds, a Camera defines the view, and a Renderer draws it all every frame.</p>
+  <p class="section-intro">Three.js is a JavaScript library that wraps WebGL (and now WebGPU) into an approachable scene graph API. The core idea: you describe <em>what</em> you want to show - objects, lights, a camera - and the renderer figures out <em>how</em> to draw it on the GPU. The architecture is simple: a Scene holds Object3Ds, a Camera defines the view, and a Renderer draws it all every frame.</p>
   <div class="section-links">
     <a href="https://threejs.org/docs/#manual/en/introduction/Creating-a-scene" target="_blank" class="doc-link">↗ Creating a Scene</a>
     <a href="https://github.com/mrdoob/three.js" target="_blank" class="doc-link">↗ GitHub Source</a>
@@ -383,11 +388,11 @@ footer p { color:var(--muted); font-size:0.82rem; }
 </div>
 
 <div class="img-entry">
-  <img src="images/encyclopedia/01_hero.webp" alt="Three.js Architecture Overview" onclick="openLb(this)" loading="lazy">
+  <img data-src="images/encyclopedia/01_hero.webp" alt="Three.js Architecture Overview" onclick="openLb(this)">
   <div class="img-meta">
-    <h3>Three.js — Full Architecture Map</h3>
+    <h3>Three.js - Full Architecture Map</h3>
     <p>Every Three.js scene follows the same pattern: create a <strong>Scene</strong>, add <strong>Mesh</strong> objects (Geometry + Material), position a <strong>Camera</strong>, and hand it all to the <strong>Renderer</strong> which sends draw calls to the GPU. The render loop runs at 60fps via <code>requestAnimationFrame</code>.</p>
-    <p>Understanding this flow is the foundation for everything else in this guide. Every other concept — shaders, post-processing, physics — sits on top of this core loop.</p>
+    <p>Understanding this flow is the foundation for everything else in this guide. Every other concept - shaders, post-processing, physics - sits on top of this core loop.</p>
     <ul class="key-points">
       <li>Scene</li><li>Camera</li><li>Renderer</li><li>Mesh</li>
       <li>BufferGeometry</li><li>Material</li><li>Object3D</li><li>requestAnimationFrame</li>
@@ -403,14 +408,14 @@ renderer.<span class="fn">setAnimationLoop</span>( () => renderer.<span class="f
 </div>
 
 <!-- ══════════════════════════════════════════════
-     02 — GEOMETRY
+     02 - GEOMETRY
 ══════════════════════════════════════════════ -->
 <div class="section-break" id="geometry">
   <div class="section-break-header">
     <span class="section-num ba">02</span>
     <h2 style="color:var(--amber)">Geometry</h2>
   </div>
-  <p class="section-intro">Geometry defines the shape of a 3D object — the vertices, edges and faces that make up its surface. Under the hood, everything is a <code>BufferGeometry</code>: flat typed arrays of vertex data (position, normal, UV, color, index) sent directly to the GPU. Three.js ships 21 built-in geometry constructors, plus the tools to create your own from scratch or load from files.</p>
+  <p class="section-intro">Geometry defines the shape of a 3D object - the vertices, edges and faces that make up its surface. Under the hood, everything is a <code>BufferGeometry</code>: flat typed arrays of vertex data (position, normal, UV, color, index) sent directly to the GPU. Three.js ships 21 built-in geometry constructors, plus the tools to create your own from scratch or load from files.</p>
   <div class="section-links">
     <a href="https://threejs.org/docs/#api/en/core/BufferGeometry" target="_blank" class="doc-link">↗ BufferGeometry</a>
     <a href="https://threejs.org/docs/#api/en/geometries/BoxGeometry" target="_blank" class="doc-link">↗ BoxGeometry</a>
@@ -420,10 +425,10 @@ renderer.<span class="fn">setAnimationLoop</span>( () => renderer.<span class="f
 </div>
 
 <div class="img-entry">
-  <img src="images/encyclopedia/02_geometry.webp" alt="Three.js Geometry Types" onclick="openLb(this)" loading="lazy">
+  <img data-src="images/encyclopedia/02_geometry.webp" alt="Three.js Geometry Types" onclick="openLb(this)">
   <div class="img-meta">
     <h3>All 21 Built-in Geometry Types</h3>
-    <p>Three.js provides a geometry for almost every common shape out of the box. The primitives — Box, Sphere, Cylinder, Cone, Torus — cover most game and visualisation needs. The parametric types — LatheGeometry, TubeGeometry, ExtrudeGeometry — let you create complex shapes from curves and profiles. The polyhedra — Icosahedron, Dodecahedron, Octahedron — produce mathematically perfect symmetric shapes.</p>
+    <p>Three.js provides a geometry for almost every common shape out of the box. The primitives - Box, Sphere, Cylinder, Cone, Torus - cover most game and visualisation needs. The parametric types - LatheGeometry, TubeGeometry, ExtrudeGeometry - let you create complex shapes from curves and profiles. The polyhedra - Icosahedron, Dodecahedron, Octahedron - produce mathematically perfect symmetric shapes.</p>
     <p>All geometries have a <code>widthSegments</code>/<code>heightSegments</code> parameter that controls polygon density. More segments = smoother shape but higher vertex count. TorusKnotGeometry creates intricate knotted shapes via <code>p</code> and <code>q</code> winding parameters.</p>
     <ul class="key-points">
       <li>BoxGeometry</li><li>SphereGeometry</li><li>CylinderGeometry</li><li>ConeGeometry</li>
@@ -446,14 +451,14 @@ renderer.<span class="fn">setAnimationLoop</span>( () => renderer.<span class="f
 </div>
 
 <!-- ══════════════════════════════════════════════
-     03 — MATERIALS
+     03 - MATERIALS
 ══════════════════════════════════════════════ -->
 <div class="section-break" id="materials">
   <div class="section-break-header">
     <span class="section-num bm">03</span>
     <h2 style="color:var(--magenta)">Materials</h2>
   </div>
-  <p class="section-intro">Materials control how geometry looks when rendered — its colour, shininess, transparency, and how it reacts to light. Three.js has materials for every use case and performance budget: from the cheapest flat <code>MeshBasicMaterial</code> (no lighting) to the fully physics-based <code>MeshPhysicalMaterial</code> with clearcoat, sheen, iridescence, transmission and subsurface scattering. The right material makes the difference between flat and photorealistic.</p>
+  <p class="section-intro">Materials control how geometry looks when rendered - its colour, shininess, transparency, and how it reacts to light. Three.js has materials for every use case and performance budget: from the cheapest flat <code>MeshBasicMaterial</code> (no lighting) to the fully physics-based <code>MeshPhysicalMaterial</code> with clearcoat, sheen, iridescence, transmission and subsurface scattering. The right material makes the difference between flat and photorealistic.</p>
   <div class="section-links">
     <a href="https://threejs.org/docs/#api/en/materials/MeshStandardMaterial" target="_blank" class="doc-link">↗ MeshStandardMaterial</a>
     <a href="https://threejs.org/docs/#api/en/materials/MeshPhysicalMaterial" target="_blank" class="doc-link">↗ MeshPhysicalMaterial</a>
@@ -463,15 +468,15 @@ renderer.<span class="fn">setAnimationLoop</span>( () => renderer.<span class="f
 </div>
 
 <div class="img-entry">
-  <img src="images/encyclopedia/03_materials.webp" alt="Three.js Materials" onclick="openLb(this)" loading="lazy">
+  <img data-src="images/encyclopedia/03_materials.webp" alt="Three.js Materials" onclick="openLb(this)">
   <div class="img-meta">
-    <h3>All Material Types — From Basic to Physically Based</h3>
-    <p><strong>MeshBasicMaterial</strong> — No lighting calculation. Always shows flat colour or texture. Zero GPU cost. Use for UI, wireframes, non-lit stylised objects.</p>
-    <p><strong>MeshLambertMaterial</strong> — Diffuse-only lighting (no specular). Calculated per-vertex, not per-pixel. Fast and decent for matte surfaces. Not realistic but works great for stylised scenes.</p>
-    <p><strong>MeshPhongMaterial</strong> — Adds a specular highlight (Blinn-Phong model). <code>shininess</code> controls the tightness of the specular spot. Classic 3D look, faster than PBR.</p>
-    <p><strong>MeshStandardMaterial</strong> — Physically-based rendering (PBR). Metalness/roughness workflow. <code>roughness=0</code> is mirror-like, <code>roughness=1</code> is fully diffuse. Correctly responds to environment maps and IBL lighting.</p>
-    <p><strong>MeshPhysicalMaterial</strong> — Extends Standard with clearcoat, sheen (velvet), iridescence, transmission (glass), thickness (refraction depth) and anisotropy. The most realistic material.</p>
-    <p><strong>MeshToonMaterial</strong> — Cel-shaded cartoon look using a gradient map to define the step in shading bands. Combine with an outline pass for a complete anime aesthetic.</p>
+    <h3>All Material Types - From Basic to Physically Based</h3>
+    <p><strong>MeshBasicMaterial</strong> - No lighting calculation. Always shows flat colour or texture. Zero GPU cost. Use for UI, wireframes, non-lit stylised objects.</p>
+    <p><strong>MeshLambertMaterial</strong> - Diffuse-only lighting (no specular). Calculated per-vertex, not per-pixel. Fast and decent for matte surfaces. Not realistic but works great for stylised scenes.</p>
+    <p><strong>MeshPhongMaterial</strong> - Adds a specular highlight (Blinn-Phong model). <code>shininess</code> controls the tightness of the specular spot. Classic 3D look, faster than PBR.</p>
+    <p><strong>MeshStandardMaterial</strong> - Physically-based rendering (PBR). Metalness/roughness workflow. <code>roughness=0</code> is mirror-like, <code>roughness=1</code> is fully diffuse. Correctly responds to environment maps and IBL lighting.</p>
+    <p><strong>MeshPhysicalMaterial</strong> - Extends Standard with clearcoat, sheen (velvet), iridescence, transmission (glass), thickness (refraction depth) and anisotropy. The most realistic material.</p>
+    <p><strong>MeshToonMaterial</strong> - Cel-shaded cartoon look using a gradient map to define the step in shading bands. Combine with an outline pass for a complete anime aesthetic.</p>
     <ul class="key-points">
       <li>MeshBasicMaterial</li><li>MeshLambertMaterial</li><li>MeshPhongMaterial</li>
       <li>MeshStandardMaterial</li><li>MeshPhysicalMaterial</li><li>MeshToonMaterial</li>
@@ -494,14 +499,14 @@ renderer.<span class="fn">setAnimationLoop</span>( () => renderer.<span class="f
 </div>
 
 <!-- ══════════════════════════════════════════════
-     04 — LIGHTS
+     04 - LIGHTS
 ══════════════════════════════════════════════ -->
 <div class="section-break" id="lights">
   <div class="section-break-header">
     <span class="section-num ba">04</span>
     <h2 style="color:var(--amber)">Lighting</h2>
   </div>
-  <p class="section-intro">Lighting is what makes a 3D scene feel real. A well-lit scene communicates depth, weight, material type and mood. Three.js offers 7 light types — from the ambient fill that eliminates harsh shadows to the precise spotlight casting dramatic shadows. Only DirectionalLight, SpotLight and PointLight can cast shadows; each uses a shadow map technique (rendering the scene from the light's POV to determine occlusion).</p>
+  <p class="section-intro">Lighting is what makes a 3D scene feel real. A well-lit scene communicates depth, weight, material type and mood. Three.js offers 7 light types - from the ambient fill that eliminates harsh shadows to the precise spotlight casting dramatic shadows. Only DirectionalLight, SpotLight and PointLight can cast shadows; each uses a shadow map technique (rendering the scene from the light's POV to determine occlusion).</p>
   <div class="section-links">
     <a href="https://threejs.org/docs/#api/en/lights/DirectionalLight" target="_blank" class="doc-link">↗ DirectionalLight</a>
     <a href="https://threejs.org/docs/#api/en/lights/PointLight" target="_blank" class="doc-link">↗ PointLight</a>
@@ -511,16 +516,16 @@ renderer.<span class="fn">setAnimationLoop</span>( () => renderer.<span class="f
 </div>
 
 <div class="img-entry">
-  <img src="images/encyclopedia/04_lights.webp" alt="Three.js Lighting" onclick="openLb(this)" loading="lazy">
+  <img data-src="images/encyclopedia/04_lights.webp" alt="Three.js Lighting" onclick="openLb(this)">
   <div class="img-meta">
     <h3>7 Light Types + Shadow Maps</h3>
-    <p><strong>AmbientLight</strong> — Adds a flat uniform colour to every surface. No direction, no shadows, no highlights. Use it as a base fill to prevent completely black shadows. Too much makes scenes look flat.</p>
-    <p><strong>DirectionalLight</strong> — Infinite parallel rays, like the sun. All shadows are parallel (use OrthographicCamera for shadow map). Position sets the direction; target sets what it points at. The workhorse outdoor light.</p>
-    <p><strong>PointLight</strong> — Radiates in all directions from a point, like a light bulb. Has <code>distance</code> and <code>decay</code> for falloff. Casts shadows in 6 directions (expensive — uses CubeCamera internally).</p>
-    <p><strong>SpotLight</strong> — Cone-shaped beam, like a flashlight or stage light. <code>angle</code> sets cone width, <code>penumbra</code> softens the edge. Position + target defines the beam direction. Great for dramatic lighting.</p>
-    <p><strong>HemisphereLight</strong> — Sky colour from above, ground colour from below. Two-colour gradient fill that simulates outdoor ambient light. No shadows. Very cheap and effective for outdoor scenes.</p>
-    <p><strong>RectAreaLight</strong> — Soft rectangular light source (like a fluorescent tube or window). Works only with MeshStandardMaterial and MeshPhysicalMaterial. Requires RectAreaLightUniformsLib. No shadow support.</p>
-    <p><strong>LightProbe</strong> — Encodes ambient lighting as spherical harmonics (SH). Low-frequency ambient lighting baked from the environment — smooth, cheap, and great for matching captured real-world lighting.</p>
+    <p><strong>AmbientLight</strong> - Adds a flat uniform colour to every surface. No direction, no shadows, no highlights. Use it as a base fill to prevent completely black shadows. Too much makes scenes look flat.</p>
+    <p><strong>DirectionalLight</strong> - Infinite parallel rays, like the sun. All shadows are parallel (use OrthographicCamera for shadow map). Position sets the direction; target sets what it points at. The workhorse outdoor light.</p>
+    <p><strong>PointLight</strong> - Radiates in all directions from a point, like a light bulb. Has <code>distance</code> and <code>decay</code> for falloff. Casts shadows in 6 directions (expensive - uses CubeCamera internally).</p>
+    <p><strong>SpotLight</strong> - Cone-shaped beam, like a flashlight or stage light. <code>angle</code> sets cone width, <code>penumbra</code> softens the edge. Position + target defines the beam direction. Great for dramatic lighting.</p>
+    <p><strong>HemisphereLight</strong> - Sky colour from above, ground colour from below. Two-colour gradient fill that simulates outdoor ambient light. No shadows. Very cheap and effective for outdoor scenes.</p>
+    <p><strong>RectAreaLight</strong> - Soft rectangular light source (like a fluorescent tube or window). Works only with MeshStandardMaterial and MeshPhysicalMaterial. Requires RectAreaLightUniformsLib. No shadow support.</p>
+    <p><strong>LightProbe</strong> - Encodes ambient lighting as spherical harmonics (SH). Low-frequency ambient lighting baked from the environment - smooth, cheap, and great for matching captured real-world lighting.</p>
     <div class="code-snippet">
 <span class="cm">// Three-point lighting setup</span>
 <span class="kw">const</span> key = <span class="kw">new</span> <span class="fn">THREE.DirectionalLight</span>( <span class="str">0xffffff</span>, <span class="str">2</span> );
@@ -533,14 +538,14 @@ key.shadow.mapSize.<span class="fn">set</span>( <span class="str">2048</span>, <
 </div>
 
 <!-- ══════════════════════════════════════════════
-     05 — OBJECTS
+     05 - OBJECTS
 ══════════════════════════════════════════════ -->
 <div class="section-break" id="objects">
   <div class="section-break-header">
     <span class="section-num bg">05</span>
     <h2 style="color:var(--green)">Scene Objects</h2>
   </div>
-  <p class="section-intro">Everything in a Three.js scene is an <code>Object3D</code> — the base class providing position, rotation, scale, visibility, and parent/child hierarchy. From the basic <code>Mesh</code> to the GPU-instanced <code>InstancedMesh</code> that draws 100,000 copies in a single draw call, each object type exists to solve a specific rendering challenge.</p>
+  <p class="section-intro">Everything in a Three.js scene is an <code>Object3D</code> - the base class providing position, rotation, scale, visibility, and parent/child hierarchy. From the basic <code>Mesh</code> to the GPU-instanced <code>InstancedMesh</code> that draws 100,000 copies in a single draw call, each object type exists to solve a specific rendering challenge.</p>
   <div class="section-links">
     <a href="https://threejs.org/docs/#api/en/core/Object3D" target="_blank" class="doc-link">↗ Object3D</a>
     <a href="https://threejs.org/docs/#api/en/objects/Mesh" target="_blank" class="doc-link">↗ Mesh</a>
@@ -550,18 +555,18 @@ key.shadow.mapSize.<span class="fn">set</span>( <span class="str">2048</span>, <
 </div>
 
 <div class="img-entry">
-  <img src="images/encyclopedia/05_objects.webp" alt="Three.js Scene Objects" onclick="openLb(this)" loading="lazy">
+  <img data-src="images/encyclopedia/05_objects.webp" alt="Three.js Scene Objects" onclick="openLb(this)">
   <div class="img-meta">
     <h3>All Object Types in the Scene Graph</h3>
-    <p><strong>Mesh</strong> — The fundamental 3D object: geometry + material. Supports position, rotation, scale, visibility, shadow casting/receiving. Most of your scene will be Meshes.</p>
-    <p><strong>InstancedMesh</strong> — Renders N copies of the same geometry+material in a single GPU draw call. Set each instance's transform via <code>setMatrixAt(i, matrix)</code>. Renders a forest of 100,000 trees as fast as one tree. Essential for performance.</p>
-    <p><strong>BatchedMesh</strong> (r159+) — Like InstancedMesh but allows different geometries in the same draw call. Add and remove geometry slots dynamically without recreating the whole buffer.</p>
-    <p><strong>SkinnedMesh</strong> — A Mesh deformed by a Skeleton (bone hierarchy). Bones are Object3Ds — moving them deforms the mesh via skinning weights stored in the geometry. Used for all character animation.</p>
-    <p><strong>Points</strong> — Renders each vertex as a screen-aligned point/sprite. Used for particle systems — fire, smoke, stars, galaxy simulations. PointsMaterial controls size, texture, colour and size attenuation with distance.</p>
-    <p><strong>Line / LineSegments / LineLoop</strong> — Draws line primitives. LineSegments draws disconnected pairs. LineLoop closes the path. Used for debug geometry, wireframes, connector lines, graphs.</p>
-    <p><strong>Sprite</strong> — A billboard that always faces the camera. Sized in screen space. Used for labels, icons, particle effects and 2D elements in 3D space.</p>
-    <p><strong>Group</strong> — An empty Object3D used as a parent container. Transforming a Group moves all children together. Fundamental for scene organisation and hierarchical animation.</p>
-    <p><strong>LOD</strong> — Automatically swaps between high/medium/low poly versions based on camera distance. Add levels with <code>lod.addLevel(mesh, distance)</code>. Essential for large open-world scenes.</p>
+    <p><strong>Mesh</strong> - The fundamental 3D object: geometry + material. Supports position, rotation, scale, visibility, shadow casting/receiving. Most of your scene will be Meshes.</p>
+    <p><strong>InstancedMesh</strong> - Renders N copies of the same geometry+material in a single GPU draw call. Set each instance's transform via <code>setMatrixAt(i, matrix)</code>. Renders a forest of 100,000 trees as fast as one tree. Essential for performance.</p>
+    <p><strong>BatchedMesh</strong> (r159+) - Like InstancedMesh but allows different geometries in the same draw call. Add and remove geometry slots dynamically without recreating the whole buffer.</p>
+    <p><strong>SkinnedMesh</strong> - A Mesh deformed by a Skeleton (bone hierarchy). Bones are Object3Ds - moving them deforms the mesh via skinning weights stored in the geometry. Used for all character animation.</p>
+    <p><strong>Points</strong> - Renders each vertex as a screen-aligned point/sprite. Used for particle systems - fire, smoke, stars, galaxy simulations. PointsMaterial controls size, texture, colour and size attenuation with distance.</p>
+    <p><strong>Line / LineSegments / LineLoop</strong> - Draws line primitives. LineSegments draws disconnected pairs. LineLoop closes the path. Used for debug geometry, wireframes, connector lines, graphs.</p>
+    <p><strong>Sprite</strong> - A billboard that always faces the camera. Sized in screen space. Used for labels, icons, particle effects and 2D elements in 3D space.</p>
+    <p><strong>Group</strong> - An empty Object3D used as a parent container. Transforming a Group moves all children together. Fundamental for scene organisation and hierarchical animation.</p>
+    <p><strong>LOD</strong> - Automatically swaps between high/medium/low poly versions based on camera distance. Add levels with <code>lod.addLevel(mesh, distance)</code>. Essential for large open-world scenes.</p>
     <ul class="key-points">
       <li>Mesh</li><li>InstancedMesh</li><li>BatchedMesh</li><li>SkinnedMesh</li>
       <li>Points</li><li>Line</li><li>LineSegments</li><li>LineLoop</li>
@@ -571,14 +576,14 @@ key.shadow.mapSize.<span class="fn">set</span>( <span class="str">2048</span>, <
 </div>
 
 <!-- ══════════════════════════════════════════════
-     07 — CAMERAS
+     07 - CAMERAS
 ══════════════════════════════════════════════ -->
 <div class="section-break" id="cameras">
   <div class="section-break-header">
     <span class="section-num bc">07</span>
     <h2 style="color:var(--cyan)">Cameras</h2>
   </div>
-  <p class="section-intro">The camera defines how the 3D scene is projected onto your 2D screen. <code>PerspectiveCamera</code> mimics human vision — objects farther away appear smaller. <code>OrthographicCamera</code> has no perspective — objects stay the same size regardless of distance, giving the classic isometric game look. The remaining cameras serve specialised purposes: real-time reflections, multi-viewport, and VR.</p>
+  <p class="section-intro">The camera defines how the 3D scene is projected onto your 2D screen. <code>PerspectiveCamera</code> mimics human vision - objects farther away appear smaller. <code>OrthographicCamera</code> has no perspective - objects stay the same size regardless of distance, giving the classic isometric game look. The remaining cameras serve specialised purposes: real-time reflections, multi-viewport, and VR.</p>
   <div class="section-links">
     <a href="https://threejs.org/docs/#api/en/cameras/PerspectiveCamera" target="_blank" class="doc-link">↗ PerspectiveCamera</a>
     <a href="https://threejs.org/docs/#api/en/cameras/OrthographicCamera" target="_blank" class="doc-link">↗ OrthographicCamera</a>
@@ -588,13 +593,13 @@ key.shadow.mapSize.<span class="fn">set</span>( <span class="str">2048</span>, <
 </div>
 
 <div class="img-entry">
-  <img src="images/encyclopedia/07a_perspective_camera.webp" alt="PerspectiveCamera FOV" onclick="openLb(this)" loading="lazy">
+  <img data-src="images/encyclopedia/07a_perspective_camera.webp" alt="PerspectiveCamera FOV" onclick="openLb(this)">
   <div class="img-meta">
-    <h3>PerspectiveCamera — Field of View</h3>
+    <h3>PerspectiveCamera - Field of View</h3>
     <p>The most common camera in Three.js. Takes four parameters: <code>fov</code> (vertical field of view in degrees), <code>aspect</code> (width/height of the canvas), <code>near</code> (closest visible distance), <code>far</code> (furthest visible distance).</p>
-    <p><strong>FOV 30°</strong> — Telephoto/sniper zoom. Looks flat, compressed perspective. Objects appear very close together. Used in sniper rifle scopes, architectural renders where you want distortion-free perspective.</p>
-    <p><strong>FOV 75°</strong> — Standard FPS game feel. Natural perspective, good depth. Most third-person games and 3D web apps use 60–75°.</p>
-    <p><strong>FOV 120°</strong> — Ultra-wide angle, strong fisheye effect. See a huge amount of the scene but with significant edge distortion. Used for racing cockpits, arena shooters, action games.</p>
+    <p><strong>FOV 30°</strong> - Telephoto/sniper zoom. Looks flat, compressed perspective. Objects appear very close together. Used in sniper rifle scopes, architectural renders where you want distortion-free perspective.</p>
+    <p><strong>FOV 75°</strong> - Standard FPS game feel. Natural perspective, good depth. Most third-person games and 3D web apps use 60–75°.</p>
+    <p><strong>FOV 120°</strong> - Ultra-wide angle, strong fisheye effect. See a huge amount of the scene but with significant edge distortion. Used for racing cockpits, arena shooters, action games.</p>
     <div class="code-snippet">
 <span class="kw">const</span> camera = <span class="kw">new</span> <span class="fn">THREE.PerspectiveCamera</span>(
   fov,    <span class="cm">// field of view in degrees (vertical)</span>
@@ -608,20 +613,20 @@ key.shadow.mapSize.<span class="fn">set</span>( <span class="str">2048</span>, <
 
 <div class="divider"></div>
 <div class="img-entry">
-  <img src="images/encyclopedia/07b_orthographic_camera.webp" alt="OrthographicCamera" onclick="openLb(this)" loading="lazy">
+  <img data-src="images/encyclopedia/07b_orthographic_camera.webp" alt="OrthographicCamera" onclick="openLb(this)">
   <div class="img-meta">
-    <h3>OrthographicCamera — Parallel Projection</h3>
-    <p>No perspective. Objects at the same size remain the same size regardless of distance from camera. This is the camera for isometric strategy games, top-down 2D games, CAD/engineering views, and shadow maps for directional lights. Takes <code>left</code>, <code>right</code>, <code>top</code>, <code>bottom</code>, <code>near</code>, <code>far</code> — defining a box-shaped frustum.</p>
+    <h3>OrthographicCamera - Parallel Projection</h3>
+    <p>No perspective. Objects at the same size remain the same size regardless of distance from camera. This is the camera for isometric strategy games, top-down 2D games, CAD/engineering views, and shadow maps for directional lights. Takes <code>left</code>, <code>right</code>, <code>top</code>, <code>bottom</code>, <code>near</code>, <code>far</code> - defining a box-shaped frustum.</p>
     <ul class="key-points"><li>left/right/top/bottom</li><li>near/far</li><li>no perspective distortion</li><li>isometric games</li><li>shadow cameras</li></ul>
   </div>
 </div>
 
 <div class="divider"></div>
 <div class="img-entry">
-  <img src="images/encyclopedia/07c_cube_camera.webp" alt="CubeCamera" onclick="openLb(this)" loading="lazy">
+  <img data-src="images/encyclopedia/07c_cube_camera.webp" alt="CubeCamera" onclick="openLb(this)">
   <div class="img-meta">
-    <h3>CubeCamera — 360° Environment Capture</h3>
-    <p>Renders the scene 6 times (±X, ±Y, ±Z faces) into a WebGLCubeRenderTarget, producing a cubemap texture of the environment. Place it inside/near an object to capture its reflection environment. Update it each frame for dynamic real-time reflections — or capture once and cache for static reflections.</p>
+    <h3>CubeCamera - 360° Environment Capture</h3>
+    <p>Renders the scene 6 times (±X, ±Y, ±Z faces) into a WebGLCubeRenderTarget, producing a cubemap texture of the environment. Place it inside/near an object to capture its reflection environment. Update it each frame for dynamic real-time reflections - or capture once and cache for static reflections.</p>
     <div class="code-snippet">
 <span class="kw">const</span> cubeRT = <span class="kw">new</span> <span class="fn">THREE.WebGLCubeRenderTarget</span>( <span class="str">256</span> );
 <span class="kw">const</span> cubeCamera = <span class="kw">new</span> <span class="fn">THREE.CubeCamera</span>( <span class="str">0.1</span>, <span class="str">100</span>, cubeRT );
@@ -632,24 +637,24 @@ sphere.material.envMap = cubeRT.texture; <span class="cm">// use as reflection</
 
 <div class="divider"></div>
 <div class="img-entry">
-  <img src="images/encyclopedia/07d_array_camera.webp" alt="ArrayCamera" onclick="openLb(this)" loading="lazy">
+  <img data-src="images/encyclopedia/07d_array_camera.webp" alt="ArrayCamera" onclick="openLb(this)">
   <div class="img-meta">
-    <h3>ArrayCamera — Multiple Viewports</h3>
+    <h3>ArrayCamera - Multiple Viewports</h3>
     <p>An array of sub-cameras each defining a viewport region (x, y, width, height in normalised 0–1 coordinates). Used for split-screen multiplayer games, security camera monitor UIs, or rendering the same scene from multiple simultaneous viewpoints. More efficient than rendering multiple separate scenes.</p>
   </div>
 </div>
 
 <div class="divider"></div>
 <div class="img-entry">
-  <img src="images/encyclopedia/07e_stereo_camera.webp" alt="StereoCamera" onclick="openLb(this)" loading="lazy">
+  <img data-src="images/encyclopedia/07e_stereo_camera.webp" alt="StereoCamera" onclick="openLb(this)">
   <div class="img-meta">
-    <h3>StereoCamera — VR &amp; 3D Anaglyph</h3>
+    <h3>StereoCamera - VR &amp; 3D Anaglyph</h3>
     <p>Two cameras separated by an eye offset (<code>eyeSep</code> parameter, default 0.064 metres). Renders left and right eye views side by side. Used with VR headsets (also see XRManager for full WebXR support) or red-cyan anaglyph 3D for classic stereoscopic effect.</p>
   </div>
 </div>
 
 <!-- ══════════════════════════════════════════════
-     08 — TEXTURES
+     08 - TEXTURES
 ══════════════════════════════════════════════ -->
 <div class="section-break" id="textures">
   <div class="section-break-header">
@@ -664,31 +669,31 @@ sphere.material.envMap = cubeRT.texture; <span class="cm">// use as reflection</
   </div>
 </div>
 
-<div class="img-entry"><img src="images/encyclopedia/08a_texture_basics.webp" alt="Texture Basics" onclick="openLb(this)" loading="lazy"><div class="img-meta"><h3>Texture Basics &amp; UV Mapping</h3><p>Every vertex has a UV coordinate (0–1 range) that maps it to a position in a 2D texture. UV 0,0 is bottom-left, 1,1 is top-right. Use <code>texture.repeat</code> to tile, <code>texture.offset</code> to shift, <code>texture.wrapS/T</code> to control how it repeats at edges (ClampToEdge, Repeat, MirroredRepeat).</p><div class="code-snippet"><span class="kw">const</span> tex = <span class="kw">new</span> <span class="fn">THREE.TextureLoader</span>().<span class="fn">load</span>( <span class="str">'wood.jpg'</span> ); tex.repeat.<span class="fn">set</span>( <span class="str">4</span>, <span class="str">4</span> ); tex.wrapS = tex.wrapT = <span class="fn">THREE.RepeatWrapping</span>;</div></div></div>
+<div class="img-entry"><img data-src="images/encyclopedia/08a_texture_basics.webp" alt="Texture Basics" onclick="openLb(this)"><div class="img-meta"><h3>Texture Basics &amp; UV Mapping</h3><p>Every vertex has a UV coordinate (0–1 range) that maps it to a position in a 2D texture. UV 0,0 is bottom-left, 1,1 is top-right. Use <code>texture.repeat</code> to tile, <code>texture.offset</code> to shift, <code>texture.wrapS/T</code> to control how it repeats at edges (ClampToEdge, Repeat, MirroredRepeat).</p><div class="code-snippet"><span class="kw">const</span> tex = <span class="kw">new</span> <span class="fn">THREE.TextureLoader</span>().<span class="fn">load</span>( <span class="str">'wood.jpg'</span> ); tex.repeat.<span class="fn">set</span>( <span class="str">4</span>, <span class="str">4</span> ); tex.wrapS = tex.wrapT = <span class="fn">THREE.RepeatWrapping</span>;</div></div></div>
 <div class="divider"></div>
 
-<div class="img-entry"><img src="images/encyclopedia/08b_normal_maps.webp" alt="Normal Maps" onclick="openLb(this)" loading="lazy"><div class="img-meta"><h3>Normal Maps — Fake Surface Detail</h3><p>An RGB image where each pixel encodes a surface normal direction. The lighting model uses these fake normals to simulate bumps, scratches, fabric weave and detail — without adding a single polygon. The result looks 3D under moving light but the geometry remains flat. Essential for game-quality assets.</p></div></div>
+<div class="img-entry"><img data-src="images/encyclopedia/08b_normal_maps.webp" alt="Normal Maps" onclick="openLb(this)"><div class="img-meta"><h3>Normal Maps - Fake Surface Detail</h3><p>An RGB image where each pixel encodes a surface normal direction. The lighting model uses these fake normals to simulate bumps, scratches, fabric weave and detail - without adding a single polygon. The result looks 3D under moving light but the geometry remains flat. Essential for game-quality assets.</p></div></div>
 <div class="divider"></div>
 
-<div class="img-entry"><img src="images/encyclopedia/08c_pbr_texture_set.webp" alt="PBR Texture Set" onclick="openLb(this)" loading="lazy"><div class="img-meta"><h3>PBR Texture Set</h3><p>A full physically-based rendering texture set for MeshStandardMaterial: <strong>Albedo</strong> (base colour, no lighting), <strong>Normal</strong> (surface detail direction), <strong>Roughness</strong> (how blurry reflections are — 0=mirror, 1=fully matte), <strong>Metalness</strong> (is it metal? — 0=non-metal, 1=metal), <strong>AO</strong> (ambient occlusion — contact shadows). Optional: Emissive, Displacement, Opacity.</p></div></div>
+<div class="img-entry"><img data-src="images/encyclopedia/08c_pbr_texture_set.webp" alt="PBR Texture Set" onclick="openLb(this)"><div class="img-meta"><h3>PBR Texture Set</h3><p>A full physically-based rendering texture set for MeshStandardMaterial: <strong>Albedo</strong> (base colour, no lighting), <strong>Normal</strong> (surface detail direction), <strong>Roughness</strong> (how blurry reflections are - 0=mirror, 1=fully matte), <strong>Metalness</strong> (is it metal? - 0=non-metal, 1=metal), <strong>AO</strong> (ambient occlusion - contact shadows). Optional: Emissive, Displacement, Opacity.</p></div></div>
 <div class="divider"></div>
 
-<div class="img-entry"><img src="images/encyclopedia/08d_cube_texture_skybox.webp" alt="Skybox" onclick="openLb(this)" loading="lazy"><div class="img-meta"><h3>CubeTexture — Skybox &amp; Environment</h3><p>6 images (±X, ±Y, ±Z) assembled into a cubemap. Set <code>scene.background = cubeTexture</code> for a skybox. Set <code>scene.environment = cubeTexture</code> to use it as IBL (image-based lighting) — it will automatically light all PBR materials, providing realistic reflections and ambient lighting from the environment.</p></div></div>
+<div class="img-entry"><img data-src="images/encyclopedia/08d_cube_texture_skybox.webp" alt="Skybox" onclick="openLb(this)"><div class="img-meta"><h3>CubeTexture - Skybox &amp; Environment</h3><p>6 images (±X, ±Y, ±Z) assembled into a cubemap. Set <code>scene.background = cubeTexture</code> for a skybox. Set <code>scene.environment = cubeTexture</code> to use it as IBL (image-based lighting) - it will automatically light all PBR materials, providing realistic reflections and ambient lighting from the environment.</p></div></div>
 <div class="divider"></div>
 
-<div class="img-entry"><img src="images/encyclopedia/08e_video_texture.webp" alt="Video Texture" onclick="openLb(this)" loading="lazy"><div class="img-meta"><h3>VideoTexture — Live Video on Surfaces</h3><p>Maps a playing HTML <code>&lt;video&gt;</code> element onto a 3D surface in real time. The texture updates every frame to match the video playback. Used for in-game TVs, screens, portals, projectors and video walls. Must call <code>videoTexture.needsUpdate = true</code> each frame.</p></div></div>
+<div class="img-entry"><img data-src="images/encyclopedia/08e_video_texture.webp" alt="Video Texture" onclick="openLb(this)"><div class="img-meta"><h3>VideoTexture - Live Video on Surfaces</h3><p>Maps a playing HTML <code>&lt;video&gt;</code> element onto a 3D surface in real time. The texture updates every frame to match the video playback. Used for in-game TVs, screens, portals, projectors and video walls. Must call <code>videoTexture.needsUpdate = true</code> each frame.</p></div></div>
 <div class="divider"></div>
 
-<div class="img-entry"><img src="images/encyclopedia/08f_data_texture.webp" alt="Data Texture" onclick="openLb(this)" loading="lazy"><div class="img-meta"><h3>DataTexture — Programmatic Textures</h3><p>Create textures directly from typed arrays in JavaScript — no image file needed. Pass a <code>Uint8Array</code> or <code>Float32Array</code> of pixel values. Used for heatmaps, heightmaps, scientific data visualisation, and GPU-computed textures from compute shaders.</p></div></div>
+<div class="img-entry"><img data-src="images/encyclopedia/08f_data_texture.webp" alt="Data Texture" onclick="openLb(this)"><div class="img-meta"><h3>DataTexture - Programmatic Textures</h3><p>Create textures directly from typed arrays in JavaScript - no image file needed. Pass a <code>Uint8Array</code> or <code>Float32Array</code> of pixel values. Used for heatmaps, heightmaps, scientific data visualisation, and GPU-computed textures from compute shaders.</p></div></div>
 <div class="divider"></div>
 
-<div class="img-entry"><img src="images/encyclopedia/08g_hdr_environment.webp" alt="HDR Environment" onclick="openLb(this)" loading="lazy"><div class="img-meta"><h3>HDR / EXR Environment Maps</h3><p>High dynamic range images store light values far above 1.0, capturing the full range from deep shadow to bright sun. Load .hdr (RGBE format) with RGBELoader or .exr with EXRLoader, then pass to PMREMGenerator to prefilter for PBR rendering. The result: metal surfaces reflect actual sunlight, not just a flat colour.</p></div></div>
+<div class="img-entry"><img data-src="images/encyclopedia/08g_hdr_environment.webp" alt="HDR Environment" onclick="openLb(this)"><div class="img-meta"><h3>HDR / EXR Environment Maps</h3><p>High dynamic range images store light values far above 1.0, capturing the full range from deep shadow to bright sun. Load .hdr (RGBE format) with RGBELoader or .exr with EXRLoader, then pass to PMREMGenerator to prefilter for PBR rendering. The result: metal surfaces reflect actual sunlight, not just a flat colour.</p></div></div>
 <div class="divider"></div>
 
-<div class="img-entry"><img src="images/encyclopedia/08h_compressed_textures.webp" alt="Compressed Textures" onclick="openLb(this)" loading="lazy"><div class="img-meta"><h3>Compressed Textures — KTX2 / Basis</h3><p>GPU-native compressed formats stay compressed in VRAM — 4–8× less memory than PNG. KTX2 with Basis supercompression is the modern standard: a single .ktx2 file transcodes to the best format per device (DXT/BC for desktop, ETC for Android, ASTC for iOS). Use KTX2Loader + MSDF worker. Critical for mobile performance.</p></div></div>
+<div class="img-entry"><img data-src="images/encyclopedia/08h_compressed_textures.webp" alt="Compressed Textures" onclick="openLb(this)"><div class="img-meta"><h3>Compressed Textures - KTX2 / Basis</h3><p>GPU-native compressed formats stay compressed in VRAM - 4–8× less memory than PNG. KTX2 with Basis supercompression is the modern standard: a single .ktx2 file transcodes to the best format per device (DXT/BC for desktop, ETC for Android, ASTC for iOS). Use KTX2Loader + MSDF worker. Critical for mobile performance.</p></div></div>
 
 <!-- ══════════════════════════════════════════════
-     09 — RENDERER
+     09 - RENDERER
 ══════════════════════════════════════════════ -->
 <div class="section-break" id="renderer">
   <div class="section-break-header">
@@ -703,31 +708,31 @@ sphere.material.envMap = cubeRT.texture; <span class="cm">// use as reflection</
   </div>
 </div>
 
-<div class="img-entry"><img src="images/encyclopedia/09a_shadow_types.webp" alt="Shadow Types" onclick="openLb(this)" loading="lazy"><div class="img-meta"><h3>Shadow Map Types</h3><p><strong>BasicShadowMap</strong> — Fastest, hard edges. <strong>PCFShadowMap</strong> — Percentage-closer filtering, smoother edges. <strong>PCFSoftShadowMap</strong> — Softer PCF with kernel blur. <strong>VSMShadowMap</strong> — Variance shadow maps, very soft, no peter-panning artifact, but has light bleeding on transparent objects. Set via <code>renderer.shadowMap.type = THREE.PCFSoftShadowMap</code>.</p></div></div>
+<div class="img-entry"><img data-src="images/encyclopedia/09a_shadow_types.webp" alt="Shadow Types" onclick="openLb(this)"><div class="img-meta"><h3>Shadow Map Types</h3><p><strong>BasicShadowMap</strong> - Fastest, hard edges. <strong>PCFShadowMap</strong> - Percentage-closer filtering, smoother edges. <strong>PCFSoftShadowMap</strong> - Softer PCF with kernel blur. <strong>VSMShadowMap</strong> - Variance shadow maps, very soft, no peter-panning artifact, but has light bleeding on transparent objects. Set via <code>renderer.shadowMap.type = THREE.PCFSoftShadowMap</code>.</p></div></div>
 <div class="divider"></div>
-<div class="img-entry"><img src="images/encyclopedia/09b_environment_mapping.webp" alt="Environment Mapping" onclick="openLb(this)" loading="lazy"><div class="img-meta"><h3>Environment Mapping &amp; IBL</h3><p>Set <code>scene.environment = pmremTexture</code> to enable image-based lighting for all PBR materials simultaneously. Metal objects reflect the environment, rough objects receive diffuse IBL. envMapIntensity scales the strength. Combine with a visible skybox for complete immersive environments.</p></div></div>
+<div class="img-entry"><img data-src="images/encyclopedia/09b_environment_mapping.webp" alt="Environment Mapping" onclick="openLb(this)"><div class="img-meta"><h3>Environment Mapping &amp; IBL</h3><p>Set <code>scene.environment = pmremTexture</code> to enable image-based lighting for all PBR materials simultaneously. Metal objects reflect the environment, rough objects receive diffuse IBL. envMapIntensity scales the strength. Combine with a visible skybox for complete immersive environments.</p></div></div>
 <div class="divider"></div>
-<div class="img-entry"><img src="images/encyclopedia/09c_tone_mapping.webp" alt="Tone Mapping" onclick="openLb(this)" loading="lazy"><div class="img-meta"><h3>Tone Mapping</h3><p>HDR rendering produces light values above 1.0. Tone mapping squashes the full HDR range into the 0–1 display range. <strong>NoToneMapping</strong> clips. <strong>ReinhardToneMapping</strong> is photographic. <strong>ACESFilmicToneMapping</strong> gives a cinematic S-curve look (most popular). <strong>AgXToneMapping</strong> (r158+) is physically accurate with correct hue preservation.</p></div></div>
+<div class="img-entry"><img data-src="images/encyclopedia/09c_tone_mapping.webp" alt="Tone Mapping" onclick="openLb(this)"><div class="img-meta"><h3>Tone Mapping</h3><p>HDR rendering produces light values above 1.0. Tone mapping squashes the full HDR range into the 0–1 display range. <strong>NoToneMapping</strong> clips. <strong>ReinhardToneMapping</strong> is photographic. <strong>ACESFilmicToneMapping</strong> gives a cinematic S-curve look (most popular). <strong>AgXToneMapping</strong> (r158+) is physically accurate with correct hue preservation.</p></div></div>
 <div class="divider"></div>
-<div class="img-entry"><img src="images/encyclopedia/09d_anti_aliasing.webp" alt="Anti-Aliasing" onclick="openLb(this)" loading="lazy"><div class="img-meta"><h3>Anti-Aliasing</h3><p>Built-in MSAA: pass <code>antialias: true</code> to WebGLRenderer. Post-process options: FXAA (fast, slight blur), SMAA (better quality, two-pass). TAA (temporal AA) provides highest quality by accumulating sub-pixel samples over multiple frames — only works on static or slow-moving scenes.</p></div></div>
+<div class="img-entry"><img data-src="images/encyclopedia/09d_anti_aliasing.webp" alt="Anti-Aliasing" onclick="openLb(this)"><div class="img-meta"><h3>Anti-Aliasing</h3><p>Built-in MSAA: pass <code>antialias: true</code> to WebGLRenderer. Post-process options: FXAA (fast, slight blur), SMAA (better quality, two-pass). TAA (temporal AA) provides highest quality by accumulating sub-pixel samples over multiple frames - only works on static or slow-moving scenes.</p></div></div>
 <div class="divider"></div>
-<div class="img-entry"><img src="images/encyclopedia/09e_render_targets.webp" alt="Render Targets" onclick="openLb(this)" loading="lazy"><div class="img-meta"><h3>Render Targets — Off-screen Rendering</h3><p>WebGLRenderTarget redirects render output to a texture instead of the screen. That texture can then be applied to a 3D surface (a TV showing another camera), used as input to post-processing, or read back to CPU. The basis for all multi-pass rendering techniques.</p></div></div>
+<div class="img-entry"><img data-src="images/encyclopedia/09e_render_targets.webp" alt="Render Targets" onclick="openLb(this)"><div class="img-meta"><h3>Render Targets - Off-screen Rendering</h3><p>WebGLRenderTarget redirects render output to a texture instead of the screen. That texture can then be applied to a 3D surface (a TV showing another camera), used as input to post-processing, or read back to CPU. The basis for all multi-pass rendering techniques.</p></div></div>
 <div class="divider"></div>
-<div class="img-entry"><img src="images/encyclopedia/09f_webgl_vs_webgpu.webp" alt="WebGL vs WebGPU" onclick="openLb(this)" loading="lazy"><div class="img-meta"><h3>WebGL vs WebGPU</h3><p><strong>WebGL</strong>: Based on OpenGL ES 2.0/3.0. ~98% browser support. Proven, stable. Limited to graphics pipeline. <strong>WebGPU</strong>: Modern explicit GPU API. Compute shaders, better multi-threading, lower driver overhead. ~70% browser support (2024). Three.js wraps both behind the same API — switch with <code>import WebGPURenderer from 'three/webgpu'</code>.</p></div></div>
+<div class="img-entry"><img data-src="images/encyclopedia/09f_webgl_vs_webgpu.webp" alt="WebGL vs WebGPU" onclick="openLb(this)"><div class="img-meta"><h3>WebGL vs WebGPU</h3><p><strong>WebGL</strong>: Based on OpenGL ES 2.0/3.0. ~98% browser support. Proven, stable. Limited to graphics pipeline. <strong>WebGPU</strong>: Modern explicit GPU API. Compute shaders, better multi-threading, lower driver overhead. ~70% browser support (2024). Three.js wraps both behind the same API - switch with <code>import WebGPURenderer from 'three/webgpu'</code>.</p></div></div>
 <div class="divider"></div>
-<div class="img-entry"><img src="images/encyclopedia/09g_compute_shaders.webp" alt="Compute Shaders" onclick="openLb(this)" loading="lazy"><div class="img-meta"><h3>Compute Shaders (WebGPU only)</h3><p>GPU programs running outside the graphics pipeline. Simulate millions of particles, fluid dynamics, cloth, or crowds entirely on the GPU — reading and writing storage buffers. Available via WebGPURenderer with TSL's <code>compute()</code> function. Orders of magnitude faster than CPU for parallelisable problems.</p></div></div>
+<div class="img-entry"><img data-src="images/encyclopedia/09g_compute_shaders.webp" alt="Compute Shaders" onclick="openLb(this)"><div class="img-meta"><h3>Compute Shaders (WebGPU only)</h3><p>GPU programs running outside the graphics pipeline. Simulate millions of particles, fluid dynamics, cloth, or crowds entirely on the GPU - reading and writing storage buffers. Available via WebGPURenderer with TSL's <code>compute()</code> function. Orders of magnitude faster than CPU for parallelisable problems.</p></div></div>
 <div class="divider"></div>
-<div class="img-entry"><img src="images/encyclopedia/09h_render_pipeline.webp" alt="Render Pipeline" onclick="openLb(this)" loading="lazy"><div class="img-meta"><h3>Render Pipeline — Frame by Frame</h3><p>Scene graph → frustum culling → sort render list by material (opaque first, transparent last, by z-depth) → set render state → GPU: vertex shader (transforms positions to clip space) → rasterisation (converts triangles to fragments) → fragment shader (computes pixel colour) → framebuffer → screen. Understanding this helps diagnose performance and visual issues.</p></div></div>
+<div class="img-entry"><img data-src="images/encyclopedia/09h_render_pipeline.webp" alt="Render Pipeline" onclick="openLb(this)"><div class="img-meta"><h3>Render Pipeline - Frame by Frame</h3><p>Scene graph → frustum culling → sort render list by material (opaque first, transparent last, by z-depth) → set render state → GPU: vertex shader (transforms positions to clip space) → rasterisation (converts triangles to fragments) → fragment shader (computes pixel colour) → framebuffer → screen. Understanding this helps diagnose performance and visual issues.</p></div></div>
 
 <!-- ══════════════════════════════════════════════
-     10 — POST-PROCESSING
+     10 - POST-PROCESSING
 ══════════════════════════════════════════════ -->
 <div class="section-break" id="postfx">
   <div class="section-break-header">
     <span class="section-num bm">10</span>
     <h2 style="color:var(--magenta)">Post-Processing Effects</h2>
   </div>
-  <p class="section-intro">Post-processing applies screen-space effects after the scene is rendered to a texture. EffectComposer chains passes together — the output of one feeds into the next. Three.js ships 20+ built-in passes and you can write custom fullscreen shader passes. The difference between a raw render and a cinematic scene is almost entirely post-processing.</p>
+  <p class="section-intro">Post-processing applies screen-space effects after the scene is rendered to a texture. EffectComposer chains passes together - the output of one feeds into the next. Three.js ships 20+ built-in passes and you can write custom fullscreen shader passes. The difference between a raw render and a cinematic scene is almost entirely post-processing.</p>
   <div class="section-links">
     <a href="https://threejs.org/docs/#examples/en/postprocessing/EffectComposer" target="_blank" class="doc-link">↗ EffectComposer</a>
     <a href="https://threejs.org/examples/#webgl_postprocessing" target="_blank" class="doc-link">↗ Post-FX Examples</a>
@@ -735,39 +740,39 @@ sphere.material.envMap = cubeRT.texture; <span class="cm">// use as reflection</
   </div>
 </div>
 
-<div class="img-entry"><img src="images/encyclopedia/10a_effect_composer.webp" alt="EffectComposer" onclick="openLb(this)" loading="lazy"><div class="img-meta"><h3>EffectComposer — The Post-Processing Pipeline</h3><p>RenderPass renders the scene to a texture. Each subsequent pass reads from the previous pass's texture, applies an effect, and writes to the next. OutputPass or RenderPixelatedPass writes to screen. The order matters — bloom after SSAO, before colour grading.</p><div class="code-snippet"><span class="kw">const</span> composer = <span class="kw">new</span> <span class="fn">EffectComposer</span>( renderer );<br>composer.<span class="fn">addPass</span>( <span class="kw">new</span> <span class="fn">RenderPass</span>( scene, camera ) );<br>composer.<span class="fn">addPass</span>( <span class="kw">new</span> <span class="fn">UnrealBloomPass</span>( resolution, strength, radius, threshold ) );<br>composer.<span class="fn">addPass</span>( <span class="kw">new</span> <span class="fn">OutputPass</span>() );</div></div></div>
+<div class="img-entry"><img data-src="images/encyclopedia/10a_effect_composer.webp" alt="EffectComposer" onclick="openLb(this)"><div class="img-meta"><h3>EffectComposer - The Post-Processing Pipeline</h3><p>RenderPass renders the scene to a texture. Each subsequent pass reads from the previous pass's texture, applies an effect, and writes to the next. OutputPass or RenderPixelatedPass writes to screen. The order matters - bloom after SSAO, before colour grading.</p><div class="code-snippet"><span class="kw">const</span> composer = <span class="kw">new</span> <span class="fn">EffectComposer</span>( renderer );<br>composer.<span class="fn">addPass</span>( <span class="kw">new</span> <span class="fn">RenderPass</span>( scene, camera ) );<br>composer.<span class="fn">addPass</span>( <span class="kw">new</span> <span class="fn">UnrealBloomPass</span>( resolution, strength, radius, threshold ) );<br>composer.<span class="fn">addPass</span>( <span class="kw">new</span> <span class="fn">OutputPass</span>() );</div></div></div>
 <div class="divider"></div>
-<div class="img-entry"><img src="images/encyclopedia/10b_bloom.webp" alt="Bloom" onclick="openLb(this)" loading="lazy"><div class="img-meta"><h3>Bloom / UnrealBloomPass</h3><p>Bright areas bleed glow into surrounding pixels, simulating the way intense light overloads a camera lens or your eyes. Adjust <code>threshold</code> (minimum brightness to bloom), <code>strength</code> (intensity), <code>radius</code> (spread distance). Selective bloom: use two scenes — one with only emissive objects, run bloom on that, composite back.</p></div></div>
+<div class="img-entry"><img data-src="images/encyclopedia/10b_bloom.webp" alt="Bloom" onclick="openLb(this)"><div class="img-meta"><h3>Bloom / UnrealBloomPass</h3><p>Bright areas bleed glow into surrounding pixels, simulating the way intense light overloads a camera lens or your eyes. Adjust <code>threshold</code> (minimum brightness to bloom), <code>strength</code> (intensity), <code>radius</code> (spread distance). Selective bloom: use two scenes - one with only emissive objects, run bloom on that, composite back.</p></div></div>
 <div class="divider"></div>
-<div class="img-entry"><img src="images/encyclopedia/10c_ssao.webp" alt="SSAO" onclick="openLb(this)" loading="lazy"><div class="img-meta"><h3>SSAO — Screen-Space Ambient Occlusion</h3><p>Darkens concave areas — crevices, corners, where surfaces meet — to simulate ambient light being blocked. Adds ground and weight to objects. Computed entirely from the depth buffer in screen space, so it's cheap and doesn't require ray-tracing. SAOPass in Three.js examples.</p></div></div>
+<div class="img-entry"><img data-src="images/encyclopedia/10c_ssao.webp" alt="SSAO" onclick="openLb(this)"><div class="img-meta"><h3>SSAO - Screen-Space Ambient Occlusion</h3><p>Darkens concave areas - crevices, corners, where surfaces meet - to simulate ambient light being blocked. Adds ground and weight to objects. Computed entirely from the depth buffer in screen space, so it's cheap and doesn't require ray-tracing. SAOPass in Three.js examples.</p></div></div>
 <div class="divider"></div>
-<div class="img-entry"><img src="images/encyclopedia/10d_depth_of_field.webp" alt="Depth of Field" onclick="openLb(this)" loading="lazy"><div class="img-meta"><h3>Depth of Field (Bokeh)</h3><p>Objects outside the focal plane blur with characteristic disc-shaped bokeh, mimicking a real camera lens with a narrow depth of field. <code>focus</code> sets focal distance, <code>aperture</code> controls blur amount, <code>maxblur</code> clamps the maximum. Draws the viewer's eye to the focal point.</p></div></div>
+<div class="img-entry"><img data-src="images/encyclopedia/10d_depth_of_field.webp" alt="Depth of Field" onclick="openLb(this)"><div class="img-meta"><h3>Depth of Field (Bokeh)</h3><p>Objects outside the focal plane blur with characteristic disc-shaped bokeh, mimicking a real camera lens with a narrow depth of field. <code>focus</code> sets focal distance, <code>aperture</code> controls blur amount, <code>maxblur</code> clamps the maximum. Draws the viewer's eye to the focal point.</p></div></div>
 <div class="divider"></div>
-<div class="img-entry"><img src="images/encyclopedia/10e_film_grain.webp" alt="Film Grain" onclick="openLb(this)" loading="lazy"><div class="img-meta"><h3>Film Grain &amp; Noise</h3><p>Adds time-varying noise to every pixel, simulating photographic film grain or sensor noise. Softens the overly-clean look of CGI and adds cinematic character. FilmPass in Three.js adds grain + optional scanlines. Animated per-frame so it looks organic, not like a static texture overlay.</p></div></div>
+<div class="img-entry"><img data-src="images/encyclopedia/10e_film_grain.webp" alt="Film Grain" onclick="openLb(this)"><div class="img-meta"><h3>Film Grain &amp; Noise</h3><p>Adds time-varying noise to every pixel, simulating photographic film grain or sensor noise. Softens the overly-clean look of CGI and adds cinematic character. FilmPass in Three.js adds grain + optional scanlines. Animated per-frame so it looks organic, not like a static texture overlay.</p></div></div>
 <div class="divider"></div>
-<div class="img-entry"><img src="images/encyclopedia/10f_glitch.webp" alt="Glitch Effect" onclick="openLb(this)" loading="lazy"><div class="img-meta"><h3>Glitch Effect</h3><p>Digital corruption: random horizontal band shifts, RGB channel separation, noise blocks. GlitchPass triggers random glitch bursts at <code>goWild</code> intensity, or stays subtle at low settings. Perfect for cyberpunk, horror, hack/error UI moments, and sci-fi transitions.</p></div></div>
+<div class="img-entry"><img data-src="images/encyclopedia/10f_glitch.webp" alt="Glitch Effect" onclick="openLb(this)"><div class="img-meta"><h3>Glitch Effect</h3><p>Digital corruption: random horizontal band shifts, RGB channel separation, noise blocks. GlitchPass triggers random glitch bursts at <code>goWild</code> intensity, or stays subtle at low settings. Perfect for cyberpunk, horror, hack/error UI moments, and sci-fi transitions.</p></div></div>
 <div class="divider"></div>
-<div class="img-entry"><img src="images/encyclopedia/10g_outline.webp" alt="Outline" onclick="openLb(this)" loading="lazy"><div class="img-meta"><h3>Outline — Selection Highlight</h3><p>OutlinePass renders selected objects with a coloured edge glow. Objects added to <code>selectedObjects</code> array get outlined. Control colour, thickness (edgeThickness) and glow (edgeStrength). Essential for game selection UIs, hover highlighting, and emphasising interactive objects.</p></div></div>
+<div class="img-entry"><img data-src="images/encyclopedia/10g_outline.webp" alt="Outline" onclick="openLb(this)"><div class="img-meta"><h3>Outline - Selection Highlight</h3><p>OutlinePass renders selected objects with a coloured edge glow. Objects added to <code>selectedObjects</code> array get outlined. Control colour, thickness (edgeThickness) and glow (edgeStrength). Essential for game selection UIs, hover highlighting, and emphasising interactive objects.</p></div></div>
 <div class="divider"></div>
-<div class="img-entry"><img src="images/encyclopedia/10h_color_grading.webp" alt="Color Grading" onclick="openLb(this)" loading="lazy"><div class="img-meta"><h3>Color Grading / LUT</h3><p>A 3D Look-Up Table (LUT) remaps the output colours of the entire frame — like an Instagram filter but for your 3D scene. LUTPass loads a .cube or .png LUT file. Transform any scene: warm cinematic orange-teal, cold horror blue, vintage sepia, crushed blacks. Industry standard.</p></div></div>
+<div class="img-entry"><img data-src="images/encyclopedia/10h_color_grading.webp" alt="Color Grading" onclick="openLb(this)"><div class="img-meta"><h3>Color Grading / LUT</h3><p>A 3D Look-Up Table (LUT) remaps the output colours of the entire frame - like an Instagram filter but for your 3D scene. LUTPass loads a .cube or .png LUT file. Transform any scene: warm cinematic orange-teal, cold horror blue, vintage sepia, crushed blacks. Industry standard.</p></div></div>
 <div class="divider"></div>
-<div class="img-entry"><img src="images/encyclopedia/10i_motion_blur.webp" alt="Motion Blur" onclick="openLb(this)" loading="lazy"><div class="img-meta"><h3>Motion Blur</h3><p>Blurs fast-moving objects along their trajectory, as a real camera shutter would capture during exposure. Gives movement weight, speed and physicality. Can be per-object (accumulate velocity vectors) or full-screen camera motion blur. Makes action scenes feel kinetic.</p></div></div>
+<div class="img-entry"><img data-src="images/encyclopedia/10i_motion_blur.webp" alt="Motion Blur" onclick="openLb(this)"><div class="img-meta"><h3>Motion Blur</h3><p>Blurs fast-moving objects along their trajectory, as a real camera shutter would capture during exposure. Gives movement weight, speed and physicality. Can be per-object (accumulate velocity vectors) or full-screen camera motion blur. Makes action scenes feel kinetic.</p></div></div>
 <div class="divider"></div>
-<div class="img-entry"><img src="images/encyclopedia/10j_god_rays.webp" alt="God Rays" onclick="openLb(this)" loading="lazy"><div class="img-meta"><h3>God Rays — Volumetric Light Shafts</h3><p>Visible shafts of light when a bright source is partially occluded — sun through clouds, lamp through fog. GodraysPass renders the scene silhouette from the light position, then applies radial blur outward. The result: volumetric-looking light without actual volumetric simulation.</p></div></div>
+<div class="img-entry"><img data-src="images/encyclopedia/10j_god_rays.webp" alt="God Rays" onclick="openLb(this)"><div class="img-meta"><h3>God Rays - Volumetric Light Shafts</h3><p>Visible shafts of light when a bright source is partially occluded - sun through clouds, lamp through fog. GodraysPass renders the scene silhouette from the light position, then applies radial blur outward. The result: volumetric-looking light without actual volumetric simulation.</p></div></div>
 <div class="divider"></div>
-<div class="img-entry"><img src="images/encyclopedia/10k_chromatic_aberration.webp" alt="Chromatic Aberration" onclick="openLb(this)" loading="lazy"><div class="img-meta"><h3>Chromatic Aberration</h3><p>Offsets the R, G and B colour channels by slightly different amounts in screen space, creating colour fringing at high-contrast edges. Mimics cheap, damaged or fisheye camera lenses. A staple of lo-fi, retro, horror and vaporwave aesthetics. Subtle amounts add believable lens character.</p></div></div>
+<div class="img-entry"><img data-src="images/encyclopedia/10k_chromatic_aberration.webp" alt="Chromatic Aberration" onclick="openLb(this)"><div class="img-meta"><h3>Chromatic Aberration</h3><p>Offsets the R, G and B colour channels by slightly different amounts in screen space, creating colour fringing at high-contrast edges. Mimics cheap, damaged or fisheye camera lenses. A staple of lo-fi, retro, horror and vaporwave aesthetics. Subtle amounts add believable lens character.</p></div></div>
 <div class="divider"></div>
-<div class="img-entry"><img src="images/encyclopedia/10l_pixel_retro.webp" alt="Pixel Retro" onclick="openLb(this)" loading="lazy"><div class="img-meta"><h3>Pixel / Retro Effect</h3><p>Renders the scene at a low resolution (e.g. 320×240) then upscales with nearest-neighbour filtering. The result looks like an old video game — blocky pixels, visible colour banding. RenderPixelatedPass in Three.js. Combine with a dithering shader and limited colour palette for a full Game Boy or NES aesthetic.</p></div></div>
+<div class="img-entry"><img data-src="images/encyclopedia/10l_pixel_retro.webp" alt="Pixel Retro" onclick="openLb(this)"><div class="img-meta"><h3>Pixel / Retro Effect</h3><p>Renders the scene at a low resolution (e.g. 320×240) then upscales with nearest-neighbour filtering. The result looks like an old video game - blocky pixels, visible colour banding. RenderPixelatedPass in Three.js. Combine with a dithering shader and limited colour palette for a full Game Boy or NES aesthetic.</p></div></div>
 
 <!-- ══════════════════════════════════════════════
-     11 — CONTROLS
+     11 - CONTROLS
 ══════════════════════════════════════════════ -->
 <div class="section-break" id="controls">
   <div class="section-break-header">
     <span class="section-num bg">11</span>
     <h2 style="color:var(--green)">Controls</h2>
   </div>
-  <p class="section-intro">Controls translate user input (mouse, keyboard, touch, gamepad) into camera or object movement. Three.js ships 8+ control types in the addons (<code>jsm/controls/</code>). The right choice depends entirely on the use case — don't use OrbitControls for an FPS game, don't use PointerLockControls for a 3D product viewer.</p>
+  <p class="section-intro">Controls translate user input (mouse, keyboard, touch, gamepad) into camera or object movement. Three.js ships 8+ control types in the addons (<code>jsm/controls/</code>). The right choice depends entirely on the use case - don't use OrbitControls for an FPS game, don't use PointerLockControls for a 3D product viewer.</p>
   <div class="section-links">
     <a href="https://threejs.org/docs/#examples/en/controls/OrbitControls" target="_blank" class="doc-link">↗ OrbitControls</a>
     <a href="https://threejs.org/docs/#examples/en/controls/TransformControls" target="_blank" class="doc-link">↗ TransformControls</a>
@@ -775,27 +780,27 @@ sphere.material.envMap = cubeRT.texture; <span class="cm">// use as reflection</
   </div>
 </div>
 
-<div class="img-entry"><img src="images/encyclopedia/11a_orbit_controls.webp" alt="OrbitControls" onclick="openLb(this)" loading="lazy"><div class="img-meta"><h3>OrbitControls — Camera Around Target</h3><p>The default for 3D model viewers and product configurators. Left-drag orbits, right-drag pans, scroll zooms. Set <code>target</code> to the point the camera orbits around. <code>enableDamping=true</code> adds smooth deceleration. <code>autoRotate</code> for hands-free spinning displays.</p></div></div>
+<div class="img-entry"><img data-src="images/encyclopedia/11a_orbit_controls.webp" alt="OrbitControls" onclick="openLb(this)"><div class="img-meta"><h3>OrbitControls - Camera Around Target</h3><p>The default for 3D model viewers and product configurators. Left-drag orbits, right-drag pans, scroll zooms. Set <code>target</code> to the point the camera orbits around. <code>enableDamping=true</code> adds smooth deceleration. <code>autoRotate</code> for hands-free spinning displays.</p></div></div>
 <div class="divider"></div>
-<div class="img-entry"><img src="images/encyclopedia/11b_first_person_controls.webp" alt="FirstPersonControls" onclick="openLb(this)" loading="lazy"><div class="img-meta"><h3>FirstPersonControls — WASD + Mouse Look</h3><p>WASD movement through the scene, mouse movement rotates the view. Camera can move through the scene freely (no collision). Note: PointerLockControls is preferred for games as it locks/hides the cursor. FirstPersonControls is better for architectural walk-throughs where you still want a visible cursor.</p></div></div>
+<div class="img-entry"><img data-src="images/encyclopedia/11b_first_person_controls.webp" alt="FirstPersonControls" onclick="openLb(this)"><div class="img-meta"><h3>FirstPersonControls - WASD + Mouse Look</h3><p>WASD movement through the scene, mouse movement rotates the view. Camera can move through the scene freely (no collision). Note: PointerLockControls is preferred for games as it locks/hides the cursor. FirstPersonControls is better for architectural walk-throughs where you still want a visible cursor.</p></div></div>
 <div class="divider"></div>
-<div class="img-entry"><img src="images/encyclopedia/11c_fly_controls.webp" alt="FlyControls" onclick="openLb(this)" loading="lazy"><div class="img-meta"><h3>FlyControls — 6 Degrees of Freedom</h3><p>Full 6DOF flight — move forward/back, strafe left/right, ascend/descend, yaw, pitch, roll. No ground plane constraint. Ideal for space games, drone simulators, and exploring large 3D environments from any angle. Use <code>movementSpeed</code> and <code>rollSpeed</code> to tune feel.</p></div></div>
+<div class="img-entry"><img data-src="images/encyclopedia/11c_fly_controls.webp" alt="FlyControls" onclick="openLb(this)"><div class="img-meta"><h3>FlyControls - 6 Degrees of Freedom</h3><p>Full 6DOF flight - move forward/back, strafe left/right, ascend/descend, yaw, pitch, roll. No ground plane constraint. Ideal for space games, drone simulators, and exploring large 3D environments from any angle. Use <code>movementSpeed</code> and <code>rollSpeed</code> to tune feel.</p></div></div>
 <div class="divider"></div>
-<div class="img-entry"><img src="images/encyclopedia/11d_map_controls.webp" alt="MapControls" onclick="openLb(this)" loading="lazy"><div class="img-meta"><h3>MapControls — Top-Down Map</h3><p>Variant of OrbitControls optimised for top-down map navigation. Right-drag rotates, left-drag pans the ground plane, scroll zooms. The camera always points roughly downward. Perfect for strategy games, GIS applications, city planners and data visualisation maps.</p></div></div>
+<div class="img-entry"><img data-src="images/encyclopedia/11d_map_controls.webp" alt="MapControls" onclick="openLb(this)"><div class="img-meta"><h3>MapControls - Top-Down Map</h3><p>Variant of OrbitControls optimised for top-down map navigation. Right-drag rotates, left-drag pans the ground plane, scroll zooms. The camera always points roughly downward. Perfect for strategy games, GIS applications, city planners and data visualisation maps.</p></div></div>
 <div class="divider"></div>
-<div class="img-entry"><img src="images/encyclopedia/11e_transform_controls.webp" alt="TransformControls" onclick="openLb(this)" loading="lazy"><div class="img-meta"><h3>TransformControls — 3D Object Gizmo</h3><p>Attach to any Object3D to show a manipulator gizmo — arrows for translation, rings for rotation, handles for scale. Press T/R/S to switch modes. Drag axes to constrain to a single axis. Essential for any in-browser 3D editor or level editor. Fire <code>objectChange</code> event to react to modifications.</p></div></div>
+<div class="img-entry"><img data-src="images/encyclopedia/11e_transform_controls.webp" alt="TransformControls" onclick="openLb(this)"><div class="img-meta"><h3>TransformControls - 3D Object Gizmo</h3><p>Attach to any Object3D to show a manipulator gizmo - arrows for translation, rings for rotation, handles for scale. Press T/R/S to switch modes. Drag axes to constrain to a single axis. Essential for any in-browser 3D editor or level editor. Fire <code>objectChange</code> event to react to modifications.</p></div></div>
 <div class="divider"></div>
-<div class="img-entry"><img src="images/encyclopedia/11f_pointer_lock_controls.webp" alt="PointerLockControls" onclick="openLb(this)" loading="lazy"><div class="img-meta"><h3>PointerLockControls — FPS Camera</h3><p>Locks and hides the mouse cursor (browser Pointer Lock API). All mouse delta movement directly rotates the camera — no cursor visible, no screen edge limits. Call <code>controls.lock()</code> on a user click gesture. Standard for first-person games. Combine with WASD keyboard handler for full FPS controls.</p></div></div>
+<div class="img-entry"><img data-src="images/encyclopedia/11f_pointer_lock_controls.webp" alt="PointerLockControls" onclick="openLb(this)"><div class="img-meta"><h3>PointerLockControls - FPS Camera</h3><p>Locks and hides the mouse cursor (browser Pointer Lock API). All mouse delta movement directly rotates the camera - no cursor visible, no screen edge limits. Call <code>controls.lock()</code> on a user click gesture. Standard for first-person games. Combine with WASD keyboard handler for full FPS controls.</p></div></div>
 
 <!-- ══════════════════════════════════════════════
-     12 — NODE / TSL
+     12 - NODE / TSL
 ══════════════════════════════════════════════ -->
 <div class="section-break" id="tsl">
   <div class="section-break-header">
     <span class="section-num bc">12</span>
-    <h2 style="color:var(--cyan)">Node System / TSL — Three Shading Language</h2>
+    <h2 style="color:var(--cyan)">Node System / TSL - Three Shading Language</h2>
   </div>
-  <p class="section-intro">TSL is Three.js's shader authoring system written entirely in JavaScript. Instead of writing GLSL strings, you compose shader graphs from function nodes — <code>color()</code>, <code>texture()</code>, <code>add()</code>, <code>normalMap()</code>, <code>noise()</code> — and TSL compiles them to GLSL for WebGL or WGSL for WebGPU automatically. No raw shader strings, no manual uniform management, no platform-specific code.</p>
+  <p class="section-intro">TSL is Three.js's shader authoring system written entirely in JavaScript. Instead of writing GLSL strings, you compose shader graphs from function nodes - <code>color()</code>, <code>texture()</code>, <code>add()</code>, <code>normalMap()</code>, <code>noise()</code> - and TSL compiles them to GLSL for WebGL or WGSL for WebGPU automatically. No raw shader strings, no manual uniform management, no platform-specific code.</p>
   <div class="section-links">
     <a href="https://github.com/mrdoob/three.js/wiki/Three.js-Shading-Language" target="_blank" class="doc-link">↗ TSL Wiki</a>
     <a href="https://threejs.org/docs/#api/en/materials/NodeMaterial" target="_blank" class="doc-link">↗ NodeMaterial</a>
@@ -803,28 +808,28 @@ sphere.material.envMap = cubeRT.texture; <span class="cm">// use as reflection</
   </div>
 </div>
 
-<div class="img-entry"><img src="images/encyclopedia/12a_tsl_concept.webp" alt="TSL Concept" onclick="openLb(this)" loading="lazy"><div class="img-meta"><h3>What is TSL?</h3><p>Write shaders in JavaScript, run on GPU. Assign any node expression to material properties: <code>material.colorNode</code>, <code>material.emissiveNode</code>, <code>material.positionNode</code>. The node graph compiles to the correct shader language at runtime.</p><div class="code-snippet"><span class="kw">import</span> { color, texture, mix, uv, time } <span class="kw">from</span> <span class="str">'three/tsl'</span>;<br><span class="kw">const</span> mat = <span class="kw">new</span> <span class="fn">MeshStandardNodeMaterial</span>();<br>mat.colorNode = <span class="fn">mix</span>( <span class="fn">color</span>(<span class="str">0xff0000</span>), <span class="fn">color</span>(<span class="str">0x0000ff</span>), <span class="fn">sin</span>( time ) );</div></div></div>
+<div class="img-entry"><img data-src="images/encyclopedia/12a_tsl_concept.webp" alt="TSL Concept" onclick="openLb(this)"><div class="img-meta"><h3>What is TSL?</h3><p>Write shaders in JavaScript, run on GPU. Assign any node expression to material properties: <code>material.colorNode</code>, <code>material.emissiveNode</code>, <code>material.positionNode</code>. The node graph compiles to the correct shader language at runtime.</p><div class="code-snippet"><span class="kw">import</span> { color, texture, mix, uv, time } <span class="kw">from</span> <span class="str">'three/tsl'</span>;<br><span class="kw">const</span> mat = <span class="kw">new</span> <span class="fn">MeshStandardNodeMaterial</span>();<br>mat.colorNode = <span class="fn">mix</span>( <span class="fn">color</span>(<span class="str">0xff0000</span>), <span class="fn">color</span>(<span class="str">0x0000ff</span>), <span class="fn">sin</span>( time ) );</div></div></div>
 <div class="divider"></div>
-<div class="img-entry"><img src="images/encyclopedia/12b_noise_functions.webp" alt="Noise Functions" onclick="openLb(this)" loading="lazy"><div class="img-meta"><h3>Noise Functions</h3><p>TSL includes several GPU noise functions: <code>mx_noise_float()</code> for Perlin-style smooth noise, <code>mx_worley_noise()</code> for cellular/Voronoi patterns, <code>checker()</code>, <code>mx_fractal_noise()</code> for fBm (fractal Brownian motion). All run on GPU — perfect for animated terrain, clouds, fire, water, procedural textures.</p></div></div>
+<div class="img-entry"><img data-src="images/encyclopedia/12b_noise_functions.webp" alt="Noise Functions" onclick="openLb(this)"><div class="img-meta"><h3>Noise Functions</h3><p>TSL includes several GPU noise functions: <code>mx_noise_float()</code> for Perlin-style smooth noise, <code>mx_worley_noise()</code> for cellular/Voronoi patterns, <code>checker()</code>, <code>mx_fractal_noise()</code> for fBm (fractal Brownian motion). All run on GPU - perfect for animated terrain, clouds, fire, water, procedural textures.</p></div></div>
 <div class="divider"></div>
-<div class="img-entry"><img src="images/encyclopedia/12c_tsl_math_ops.webp" alt="TSL Math Operations" onclick="openLb(this)" loading="lazy"><div class="img-meta"><h3>Math Operations in TSL</h3><p>All standard shader math functions available as TSL nodes: <code>add()</code>, <code>sub()</code>, <code>mul()</code>, <code>div()</code>, <code>mix()</code>, <code>clamp()</code>, <code>smoothstep()</code>, <code>pow()</code>, <code>abs()</code>, <code>sin()</code>, <code>cos()</code>, <code>floor()</code>, <code>fract()</code>, <code>length()</code>, <code>dot()</code>, <code>cross()</code>, <code>normalize()</code>. Chain them to build any mathematical shader effect.</p></div></div>
+<div class="img-entry"><img data-src="images/encyclopedia/12c_tsl_math_ops.webp" alt="TSL Math Operations" onclick="openLb(this)"><div class="img-meta"><h3>Math Operations in TSL</h3><p>All standard shader math functions available as TSL nodes: <code>add()</code>, <code>sub()</code>, <code>mul()</code>, <code>div()</code>, <code>mix()</code>, <code>clamp()</code>, <code>smoothstep()</code>, <code>pow()</code>, <code>abs()</code>, <code>sin()</code>, <code>cos()</code>, <code>floor()</code>, <code>fract()</code>, <code>length()</code>, <code>dot()</code>, <code>cross()</code>, <code>normalize()</code>. Chain them to build any mathematical shader effect.</p></div></div>
 <div class="divider"></div>
-<div class="img-entry"><img src="images/encyclopedia/12d_tsl_fresnel.webp" alt="Fresnel" onclick="openLb(this)" loading="lazy"><div class="img-meta"><h3>Fresnel / Rim Lighting</h3><p>The Fresnel effect: surfaces become more reflective at glancing angles (edge of a sphere vs centre). Water, glass, car paint, skin all exhibit this. In TSL: <code>fresnel()</code> outputs 0 at the centre (facing camera) and 1 at the edge. Mix it into emissive or colour for rim glow effects.</p></div></div>
+<div class="img-entry"><img data-src="images/encyclopedia/12d_tsl_fresnel.webp" alt="Fresnel" onclick="openLb(this)"><div class="img-meta"><h3>Fresnel / Rim Lighting</h3><p>The Fresnel effect: surfaces become more reflective at glancing angles (edge of a sphere vs centre). Water, glass, car paint, skin all exhibit this. In TSL: <code>fresnel()</code> outputs 0 at the centre (facing camera) and 1 at the edge. Mix it into emissive or colour for rim glow effects.</p></div></div>
 <div class="divider"></div>
-<div class="img-entry"><img src="images/encyclopedia/12e_tsl_displacement.webp" alt="Displacement" onclick="openLb(this)" loading="lazy"><div class="img-meta"><h3>Vertex Displacement</h3><p>Assign a TSL expression to <code>material.positionNode</code> to move vertices in the vertex shader. Animate terrain from a heightmap, make ocean waves from sine functions, breathe life into characters, create plasma sphere effects — all on GPU with zero CPU overhead.</p></div></div>
+<div class="img-entry"><img data-src="images/encyclopedia/12e_tsl_displacement.webp" alt="Displacement" onclick="openLb(this)"><div class="img-meta"><h3>Vertex Displacement</h3><p>Assign a TSL expression to <code>material.positionNode</code> to move vertices in the vertex shader. Animate terrain from a heightmap, make ocean waves from sine functions, breathe life into characters, create plasma sphere effects - all on GPU with zero CPU overhead.</p></div></div>
 <div class="divider"></div>
-<div class="img-entry"><img src="images/encyclopedia/12f_tsl_triplanar.webp" alt="Triplanar" onclick="openLb(this)" loading="lazy"><div class="img-meta"><h3>Triplanar Mapping</h3><p>Projects a texture from X, Y and Z axes simultaneously and blends them based on the surface normal. The result: any shape gets correctly textured without UV unwrapping. <code>triplanarTexture()</code> in TSL. Essential for terrain, caves, organic shapes and anything where UV mapping is impractical.</p></div></div>
+<div class="img-entry"><img data-src="images/encyclopedia/12f_tsl_triplanar.webp" alt="Triplanar" onclick="openLb(this)"><div class="img-meta"><h3>Triplanar Mapping</h3><p>Projects a texture from X, Y and Z axes simultaneously and blends them based on the surface normal. The result: any shape gets correctly textured without UV unwrapping. <code>triplanarTexture()</code> in TSL. Essential for terrain, caves, organic shapes and anything where UV mapping is impractical.</p></div></div>
 <div class="divider"></div>
-<div class="img-entry"><img src="images/encyclopedia/12g_tsl_pbr_breakdown.webp" alt="PBR Node Breakdown" onclick="openLb(this)" loading="lazy"><div class="img-meta"><h3>PBR Node Breakdown</h3><p>How TSL texture nodes wire into a full PBR material: <code>texture(albedoMap)</code> → <code>colorNode</code>, <code>normalMap(normalTex)</code> → <code>normalNode</code>, <code>texture(roughTex).r</code> → <code>roughnessNode</code>, <code>texture(metalTex).b</code> → <code>metalnessNode</code>. Each property accepts any node expression.</p></div></div>
+<div class="img-entry"><img data-src="images/encyclopedia/12g_tsl_pbr_breakdown.webp" alt="PBR Node Breakdown" onclick="openLb(this)"><div class="img-meta"><h3>PBR Node Breakdown</h3><p>How TSL texture nodes wire into a full PBR material: <code>texture(albedoMap)</code> → <code>colorNode</code>, <code>normalMap(normalTex)</code> → <code>normalNode</code>, <code>texture(roughTex).r</code> → <code>roughnessNode</code>, <code>texture(metalTex).b</code> → <code>metalnessNode</code>. Each property accepts any node expression.</p></div></div>
 <div class="divider"></div>
-<div class="img-entry"><img src="images/encyclopedia/12h_tsl_gpgpu.webp" alt="GPGPU" onclick="openLb(this)" loading="lazy"><div class="img-meta"><h3>GPGPU — GPU Particle Simulation</h3><p>Use <code>compute()</code> nodes (WebGPU only) to simulate millions of particles entirely on the GPU. Each particle's position and velocity is stored in a storage buffer. The compute shader updates all particles in parallel. Results feed directly into InstancedMesh matrices — no CPU data transfer each frame.</p></div></div>
+<div class="img-entry"><img data-src="images/encyclopedia/12h_tsl_gpgpu.webp" alt="GPGPU" onclick="openLb(this)"><div class="img-meta"><h3>GPGPU - GPU Particle Simulation</h3><p>Use <code>compute()</code> nodes (WebGPU only) to simulate millions of particles entirely on the GPU. Each particle's position and velocity is stored in a storage buffer. The compute shader updates all particles in parallel. Results feed directly into InstancedMesh matrices - no CPU data transfer each frame.</p></div></div>
 <div class="divider"></div>
-<div class="img-entry"><img src="images/encyclopedia/12i_tsl_procedural.webp" alt="Procedural Shaders" onclick="openLb(this)" loading="lazy"><div class="img-meta"><h3>Procedural Shaders</h3><p>Generate every pixel purely from mathematics — no textures, no files, no loading time. Checkerboard, gradient, polar coordinates, mandelbrot, voronoi, plasma, sine wave patterns. All computed per-pixel at 60fps on GPU. Combine noise + trig functions for infinite detail at any scale.</p></div></div>
+<div class="img-entry"><img data-src="images/encyclopedia/12i_tsl_procedural.webp" alt="Procedural Shaders" onclick="openLb(this)"><div class="img-meta"><h3>Procedural Shaders</h3><p>Generate every pixel purely from mathematics - no textures, no files, no loading time. Checkerboard, gradient, polar coordinates, mandelbrot, voronoi, plasma, sine wave patterns. All computed per-pixel at 60fps on GPU. Combine noise + trig functions for infinite detail at any scale.</p></div></div>
 <div class="divider"></div>
-<div class="img-entry"><img src="images/encyclopedia/12j_tsl_custom_shader.webp" alt="Custom Shader" onclick="openLb(this)" loading="lazy"><div class="img-meta"><h3>Custom Shader — Full Creative Control</h3><p>Assign any TSL expression to any material property. Combine noise, math, time, UV coordinates and texture samples in any way you imagine. Or use raw ShaderMaterial/RawShaderMaterial with hand-written GLSL for absolute control. This is where Three.js becomes a creative coding environment.</p></div></div>
+<div class="img-entry"><img data-src="images/encyclopedia/12j_tsl_custom_shader.webp" alt="Custom Shader" onclick="openLb(this)"><div class="img-meta"><h3>Custom Shader - Full Creative Control</h3><p>Assign any TSL expression to any material property. Combine noise, math, time, UV coordinates and texture samples in any way you imagine. Or use raw ShaderMaterial/RawShaderMaterial with hand-written GLSL for absolute control. This is where Three.js becomes a creative coding environment.</p></div></div>
 
 <!-- ══════════════════════════════════════════════
-     13 — ANIMATION
+     13 - ANIMATION
 ══════════════════════════════════════════════ -->
 <div class="section-break" id="animation">
   <div class="section-break-header">
@@ -840,31 +845,31 @@ sphere.material.envMap = cubeRT.texture; <span class="cm">// use as reflection</
   </div>
 </div>
 
-<div class="img-entry"><img src="images/encyclopedia/13a_keyframes.webp" alt="Keyframes" onclick="openLb(this)" loading="lazy"><div class="img-meta"><h3>Keyframes &amp; Tracks</h3><p>A KeyframeTrack stores the property name (<code>.position[x]</code>), an array of times (seconds), and an array of values. Multiple tracks form an AnimationClip. The interpolant (linear, smooth cubic, or discrete step) fills values between keyframes. Any Object3D property can be animated: position, rotation, scale, material colour, morph weight.</p></div></div>
+<div class="img-entry"><img data-src="images/encyclopedia/13a_keyframes.webp" alt="Keyframes" onclick="openLb(this)"><div class="img-meta"><h3>Keyframes &amp; Tracks</h3><p>A KeyframeTrack stores the property name (<code>.position[x]</code>), an array of times (seconds), and an array of values. Multiple tracks form an AnimationClip. The interpolant (linear, smooth cubic, or discrete step) fills values between keyframes. Any Object3D property can be animated: position, rotation, scale, material colour, morph weight.</p></div></div>
 <div class="divider"></div>
-<div class="img-entry"><img src="images/encyclopedia/13b_walk_cycle.webp" alt="Walk Cycle" onclick="openLb(this)" loading="lazy"><div class="img-meta"><h3>Walk Cycle</h3><p>~8 key poses timed so the last frame flows back into the first. The mixer loops the clip and the character walks indefinitely. Walk cycles are the foundation of character animation — everything else (run, jump, combat) layers on top or crossfades from it.</p></div></div>
+<div class="img-entry"><img data-src="images/encyclopedia/13b_walk_cycle.webp" alt="Walk Cycle" onclick="openLb(this)"><div class="img-meta"><h3>Walk Cycle</h3><p>~8 key poses timed so the last frame flows back into the first. The mixer loops the clip and the character walks indefinitely. Walk cycles are the foundation of character animation - everything else (run, jump, combat) layers on top or crossfades from it.</p></div></div>
 <div class="divider"></div>
-<div class="img-entry"><img src="images/encyclopedia/13c_blend_crossfade.webp" alt="Blend / Crossfade" onclick="openLb(this)" loading="lazy"><div class="img-meta"><h3>Blend &amp; Crossfade</h3><p>AnimationMixer blends multiple simultaneous actions by their <code>weight</code> property. <code>action.crossFadeTo(otherAction, duration)</code> smoothly transitions weight from one clip to another over the duration — walk smoothly becomes run, idle flows into attack, land fades from falling.</p></div></div>
+<div class="img-entry"><img data-src="images/encyclopedia/13c_blend_crossfade.webp" alt="Blend / Crossfade" onclick="openLb(this)"><div class="img-meta"><h3>Blend &amp; Crossfade</h3><p>AnimationMixer blends multiple simultaneous actions by their <code>weight</code> property. <code>action.crossFadeTo(otherAction, duration)</code> smoothly transitions weight from one clip to another over the duration - walk smoothly becomes run, idle flows into attack, land fades from falling.</p></div></div>
 <div class="divider"></div>
-<div class="img-entry"><img src="images/encyclopedia/13d_morph_targets.webp" alt="Morph Targets" onclick="openLb(this)" loading="lazy"><div class="img-meta"><h3>Morph Targets — Blend Shapes</h3><p>Pre-baked vertex positions stored in geometry. <code>mesh.morphTargetInfluences[i] = 0..1</code> blends between base geometry and a target shape. Blend multiple targets simultaneously. Used for facial expressions, lip-sync, secondary deformations, and smooth shape transformations. Common in glTF character files.</p></div></div>
+<div class="img-entry"><img data-src="images/encyclopedia/13d_morph_targets.webp" alt="Morph Targets" onclick="openLb(this)"><div class="img-meta"><h3>Morph Targets - Blend Shapes</h3><p>Pre-baked vertex positions stored in geometry. <code>mesh.morphTargetInfluences[i] = 0..1</code> blends between base geometry and a target shape. Blend multiple targets simultaneously. Used for facial expressions, lip-sync, secondary deformations, and smooth shape transformations. Common in glTF character files.</p></div></div>
 <div class="divider"></div>
-<div class="img-entry"><img src="images/encyclopedia/13e_skeletal_animation.webp" alt="Skeletal Animation" onclick="openLb(this)" loading="lazy"><div class="img-meta"><h3>Skeletal Animation — Bone Rigs</h3><p>A Skeleton is a hierarchy of Bone objects (Object3Ds). Each vertex in the SkinnedMesh is influenced by 1–4 bones with blend weights (stored as <code>skinIndex</code> and <code>skinWeight</code> attributes). Move/rotate bones and the mesh follows. The complete character animation pipeline used in games.</p></div></div>
+<div class="img-entry"><img data-src="images/encyclopedia/13e_skeletal_animation.webp" alt="Skeletal Animation" onclick="openLb(this)"><div class="img-meta"><h3>Skeletal Animation - Bone Rigs</h3><p>A Skeleton is a hierarchy of Bone objects (Object3Ds). Each vertex in the SkinnedMesh is influenced by 1–4 bones with blend weights (stored as <code>skinIndex</code> and <code>skinWeight</code> attributes). Move/rotate bones and the mesh follows. The complete character animation pipeline used in games.</p></div></div>
 <div class="divider"></div>
-<div class="img-entry"><img src="images/encyclopedia/13f_additive_animation.webp" alt="Additive Animation" onclick="openLb(this)" loading="lazy"><div class="img-meta"><h3>Additive Animation</h3><p>An additive layer adds its delta values on top of a base pose instead of replacing it. Set <code>action.blendMode = THREE.AdditiveAnimationBlendMode</code>. Breathing, head-look, flinch reactions and facial emotions can all be independent additive layers playing simultaneously on top of locomotion.</p></div></div>
+<div class="img-entry"><img data-src="images/encyclopedia/13f_additive_animation.webp" alt="Additive Animation" onclick="openLb(this)"><div class="img-meta"><h3>Additive Animation</h3><p>An additive layer adds its delta values on top of a base pose instead of replacing it. Set <code>action.blendMode = THREE.AdditiveAnimationBlendMode</code>. Breathing, head-look, flinch reactions and facial emotions can all be independent additive layers playing simultaneously on top of locomotion.</p></div></div>
 <div class="divider"></div>
-<div class="img-entry"><img src="images/encyclopedia/13g_animation_curves.webp" alt="Animation Curves" onclick="openLb(this)" loading="lazy"><div class="img-meta"><h3>Animation Curves — Interpolation</h3><p>How values change between keyframes: <strong>InterpolateLinear</strong> (straight line, robotic), <strong>InterpolateSmooth</strong> (cubic Catmull-Rom, natural), <strong>InterpolateDiscrete</strong> (instant step, snappy). Ease-in/ease-out curves make animations feel physical — things accelerate and decelerate rather than moving at constant speed.</p></div></div>
+<div class="img-entry"><img data-src="images/encyclopedia/13g_animation_curves.webp" alt="Animation Curves" onclick="openLb(this)"><div class="img-meta"><h3>Animation Curves - Interpolation</h3><p>How values change between keyframes: <strong>InterpolateLinear</strong> (straight line, robotic), <strong>InterpolateSmooth</strong> (cubic Catmull-Rom, natural), <strong>InterpolateDiscrete</strong> (instant step, snappy). Ease-in/ease-out curves make animations feel physical - things accelerate and decelerate rather than moving at constant speed.</p></div></div>
 <div class="divider"></div>
-<div class="img-entry"><img src="images/encyclopedia/13h_animation_mixer_concept.webp" alt="AnimationMixer" onclick="openLb(this)" loading="lazy"><div class="img-meta"><h3>AnimationMixer Concept</h3><p>One mixer per animated object. <code>mixer.clipAction(clip)</code> returns an AnimationAction. Set <code>action.play()</code>, <code>action.weight</code> (blend amount), <code>action.timeScale</code> (speed). Call <code>mixer.update(delta)</code> every frame in the render loop. Multiple actions blend automatically by their weights.</p></div></div>
+<div class="img-entry"><img data-src="images/encyclopedia/13h_animation_mixer_concept.webp" alt="AnimationMixer" onclick="openLb(this)"><div class="img-meta"><h3>AnimationMixer Concept</h3><p>One mixer per animated object. <code>mixer.clipAction(clip)</code> returns an AnimationAction. Set <code>action.play()</code>, <code>action.weight</code> (blend amount), <code>action.timeScale</code> (speed). Call <code>mixer.update(delta)</code> every frame in the render loop. Multiple actions blend automatically by their weights.</p></div></div>
 
 <!-- ══════════════════════════════════════════════
-     14 — AUDIO
+     14 - AUDIO
 ══════════════════════════════════════════════ -->
 <div class="section-break" id="audio">
   <div class="section-break-header">
     <span class="section-num bm">14</span>
     <h2 style="color:var(--magenta)">Audio</h2>
   </div>
-  <p class="section-intro">Three.js integrates the Web Audio API into the scene graph. AudioListener attaches to the camera and acts as the player's ears. PositionalAudio attaches to 3D objects and automatically adjusts volume and stereo panning based on distance and angle from the listener — walk towards an explosion and it gets louder, walk past it and it pans side to side.</p>
+  <p class="section-intro">Three.js integrates the Web Audio API into the scene graph. AudioListener attaches to the camera and acts as the player's ears. PositionalAudio attaches to 3D objects and automatically adjusts volume and stereo panning based on distance and angle from the listener - walk towards an explosion and it gets louder, walk past it and it pans side to side.</p>
   <div class="section-links">
     <a href="https://threejs.org/docs/#api/en/audio/AudioListener" target="_blank" class="doc-link">↗ AudioListener</a>
     <a href="https://threejs.org/docs/#api/en/audio/PositionalAudio" target="_blank" class="doc-link">↗ PositionalAudio</a>
@@ -872,23 +877,23 @@ sphere.material.envMap = cubeRT.texture; <span class="cm">// use as reflection</
   </div>
 </div>
 
-<div class="img-entry"><img src="images/encyclopedia/14a_spatial_audio.webp" alt="Spatial Audio" onclick="openLb(this)" loading="lazy"><div class="img-meta"><h3>Spatial Audio — 3D Positioning</h3><p>AudioListener on the camera = the player's ears. PositionalAudio on a 3D object = a sound source in the world. The Web Audio PannerNode automatically computes volume, left/right panning, and doppler shift from the relative positions and velocities. Walk through a scene and sounds change as expected.</p></div></div>
+<div class="img-entry"><img data-src="images/encyclopedia/14a_spatial_audio.webp" alt="Spatial Audio" onclick="openLb(this)"><div class="img-meta"><h3>Spatial Audio - 3D Positioning</h3><p>AudioListener on the camera = the player's ears. PositionalAudio on a 3D object = a sound source in the world. The Web Audio PannerNode automatically computes volume, left/right panning, and doppler shift from the relative positions and velocities. Walk through a scene and sounds change as expected.</p></div></div>
 <div class="divider"></div>
-<div class="img-entry"><img src="images/encyclopedia/14b_audio_falloff.webp" alt="Audio Falloff" onclick="openLb(this)" loading="lazy"><div class="img-meta"><h3>Audio Falloff — Distance Curves</h3><p><code>rolloffFactor</code> controls how fast volume drops. <code>distanceModel</code>: <strong>linear</strong> (even drop to maxDistance), <strong>inverse</strong> (halves every doubling of distance — physically correct), <strong>exponential</strong> (extreme drop off). <code>refDistance</code> is where attenuation begins; <code>maxDistance</code> is where volume hits 0.</p></div></div>
+<div class="img-entry"><img data-src="images/encyclopedia/14b_audio_falloff.webp" alt="Audio Falloff" onclick="openLb(this)"><div class="img-meta"><h3>Audio Falloff - Distance Curves</h3><p><code>rolloffFactor</code> controls how fast volume drops. <code>distanceModel</code>: <strong>linear</strong> (even drop to maxDistance), <strong>inverse</strong> (halves every doubling of distance - physically correct), <strong>exponential</strong> (extreme drop off). <code>refDistance</code> is where attenuation begins; <code>maxDistance</code> is where volume hits 0.</p></div></div>
 <div class="divider"></div>
-<div class="img-entry"><img src="images/encyclopedia/14c_audio_analyser.webp" alt="AudioAnalyser" onclick="openLb(this)" loading="lazy"><div class="img-meta"><h3>AudioAnalyser — Frequency Visualisation</h3><p>Wraps Web Audio's AnalyserNode. Call <code>analyser.getFrequencyData()</code> each frame — returns a Uint8Array of FFT frequency bins from bass to treble. Use those 128/256 values to drive anything: geometry heights, emissive intensity, particle velocities, colour shifts. Music-reactive visuals.</p></div></div>
+<div class="img-entry"><img data-src="images/encyclopedia/14c_audio_analyser.webp" alt="AudioAnalyser" onclick="openLb(this)"><div class="img-meta"><h3>AudioAnalyser - Frequency Visualisation</h3><p>Wraps Web Audio's AnalyserNode. Call <code>analyser.getFrequencyData()</code> each frame - returns a Uint8Array of FFT frequency bins from bass to treble. Use those 128/256 values to drive anything: geometry heights, emissive intensity, particle velocities, colour shifts. Music-reactive visuals.</p></div></div>
 <div class="divider"></div>
-<div class="img-entry"><img src="images/encyclopedia/14d_audio_cones.webp" alt="Audio Cones" onclick="openLb(this)" loading="lazy"><div class="img-meta"><h3>Audio Cones — Directional Sound</h3><p>PositionalAudio supports directionality via inner/outer cone angles. <code>coneInnerAngle</code>: full volume zone. <code>coneOuterAngle</code>: transition zone. <code>coneOuterGain</code>: volume at and beyond outer cone. Perfect for NPCs, speakers pointing in a direction, vehicle exhausts, vents.</p></div></div>
+<div class="img-entry"><img data-src="images/encyclopedia/14d_audio_cones.webp" alt="Audio Cones" onclick="openLb(this)"><div class="img-meta"><h3>Audio Cones - Directional Sound</h3><p>PositionalAudio supports directionality via inner/outer cone angles. <code>coneInnerAngle</code>: full volume zone. <code>coneOuterAngle</code>: transition zone. <code>coneOuterGain</code>: volume at and beyond outer cone. Perfect for NPCs, speakers pointing in a direction, vehicle exhausts, vents.</p></div></div>
 
 <!-- ══════════════════════════════════════════════
-     15 — SPECIAL OBJECTS
+     15 - SPECIAL OBJECTS
 ══════════════════════════════════════════════ -->
 <div class="section-break" id="special">
   <div class="section-break-header">
     <span class="section-num bg">15</span>
     <h2 style="color:var(--green)">Special Objects &amp; Effects</h2>
   </div>
-  <p class="section-intro">Three.js addons include high-level pre-built objects for visual needs that would take weeks to build from scratch — animated ocean water, procedural sky, real-time mirror reflections, lens flares, HTML elements in 3D space, and GPU-instanced forests. All in <code>jsm/objects/</code> and ready to drop into any scene.</p>
+  <p class="section-intro">Three.js addons include high-level pre-built objects for visual needs that would take weeks to build from scratch - animated ocean water, procedural sky, real-time mirror reflections, lens flares, HTML elements in 3D space, and GPU-instanced forests. All in <code>jsm/objects/</code> and ready to drop into any scene.</p>
   <div class="section-links">
     <a href="https://threejs.org/examples/#webgl_shaders_ocean" target="_blank" class="doc-link">↗ Water Example</a>
     <a href="https://threejs.org/examples/#webgl_mirror" target="_blank" class="doc-link">↗ Reflector Example</a>
@@ -896,35 +901,35 @@ sphere.material.envMap = cubeRT.texture; <span class="cm">// use as reflection</
   </div>
 </div>
 
-<div class="img-entry"><img src="images/encyclopedia/15a_water.webp" alt="Water" onclick="openLb(this)" loading="lazy"><div class="img-meta"><h3>Water — Ocean Surface</h3><p>Animated water surface using two normal map textures scrolling at different speeds and angles for complex wave patterns. Reflects the sky, refracts the scene below, and responds to <code>sunDirection</code> for specular sun glints. Water2 adds more complex dual-normal wave patterns for rivers, pools and oceans.</p></div></div>
+<div class="img-entry"><img data-src="images/encyclopedia/15a_water.webp" alt="Water" onclick="openLb(this)"><div class="img-meta"><h3>Water - Ocean Surface</h3><p>Animated water surface using two normal map textures scrolling at different speeds and angles for complex wave patterns. Reflects the sky, refracts the scene below, and responds to <code>sunDirection</code> for specular sun glints. Water2 adds more complex dual-normal wave patterns for rivers, pools and oceans.</p></div></div>
 <div class="divider"></div>
-<div class="img-entry"><img src="images/encyclopedia/15b_sky.webp" alt="Sky" onclick="openLb(this)" loading="lazy"><div class="img-meta"><h3>Sky — Procedural Preetham Model</h3><p>A physically-based sky shader (Preetham 1999 atmospheric scattering model). Parameters: <code>turbidity</code> (haze), <code>rayleigh</code> (blue sky scattering), <code>mieCoefficient</code>/<code>mieDirectionalG</code> (sun halo size), <code>sunPosition</code>. No textures needed — full dawn-to-dusk cycle in real-time from equations alone.</p></div></div>
+<div class="img-entry"><img data-src="images/encyclopedia/15b_sky.webp" alt="Sky" onclick="openLb(this)"><div class="img-meta"><h3>Sky - Procedural Preetham Model</h3><p>A physically-based sky shader (Preetham 1999 atmospheric scattering model). Parameters: <code>turbidity</code> (haze), <code>rayleigh</code> (blue sky scattering), <code>mieCoefficient</code>/<code>mieDirectionalG</code> (sun halo size), <code>sunPosition</code>. No textures needed - full dawn-to-dusk cycle in real-time from equations alone.</p></div></div>
 <div class="divider"></div>
-<div class="img-entry"><img src="images/encyclopedia/15c_reflector.webp" alt="Reflector" onclick="openLb(this)" loading="lazy"><div class="img-meta"><h3>Reflector — Real-Time Mirror</h3><p>Renders the scene from a reflected camera perspective into a texture, then applies that texture to the reflective plane — a real-time mirror. Used for glossy floors, mirrors, calm water. ReflectorForSSRPass adds screen-space reflections for any surface (not just flat planes).</p></div></div>
+<div class="img-entry"><img data-src="images/encyclopedia/15c_reflector.webp" alt="Reflector" onclick="openLb(this)"><div class="img-meta"><h3>Reflector - Real-Time Mirror</h3><p>Renders the scene from a reflected camera perspective into a texture, then applies that texture to the reflective plane - a real-time mirror. Used for glossy floors, mirrors, calm water. ReflectorForSSRPass adds screen-space reflections for any surface (not just flat planes).</p></div></div>
 <div class="divider"></div>
-<div class="img-entry"><img src="images/encyclopedia/15d_lensflare.webp" alt="Lensflare" onclick="openLb(this)" loading="lazy"><div class="img-meta"><h3>Lensflare</h3><p>Adds hexagonal aperture flare artefacts along the axis from a bright light to screen centre — mimicking a camera lens. Attach Lensflare to any light/object and add textured flare elements at different screen distances. Occlusion-tested: disappears when the light source is hidden.</p></div></div>
+<div class="img-entry"><img data-src="images/encyclopedia/15d_lensflare.webp" alt="Lensflare" onclick="openLb(this)"><div class="img-meta"><h3>Lensflare</h3><p>Adds hexagonal aperture flare artefacts along the axis from a bright light to screen centre - mimicking a camera lens. Attach Lensflare to any light/object and add textured flare elements at different screen distances. Occlusion-tested: disappears when the light source is hidden.</p></div></div>
 <div class="divider"></div>
-<div class="img-entry"><img src="images/encyclopedia/15e_css3d.webp" alt="CSS3D" onclick="openLb(this)" loading="lazy"><div class="img-meta"><h3>CSS3DObject — HTML Elements in 3D</h3><p>CSS3DRenderer overlays a DOM layer perfectly aligned with the WebGL scene. CSS3DObject wraps any HTML element (including live iframes, video, interactive UI) and positions it in 3D space. The CSS transform matches Three.js camera perspective exactly. Combine with WebGL renderer for mixed HTML/3D experiences.</p></div></div>
+<div class="img-entry"><img data-src="images/encyclopedia/15e_css3d.webp" alt="CSS3D" onclick="openLb(this)"><div class="img-meta"><h3>CSS3DObject - HTML Elements in 3D</h3><p>CSS3DRenderer overlays a DOM layer perfectly aligned with the WebGL scene. CSS3DObject wraps any HTML element (including live iframes, video, interactive UI) and positions it in 3D space. The CSS transform matches Three.js camera perspective exactly. Combine with WebGL renderer for mixed HTML/3D experiences.</p></div></div>
 <div class="divider"></div>
-<div class="img-entry"><img src="images/encyclopedia/15f_instancing.webp" alt="Instancing" onclick="openLb(this)" loading="lazy"><div class="img-meta"><h3>Instancing — One Draw Call, 100,000 Objects</h3><p>InstancedMesh renders N copies of the same geometry+material in a single GPU draw call. Each instance has its own 4×4 transform matrix (position, rotation, scale) and optional per-instance colour. Rendering a forest of 100,000 trees takes the same CPU time as rendering one tree.</p></div></div>
+<div class="img-entry"><img data-src="images/encyclopedia/15f_instancing.webp" alt="Instancing" onclick="openLb(this)"><div class="img-meta"><h3>Instancing - One Draw Call, 100,000 Objects</h3><p>InstancedMesh renders N copies of the same geometry+material in a single GPU draw call. Each instance has its own 4×4 transform matrix (position, rotation, scale) and optional per-instance colour. Rendering a forest of 100,000 trees takes the same CPU time as rendering one tree.</p></div></div>
 <div class="divider"></div>
-<div class="img-entry"><img src="images/encyclopedia/15g_lod.webp" alt="LOD" onclick="openLb(this)" loading="lazy"><div class="img-meta"><h3>LOD — Level of Detail</h3><p>LOD.addLevel(mesh, distance) — the closest level shows full detail; as camera distance increases, lower-poly versions swap in automatically. Halving polygon count at double distance maintains visual quality while dramatically reducing GPU load. Essential for open worlds and large scenes.</p></div></div>
+<div class="img-entry"><img data-src="images/encyclopedia/15g_lod.webp" alt="LOD" onclick="openLb(this)"><div class="img-meta"><h3>LOD - Level of Detail</h3><p>LOD.addLevel(mesh, distance) - the closest level shows full detail; as camera distance increases, lower-poly versions swap in automatically. Halving polygon count at double distance maintains visual quality while dramatically reducing GPU load. Essential for open worlds and large scenes.</p></div></div>
 <div class="divider"></div>
-<div class="img-entry"><img src="images/encyclopedia/15h_particles.webp" alt="Particles" onclick="openLb(this)" loading="lazy"><div class="img-meta"><h3>Sprite Particles — Points System</h3><p>Points geometry + PointsMaterial renders each vertex as a screen-aligned billboard. <code>size</code> controls point size, <code>sizeAttenuation</code> enables perspective scaling, <code>map</code> applies a texture, <code>vertexColors</code> allows per-particle colour. For millions of particles, use GPU simulation via GPGPU (Section 12h).</p></div></div>
+<div class="img-entry"><img data-src="images/encyclopedia/15h_particles.webp" alt="Particles" onclick="openLb(this)"><div class="img-meta"><h3>Sprite Particles - Points System</h3><p>Points geometry + PointsMaterial renders each vertex as a screen-aligned billboard. <code>size</code> controls point size, <code>sizeAttenuation</code> enables perspective scaling, <code>map</code> applies a texture, <code>vertexColors</code> allows per-particle colour. For millions of particles, use GPU simulation via GPGPU (Section 12h).</p></div></div>
 <div class="divider"></div>
-<div class="img-entry"><img src="images/encyclopedia/15i_raycaster.webp" alt="Raycaster" onclick="openLb(this)" loading="lazy"><div class="img-meta"><h3>Raycaster — Mouse Picking &amp; Interaction</h3><p>Cast a mathematical ray from the camera through the mouse pointer into the scene. <code>raycaster.setFromCamera(pointer, camera)</code> then <code>intersectObjects(meshArray)</code> returns all hit objects sorted by distance, each with exact hit point, normal, UV, and face index. The foundation for all 3D clicking, hovering, and dragging.</p></div></div>
+<div class="img-entry"><img data-src="images/encyclopedia/15i_raycaster.webp" alt="Raycaster" onclick="openLb(this)"><div class="img-meta"><h3>Raycaster - Mouse Picking &amp; Interaction</h3><p>Cast a mathematical ray from the camera through the mouse pointer into the scene. <code>raycaster.setFromCamera(pointer, camera)</code> then <code>intersectObjects(meshArray)</code> returns all hit objects sorted by distance, each with exact hit point, normal, UV, and face index. The foundation for all 3D clicking, hovering, and dragging.</p></div></div>
 <div class="divider"></div>
-<div class="img-entry"><img src="images/encyclopedia/15j_clipping_planes.webp" alt="Clipping Planes" onclick="openLb(this)" loading="lazy"><div class="img-meta"><h3>Clipping Planes — Cross-Sections</h3><p>Discard all fragments on one side of a mathematical plane (Plane: normal + constant). <code>renderer.clippingPlanes</code> clips globally. <code>material.clippingPlanes</code> clips per-material. Animate the plane to create a cutting animation. Multiple planes create complex cross-section views — medical, architectural, CAD visualisations.</p></div></div>
+<div class="img-entry"><img data-src="images/encyclopedia/15j_clipping_planes.webp" alt="Clipping Planes" onclick="openLb(this)"><div class="img-meta"><h3>Clipping Planes - Cross-Sections</h3><p>Discard all fragments on one side of a mathematical plane (Plane: normal + constant). <code>renderer.clippingPlanes</code> clips globally. <code>material.clippingPlanes</code> clips per-material. Animate the plane to create a cutting animation. Multiple planes create complex cross-section views - medical, architectural, CAD visualisations.</p></div></div>
 
 <!-- ══════════════════════════════════════════════
-     16 — LOADERS
+     16 - LOADERS
 ══════════════════════════════════════════════ -->
 <div class="section-break" id="loaders">
   <div class="section-break-header">
     <span class="section-num bc">16</span>
     <h2 style="color:var(--cyan)">Loaders</h2>
   </div>
-  <p class="section-intro">Loaders import external assets — 3D models, textures, environments. Three.js ships a base Loader class and dozens of format-specific loaders in the addons. Use GLTFLoader for 3D models — it's the "JPEG of 3D", compact and feature-complete. Use LoadingManager to track combined loading progress across all assets.</p>
+  <p class="section-intro">Loaders import external assets - 3D models, textures, environments. Three.js ships a base Loader class and dozens of format-specific loaders in the addons. Use GLTFLoader for 3D models - it's the "JPEG of 3D", compact and feature-complete. Use LoadingManager to track combined loading progress across all assets.</p>
   <div class="section-links">
     <a href="https://threejs.org/docs/#examples/en/loaders/GLTFLoader" target="_blank" class="doc-link">↗ GLTFLoader</a>
     <a href="https://threejs.org/docs/#examples/en/loaders/DRACOLoader" target="_blank" class="doc-link">↗ DRACOLoader</a>
@@ -932,27 +937,27 @@ sphere.material.envMap = cubeRT.texture; <span class="cm">// use as reflection</
   </div>
 </div>
 
-<div class="img-entry"><img src="images/encyclopedia/16a_gltf_loader.webp" alt="GLTF Loader" onclick="openLb(this)" loading="lazy"><div class="img-meta"><h3>GLTFLoader — The Standard 3D Format</h3><p><code>.gltf</code> (JSON + separate .bin + images) or <code>.glb</code> (single binary bundle). Supports: PBR materials, skeletal animation, morph targets, multiple meshes/scenes, lights, cameras, custom extensions (KHR_draco_mesh_compression, KHR_materials_transmission, EXT_meshopt_compression). The correct default choice for web delivery.</p></div></div>
+<div class="img-entry"><img data-src="images/encyclopedia/16a_gltf_loader.webp" alt="GLTF Loader" onclick="openLb(this)"><div class="img-meta"><h3>GLTFLoader - The Standard 3D Format</h3><p><code>.gltf</code> (JSON + separate .bin + images) or <code>.glb</code> (single binary bundle). Supports: PBR materials, skeletal animation, morph targets, multiple meshes/scenes, lights, cameras, custom extensions (KHR_draco_mesh_compression, KHR_materials_transmission, EXT_meshopt_compression). The correct default choice for web delivery.</p></div></div>
 <div class="divider"></div>
-<div class="img-entry"><img src="images/encyclopedia/16b_fbx_loader.webp" alt="FBX Loader" onclick="openLb(this)" loading="lazy"><div class="img-meta"><h3>FBXLoader — Autodesk Format</h3><p>Autodesk FBX is common in game pipelines from Maya, 3ds Max, MotionBuilder and game engines like Unity/Unreal (as export format). FBXLoader supports skeletal animation, morph targets, embedded textures. Files tend to be large — prefer exporting to GLTF from DCC tools where possible, using FBX only when needed.</p></div></div>
+<div class="img-entry"><img data-src="images/encyclopedia/16b_fbx_loader.webp" alt="FBX Loader" onclick="openLb(this)"><div class="img-meta"><h3>FBXLoader - Autodesk Format</h3><p>Autodesk FBX is common in game pipelines from Maya, 3ds Max, MotionBuilder and game engines like Unity/Unreal (as export format). FBXLoader supports skeletal animation, morph targets, embedded textures. Files tend to be large - prefer exporting to GLTF from DCC tools where possible, using FBX only when needed.</p></div></div>
 <div class="divider"></div>
-<div class="img-entry"><img src="images/encyclopedia/16c_obj_loader.webp" alt="OBJ Loader" onclick="openLb(this)" loading="lazy"><div class="img-meta"><h3>OBJLoader — Universal Legacy Format</h3><p>The most widely supported 3D format — almost every 3D application can export OBJ. Human-readable text format, paired with .mtl for materials (Phong, no PBR). No animation support. Large file sizes. Good for static geometry interchange and legacy assets. Use GLTF for anything new.</p></div></div>
+<div class="img-entry"><img data-src="images/encyclopedia/16c_obj_loader.webp" alt="OBJ Loader" onclick="openLb(this)"><div class="img-meta"><h3>OBJLoader - Universal Legacy Format</h3><p>The most widely supported 3D format - almost every 3D application can export OBJ. Human-readable text format, paired with .mtl for materials (Phong, no PBR). No animation support. Large file sizes. Good for static geometry interchange and legacy assets. Use GLTF for anything new.</p></div></div>
 <div class="divider"></div>
-<div class="img-entry"><img src="images/encyclopedia/16d_draco_compression.webp" alt="Draco Compression" onclick="openLb(this)" loading="lazy"><div class="img-meta"><h3>Draco Compression</h3><p>Google's open-source mesh compression codec reduces geometry file size by 50–90% with minimal visual loss. Embed in GLTF via KHR_draco_mesh_compression extension. Requires DRACOLoader with the decoder WASM loaded from a CDN or bundled. Worth the setup cost for bandwidth-critical apps.</p></div></div>
+<div class="img-entry"><img data-src="images/encyclopedia/16d_draco_compression.webp" alt="Draco Compression" onclick="openLb(this)"><div class="img-meta"><h3>Draco Compression</h3><p>Google's open-source mesh compression codec reduces geometry file size by 50–90% with minimal visual loss. Embed in GLTF via KHR_draco_mesh_compression extension. Requires DRACOLoader with the decoder WASM loaded from a CDN or bundled. Worth the setup cost for bandwidth-critical apps.</p></div></div>
 <div class="divider"></div>
-<div class="img-entry"><img src="images/encyclopedia/16e_hdr_loader.webp" alt="HDR Loader" onclick="openLb(this)" loading="lazy"><div class="img-meta"><h3>RGBELoader / EXRLoader — HDR Environments</h3><p>Load .hdr (Radiance RGBE format) or .exr (OpenEXR) HDRI environment maps — equirectangular panoramas with high dynamic range. Pass the loaded texture to <code>PMREMGenerator.fromEquirectangular()</code> to prefilter for physically-based IBL. Free HDRI libraries: Poly Haven, HDRIHaven.</p></div></div>
+<div class="img-entry"><img data-src="images/encyclopedia/16e_hdr_loader.webp" alt="HDR Loader" onclick="openLb(this)"><div class="img-meta"><h3>RGBELoader / EXRLoader - HDR Environments</h3><p>Load .hdr (Radiance RGBE format) or .exr (OpenEXR) HDRI environment maps - equirectangular panoramas with high dynamic range. Pass the loaded texture to <code>PMREMGenerator.fromEquirectangular()</code> to prefilter for physically-based IBL. Free HDRI libraries: Poly Haven, HDRIHaven.</p></div></div>
 <div class="divider"></div>
-<div class="img-entry"><img src="images/encyclopedia/16f_svg_loader.webp" alt="SVG Loader" onclick="openLb(this)" loading="lazy"><div class="img-meta"><h3>SVGLoader — Vector Graphics in 3D</h3><p>Parses SVG paths, circles, rects and polygons into Three.js ShapePaths. Pass shapes to ExtrudeGeometry for 3D logos with depth and bevel, or ShapeGeometry for flat vector art in 3D space. Preserves curves, fills and colours from the source SVG.</p></div></div>
+<div class="img-entry"><img data-src="images/encyclopedia/16f_svg_loader.webp" alt="SVG Loader" onclick="openLb(this)"><div class="img-meta"><h3>SVGLoader - Vector Graphics in 3D</h3><p>Parses SVG paths, circles, rects and polygons into Three.js ShapePaths. Pass shapes to ExtrudeGeometry for 3D logos with depth and bevel, or ShapeGeometry for flat vector art in 3D space. Preserves curves, fills and colours from the source SVG.</p></div></div>
 
 <!-- ══════════════════════════════════════════════
-     17 — PHYSICS
+     17 - PHYSICS
 ══════════════════════════════════════════════ -->
 <div class="section-break" id="physics">
   <div class="section-break-header">
     <span class="section-num ba">17</span>
     <h2 style="color:var(--amber)">Physics</h2>
   </div>
-  <p class="section-intro">Three.js has no built-in physics — it's a rendering library. But it pairs seamlessly with dedicated physics engines. The pattern is always the same: physics world runs the simulation, Three.js mirrors the results visually. Popular choices: <strong>Rapier</strong> (Rust/WASM, fastest, deterministic), <strong>cannon-es</strong> (pure JS, easy), <strong>Ammo.js</strong> (Bullet port, full-featured), <strong>Jolt</strong> (game-quality).</p>
+  <p class="section-intro">Three.js has no built-in physics - it's a rendering library. But it pairs seamlessly with dedicated physics engines. The pattern is always the same: physics world runs the simulation, Three.js mirrors the results visually. Popular choices: <strong>Rapier</strong> (Rust/WASM, fastest, deterministic), <strong>cannon-es</strong> (pure JS, easy), <strong>Ammo.js</strong> (Bullet port, full-featured), <strong>Jolt</strong> (game-quality).</p>
   <div class="section-links">
     <a href="https://rapier.rs/docs/user_guides/javascript/getting_started_js" target="_blank" class="doc-link">↗ Rapier.js</a>
     <a href="https://github.com/pmndrs/cannon-es" target="_blank" class="doc-link">↗ cannon-es</a>
@@ -960,23 +965,23 @@ sphere.material.envMap = cubeRT.texture; <span class="cm">// use as reflection</
   </div>
 </div>
 
-<div class="img-entry"><img src="images/encyclopedia/17a_rigid_body.webp" alt="Rigid Body" onclick="openLb(this)" loading="lazy"><div class="img-meta"><h3>Rigid Body Physics</h3><p>Objects with mass that fall, bounce, slide and collide realistically. Each body has a collision shape (box, sphere, convex hull, trimesh), mass (0 = static), friction and restitution (bounciness). Every frame: <code>world.step(delta)</code> → copy <code>body.position</code> to <code>mesh.position</code>, <code>body.quaternion</code> to <code>mesh.quaternion</code>.</p></div></div>
+<div class="img-entry"><img data-src="images/encyclopedia/17a_rigid_body.webp" alt="Rigid Body" onclick="openLb(this)"><div class="img-meta"><h3>Rigid Body Physics</h3><p>Objects with mass that fall, bounce, slide and collide realistically. Each body has a collision shape (box, sphere, convex hull, trimesh), mass (0 = static), friction and restitution (bounciness). Every frame: <code>world.step(delta)</code> → copy <code>body.position</code> to <code>mesh.position</code>, <code>body.quaternion</code> to <code>mesh.quaternion</code>.</p></div></div>
 <div class="divider"></div>
-<div class="img-entry"><img src="images/encyclopedia/17b_cloth_simulation.webp" alt="Cloth Simulation" onclick="openLb(this)" loading="lazy"><div class="img-meta"><h3>Cloth Simulation</h3><p>A grid of particles connected by stretch, shear and bend spring constraints. Pin some particles (e.g. top corners) and let gravity pull the rest. Apply wind force for fabric movement. Resolve constraints iteratively each frame — more iterations = stiffer, more accurate. Ammo.js soft bodies or custom verlet integration.</p></div></div>
+<div class="img-entry"><img data-src="images/encyclopedia/17b_cloth_simulation.webp" alt="Cloth Simulation" onclick="openLb(this)"><div class="img-meta"><h3>Cloth Simulation</h3><p>A grid of particles connected by stretch, shear and bend spring constraints. Pin some particles (e.g. top corners) and let gravity pull the rest. Apply wind force for fabric movement. Resolve constraints iteratively each frame - more iterations = stiffer, more accurate. Ammo.js soft bodies or custom verlet integration.</p></div></div>
 <div class="divider"></div>
-<div class="img-entry"><img src="images/encyclopedia/17c_vehicle_physics.webp" alt="Vehicle Physics" onclick="openLb(this)" loading="lazy"><div class="img-meta"><h3>Vehicle Physics</h3><p>Ray-cast vehicle model: a chassis rigid body with four ray-cast "wheels". Rays shoot downward from each wheel mount and detect the ground; suspension compresses based on contact distance. Engine torque applied to driven wheels; steering applies to front wheels. Rapier and Ammo.js both have vehicle controllers.</p></div></div>
+<div class="img-entry"><img data-src="images/encyclopedia/17c_vehicle_physics.webp" alt="Vehicle Physics" onclick="openLb(this)"><div class="img-meta"><h3>Vehicle Physics</h3><p>Ray-cast vehicle model: a chassis rigid body with four ray-cast "wheels". Rays shoot downward from each wheel mount and detect the ground; suspension compresses based on contact distance. Engine torque applied to driven wheels; steering applies to front wheels. Rapier and Ammo.js both have vehicle controllers.</p></div></div>
 <div class="divider"></div>
-<div class="img-entry"><img src="images/encyclopedia/17d_constraints_ragdoll.webp" alt="Constraints" onclick="openLb(this)" loading="lazy"><div class="img-meta"><h3>Constraints &amp; Ragdolls</h3><p>Constraints join two rigid bodies with limits: <strong>Hinge</strong> (door, wheel), <strong>Slider</strong> (piston), <strong>Lock</strong> (weld), <strong>Point-to-point</strong> (wrecking ball chain), <strong>Cone-twist</strong> (shoulder joint with angle limits). Chain cone-twist constraints for a ragdoll skeleton that collapses physically when the character is knocked down.</p></div></div>
+<div class="img-entry"><img data-src="images/encyclopedia/17d_constraints_ragdoll.webp" alt="Constraints" onclick="openLb(this)"><div class="img-meta"><h3>Constraints &amp; Ragdolls</h3><p>Constraints join two rigid bodies with limits: <strong>Hinge</strong> (door, wheel), <strong>Slider</strong> (piston), <strong>Lock</strong> (weld), <strong>Point-to-point</strong> (wrecking ball chain), <strong>Cone-twist</strong> (shoulder joint with angle limits). Chain cone-twist constraints for a ragdoll skeleton that collapses physically when the character is knocked down.</p></div></div>
 
 <!-- ══════════════════════════════════════════════
-     18 — HELPERS
+     18 - HELPERS
 ══════════════════════════════════════════════ -->
 <div class="section-break" id="helpers">
   <div class="section-break-header">
     <span class="section-num bc">18</span>
     <h2 style="color:var(--cyan)">Helpers &amp; Debug Tools</h2>
   </div>
-  <p class="section-intro">Helpers are Object3D instances added to the scene during development to visualise invisible things — camera frustums, light shapes, bone positions, bounding boxes, normals. They are standard scene objects: add them, move them, set visible=false. Remove before shipping. Invaluable for debugging shadow cameras, verifying rig setup, checking frustum culling.</p>
+  <p class="section-intro">Helpers are Object3D instances added to the scene during development to visualise invisible things - camera frustums, light shapes, bone positions, bounding boxes, normals. They are standard scene objects: add them, move them, set visible=false. Remove before shipping. Invaluable for debugging shadow cameras, verifying rig setup, checking frustum culling.</p>
   <div class="section-links">
     <a href="https://threejs.org/docs/#api/en/helpers/GridHelper" target="_blank" class="doc-link">↗ GridHelper</a>
     <a href="https://threejs.org/docs/#api/en/helpers/CameraHelper" target="_blank" class="doc-link">↗ CameraHelper</a>
@@ -984,23 +989,23 @@ sphere.material.envMap = cubeRT.texture; <span class="cm">// use as reflection</
   </div>
 </div>
 
-<div class="img-entry"><img src="images/encyclopedia/18a_grid_axes.webp" alt="Grid and Axes Helpers" onclick="openLb(this)" loading="lazy"><div class="img-meta"><h3>GridHelper + AxesHelper</h3><p>GridHelper draws a flat grid at Y=0 — instantly orients you in 3D space. <code>new GridHelper(size, divisions)</code>. AxesHelper draws the XYZ axes as red (X), green (Y), blue (Z) lines. <code>new AxesHelper(length)</code>. These two together are the first thing to add to any new project.</p></div></div>
+<div class="img-entry"><img data-src="images/encyclopedia/18a_grid_axes.webp" alt="Grid and Axes Helpers" onclick="openLb(this)"><div class="img-meta"><h3>GridHelper + AxesHelper</h3><p>GridHelper draws a flat grid at Y=0 - instantly orients you in 3D space. <code>new GridHelper(size, divisions)</code>. AxesHelper draws the XYZ axes as red (X), green (Y), blue (Z) lines. <code>new AxesHelper(length)</code>. These two together are the first thing to add to any new project.</p></div></div>
 <div class="divider"></div>
-<div class="img-entry"><img src="images/encyclopedia/18b_camera_helper.webp" alt="Camera Helper" onclick="openLb(this)" loading="lazy"><div class="img-meta"><h3>CameraHelper — Visualise Frustum</h3><p>Renders the wireframe frustum of any camera as lines in the scene. Add <code>new CameraHelper(camera)</code> to visualise near plane, far plane and field of view. Critical when debugging shadow cameras (DirectionalLight.shadow.camera) — you can see exactly what the light "sees".</p></div></div>
+<div class="img-entry"><img data-src="images/encyclopedia/18b_camera_helper.webp" alt="Camera Helper" onclick="openLb(this)"><div class="img-meta"><h3>CameraHelper - Visualise Frustum</h3><p>Renders the wireframe frustum of any camera as lines in the scene. Add <code>new CameraHelper(camera)</code> to visualise near plane, far plane and field of view. Critical when debugging shadow cameras (DirectionalLight.shadow.camera) - you can see exactly what the light "sees".</p></div></div>
 <div class="divider"></div>
-<div class="img-entry"><img src="images/encyclopedia/18c_light_helpers.webp" alt="Light Helpers" onclick="openLb(this)" loading="lazy"><div class="img-meta"><h3>Light Helpers</h3><p>DirectionalLightHelper: arrow + target line. PointLightHelper: wireframe sphere at the light position. SpotLightHelper: cone shape. HemisphereLightHelper: two colour-coded hemispheres. RectAreaLightHelper: outlined rectangle. All update when you move the light. Pass <code>size</code> to control helper scale.</p></div></div>
+<div class="img-entry"><img data-src="images/encyclopedia/18c_light_helpers.webp" alt="Light Helpers" onclick="openLb(this)"><div class="img-meta"><h3>Light Helpers</h3><p>DirectionalLightHelper: arrow + target line. PointLightHelper: wireframe sphere at the light position. SpotLightHelper: cone shape. HemisphereLightHelper: two colour-coded hemispheres. RectAreaLightHelper: outlined rectangle. All update when you move the light. Pass <code>size</code> to control helper scale.</p></div></div>
 <div class="divider"></div>
-<div class="img-entry"><img src="images/encyclopedia/18d_skeleton_helper.webp" alt="Skeleton Helper" onclick="openLb(this)" loading="lazy"><div class="img-meta"><h3>SkeletonHelper — Bone Visualiser</h3><p>Renders the bone hierarchy of a SkinnedMesh as coloured line segments showing each bone's position and length. <code>new SkeletonHelper(skinnedMesh)</code> — add it to the scene and it updates every frame. Essential for debugging animation rigs, verifying bone names and understanding skeleton hierarchy after loading a GLTF character.</p></div></div>
+<div class="img-entry"><img data-src="images/encyclopedia/18d_skeleton_helper.webp" alt="Skeleton Helper" onclick="openLb(this)"><div class="img-meta"><h3>SkeletonHelper - Bone Visualiser</h3><p>Renders the bone hierarchy of a SkinnedMesh as coloured line segments showing each bone's position and length. <code>new SkeletonHelper(skinnedMesh)</code> - add it to the scene and it updates every frame. Essential for debugging animation rigs, verifying bone names and understanding skeleton hierarchy after loading a GLTF character.</p></div></div>
 
 <!-- ══════════════════════════════════════════════
-     19 — CURVES
+     19 - CURVES
 ══════════════════════════════════════════════ -->
 <div class="section-break" id="curves">
   <div class="section-break-header">
     <span class="section-num bm">19</span>
     <h2 style="color:var(--magenta)">Curves, Shapes &amp; Extras</h2>
   </div>
-  <p class="section-intro">Three.js has a rich 2D/3D curve and shape system. Curves define smooth paths through space — use them for camera fly-throughs, tube geometry, spline animation. Shapes define 2D outlines that can be extruded into 3D. PMREMGenerator is the utility that makes physically-based environment lighting work correctly.</p>
+  <p class="section-intro">Three.js has a rich 2D/3D curve and shape system. Curves define smooth paths through space - use them for camera fly-throughs, tube geometry, spline animation. Shapes define 2D outlines that can be extruded into 3D. PMREMGenerator is the utility that makes physically-based environment lighting work correctly.</p>
   <div class="section-links">
     <a href="https://threejs.org/docs/#api/en/extras/curves/CatmullRomCurve3" target="_blank" class="doc-link">↗ CatmullRomCurve3</a>
     <a href="https://threejs.org/docs/#api/en/extras/core/Shape" target="_blank" class="doc-link">↗ Shape</a>
@@ -1008,13 +1013,13 @@ sphere.material.envMap = cubeRT.texture; <span class="cm">// use as reflection</
   </div>
 </div>
 
-<div class="img-entry"><img src="images/encyclopedia/19a_bezier_curves.webp" alt="Bezier Curves" onclick="openLb(this)" loading="lazy"><div class="img-meta"><h3>Bezier Curves</h3><p>QuadraticBezierCurve3 (start, control, end) and CubicBezierCurve3 (start, control1, control2, end). Define smooth curves through 3D space using control points that pull the curve without it necessarily passing through them. <code>curve.getPoints(n)</code> samples N points — pass to TubeGeometry, LineGeometry, or use for animation paths.</p></div></div>
+<div class="img-entry"><img data-src="images/encyclopedia/19a_bezier_curves.webp" alt="Bezier Curves" onclick="openLb(this)"><div class="img-meta"><h3>Bezier Curves</h3><p>QuadraticBezierCurve3 (start, control, end) and CubicBezierCurve3 (start, control1, control2, end). Define smooth curves through 3D space using control points that pull the curve without it necessarily passing through them. <code>curve.getPoints(n)</code> samples N points - pass to TubeGeometry, LineGeometry, or use for animation paths.</p></div></div>
 <div class="divider"></div>
-<div class="img-entry"><img src="images/encyclopedia/19b_catmullrom_spline.webp" alt="CatmullRom Spline" onclick="openLb(this)" loading="lazy"><div class="img-meta"><h3>CatmullRom Spline — Camera Paths</h3><p>Unlike bezier curves, CatmullRomCurve3 passes through all control points. Perfect for cinematic camera fly-throughs: place a series of waypoints, sample <code>curve.getPointAt(t)</code> as t goes 0→1, set the camera to look at the next point on the curve for smooth forward-facing movement.</p></div></div>
+<div class="img-entry"><img data-src="images/encyclopedia/19b_catmullrom_spline.webp" alt="CatmullRom Spline" onclick="openLb(this)"><div class="img-meta"><h3>CatmullRom Spline - Camera Paths</h3><p>Unlike bezier curves, CatmullRomCurve3 passes through all control points. Perfect for cinematic camera fly-throughs: place a series of waypoints, sample <code>curve.getPointAt(t)</code> as t goes 0→1, set the camera to look at the next point on the curve for smooth forward-facing movement.</p></div></div>
 <div class="divider"></div>
-<div class="img-entry"><img src="images/encyclopedia/19c_shapes_extrude.webp" alt="Shapes and Extrude" onclick="openLb(this)" loading="lazy"><div class="img-meta"><h3>Shape + ExtrudeGeometry</h3><p>Define a 2D outline with Shape (<code>moveTo</code>, <code>lineTo</code>, <code>bezierCurveTo</code>, <code>arc</code>, <code>hole</code> for cutouts). Pass to <code>ShapeGeometry</code> for flat 2D, or <code>ExtrudeGeometry</code> with <code>depth</code> and <code>bevelSize</code> parameters for 3D depth. Create custom logos, architectural mouldings, extruded text, custom mechanical parts.</p></div></div>
+<div class="img-entry"><img data-src="images/encyclopedia/19c_shapes_extrude.webp" alt="Shapes and Extrude" onclick="openLb(this)"><div class="img-meta"><h3>Shape + ExtrudeGeometry</h3><p>Define a 2D outline with Shape (<code>moveTo</code>, <code>lineTo</code>, <code>bezierCurveTo</code>, <code>arc</code>, <code>hole</code> for cutouts). Pass to <code>ShapeGeometry</code> for flat 2D, or <code>ExtrudeGeometry</code> with <code>depth</code> and <code>bevelSize</code> parameters for 3D depth. Create custom logos, architectural mouldings, extruded text, custom mechanical parts.</p></div></div>
 <div class="divider"></div>
-<div class="img-entry"><img src="images/encyclopedia/19d_pmrem.webp" alt="PMREMGenerator" onclick="openLb(this)" loading="lazy"><div class="img-meta"><h3>PMREMGenerator — Prefiltered Environment Maps</h3><p>Pre-filters a raw environment (HDRI or cubemap) into a Prefiltered Mipmapped Radiance Environment Map (PMREM). Different mip levels correspond to different roughness values — a rough surface samples a blurry mip, a mirror samples the sharpest mip. Required for correct PBR rendering with environment lighting. Run once after loading the HDRI.</p><div class="code-snippet"><span class="kw">const</span> pmrem = <span class="kw">new</span> <span class="fn">THREE.PMREMGenerator</span>( renderer );<br><span class="kw">const</span> envMap = pmrem.<span class="fn">fromEquirectangular</span>( hdrTexture ).texture;<br>scene.environment = envMap;</div></div></div>
+<div class="img-entry"><img data-src="images/encyclopedia/19d_pmrem.webp" alt="PMREMGenerator" onclick="openLb(this)"><div class="img-meta"><h3>PMREMGenerator - Prefiltered Environment Maps</h3><p>Pre-filters a raw environment (HDRI or cubemap) into a Prefiltered Mipmapped Radiance Environment Map (PMREM). Different mip levels correspond to different roughness values - a rough surface samples a blurry mip, a mirror samples the sharpest mip. Required for correct PBR rendering with environment lighting. Run once after loading the HDRI.</p><div class="code-snippet"><span class="kw">const</span> pmrem = <span class="kw">new</span> <span class="fn">THREE.PMREMGenerator</span>( renderer );<br><span class="kw">const</span> envMap = pmrem.<span class="fn">fromEquirectangular</span>( hdrTexture ).texture;<br>scene.environment = envMap;</div></div></div>
 
 <!-- ══════════════════════════════════════════════
      MATH
@@ -1024,7 +1029,7 @@ sphere.material.envMap = cubeRT.texture; <span class="cm">// use as reflection</
     <span class="section-num bg">20</span>
     <h2 style="color:var(--green)">Math Library</h2>
   </div>
-  <p class="section-intro">Three.js includes a complete 3D math library. These classes are used everywhere in the engine and in your code — setting positions, composing rotations, computing transforms, building ray queries. Understanding Vector3, Quaternion and Matrix4 deeply is fundamental to working with Three.js beyond the basics.</p>
+  <p class="section-intro">Three.js includes a complete 3D math library. These classes are used everywhere in the engine and in your code - setting positions, composing rotations, computing transforms, building ray queries. Understanding Vector3, Quaternion and Matrix4 deeply is fundamental to working with Three.js beyond the basics.</p>
   <div class="section-links">
     <a href="https://threejs.org/docs/#api/en/math/Vector3" target="_blank" class="doc-link">↗ Vector3</a>
     <a href="https://threejs.org/docs/#api/en/math/Quaternion" target="_blank" class="doc-link">↗ Quaternion</a>
@@ -1035,17 +1040,17 @@ sphere.material.envMap = cubeRT.texture; <span class="cm">// use as reflection</
 </div>
 
 <div class="img-entry">
-  <img src="images/encyclopedia/14_math.webp" alt="Three.js Math Library" onclick="openLb(this)" loading="lazy">
+  <img data-src="images/encyclopedia/14_math.webp" alt="Three.js Math Library" onclick="openLb(this)">
   <div class="img-meta">
     <h3>Complete Math Library</h3>
-    <p><strong>Vector2/3/4</strong> — 2D/3D/4D vectors. Operations: add, sub, multiply, divide, dot, cross, length, normalize, lerp, clone. The most used class in Three.js.</p>
-    <p><strong>Quaternion</strong> — Rotation without gimbal lock. <code>setFromEuler</code>, <code>setFromAxisAngle</code>, <code>slerp</code> (smooth rotation interpolation). Always use Quaternion for rotation math — never Euler for interpolation.</p>
-    <p><strong>Euler</strong> — Human-readable rotation angles (X, Y, Z in radians + order). Easy to set from degrees, but don't interpolate between Eulers — convert to Quaternion first.</p>
-    <p><strong>Matrix3/4</strong> — 3×3 and 4×4 matrices for transforms. Every Object3D has a <code>matrix</code> (local) and <code>matrixWorld</code> (world space). <code>decompose</code> extracts position/quaternion/scale.</p>
-    <p><strong>Color</strong> — RGB + HSL colour. <code>setHex</code>, <code>setHSL</code>, <code>lerp</code>, <code>convertLinearToSRGB</code>. Always work in linear colour space internally.</p>
-    <p><strong>Box3, Sphere</strong> — Bounding volumes. <code>box.setFromObject(mesh)</code> computes tight axis-aligned bounds. <code>box.intersectsBox(other)</code> for broad-phase collision.</p>
-    <p><strong>Ray, Plane, Frustum, Triangle, Line3</strong> — Geometric primitives for intersection testing, clipping, and spatial queries.</p>
-    <p><strong>MathUtils</strong> — <code>lerp</code>, <code>clamp</code>, <code>mapLinear</code>, <code>degToRad</code>, <code>radToDeg</code>, <code>smoothstep</code>, <code>randFloat</code>, <code>seededRandom</code>, <code>UUID</code>.</p>
+    <p><strong>Vector2/3/4</strong> - 2D/3D/4D vectors. Operations: add, sub, multiply, divide, dot, cross, length, normalize, lerp, clone. The most used class in Three.js.</p>
+    <p><strong>Quaternion</strong> - Rotation without gimbal lock. <code>setFromEuler</code>, <code>setFromAxisAngle</code>, <code>slerp</code> (smooth rotation interpolation). Always use Quaternion for rotation math - never Euler for interpolation.</p>
+    <p><strong>Euler</strong> - Human-readable rotation angles (X, Y, Z in radians + order). Easy to set from degrees, but don't interpolate between Eulers - convert to Quaternion first.</p>
+    <p><strong>Matrix3/4</strong> - 3×3 and 4×4 matrices for transforms. Every Object3D has a <code>matrix</code> (local) and <code>matrixWorld</code> (world space). <code>decompose</code> extracts position/quaternion/scale.</p>
+    <p><strong>Color</strong> - RGB + HSL colour. <code>setHex</code>, <code>setHSL</code>, <code>lerp</code>, <code>convertLinearToSRGB</code>. Always work in linear colour space internally.</p>
+    <p><strong>Box3, Sphere</strong> - Bounding volumes. <code>box.setFromObject(mesh)</code> computes tight axis-aligned bounds. <code>box.intersectsBox(other)</code> for broad-phase collision.</p>
+    <p><strong>Ray, Plane, Frustum, Triangle, Line3</strong> - Geometric primitives for intersection testing, clipping, and spatial queries.</p>
+    <p><strong>MathUtils</strong> - <code>lerp</code>, <code>clamp</code>, <code>mapLinear</code>, <code>degToRad</code>, <code>radToDeg</code>, <code>smoothstep</code>, <code>randFloat</code>, <code>seededRandom</code>, <code>UUID</code>.</p>
     <ul class="key-points">
       <li>Vector2/3/4</li><li>Matrix3/4</li><li>Quaternion</li><li>Euler</li>
       <li>Color</li><li>Box2/3</li><li>Sphere</li><li>Ray</li>
@@ -1056,7 +1061,7 @@ sphere.material.envMap = cubeRT.texture; <span class="cm">// use as reflection</
 
 <!-- ── FOOTER ── -->
 <footer>
-  <img src="images/encyclopedia/99_footer.webp" alt="Three.js Encyclopedia Footer" loading="lazy">
+  <img data-src="images/encyclopedia/99_footer.webp" alt="Three.js Encyclopedia Footer">
   <div style="margin-bottom:2rem;">
     <a href="https://x.com/AIOnlyDeveloper" target="_blank" class="twitter-cta twitter-cta-footer" style="font-size:1rem; padding:1rem 2rem;">
       <svg width="18" height="18" viewBox="0 0 24 24" fill="white"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-4.714-6.231-5.401 6.231H2.747l7.73-8.835L1.254 2.25H8.08l4.259 5.63zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg>
@@ -1083,7 +1088,7 @@ sphere.material.envMap = cubeRT.texture; <span class="cm">// use as reflection</
 
 <script>
 function openLb(img) {
-  document.getElementById('lb-img').src = img.src;
+  document.getElementById('lb-img').src = img.dataset.src || img.src;
   document.getElementById('lb-img').alt = img.alt;
   document.getElementById('lb').classList.add('open');
   document.body.style.overflow = 'hidden';
@@ -1119,6 +1124,22 @@ document.addEventListener('keydown', e => { if (e.key === 'Escape') closeLb(); }
   }, { rootMargin: '-15% 0px -80% 0px', threshold: 0 });
 
   targets.forEach(t => obs.observe(t));
+})();
+
+// ── Custom image preloader — loads 3000px ahead of viewport ──
+(function() {
+  const imgs = document.querySelectorAll('img[data-src]');
+  if (!imgs.length) return;
+  const io = new IntersectionObserver(entries => {
+    entries.forEach(e => {
+      if (!e.isIntersecting) return;
+      const img = e.target;
+      img.onload = () => img.classList.remove('lazy-pending');
+      img.src = img.dataset.src;
+      io.unobserve(img);
+    });
+  }, { rootMargin: '0px 0px 3000px 0px' });
+  imgs.forEach(img => { img.classList.add('lazy-pending'); io.observe(img); });
 })();
 </script>
 </body>
