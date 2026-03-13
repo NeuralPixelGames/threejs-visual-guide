@@ -18,8 +18,8 @@
   --amber:    #f5a623;
   --green:    #00ff88;
   --purple:   #a855f7;
-  --text:     #eef2ff;
-  --muted:    #a0b4d0;
+  --text:     #f2f6ff;
+  --muted:    #ccdaee;
   --subtle:   #1e2a42;
   --border:   rgba(0,212,255,0.12);
   --glow-c:   0 0 30px rgba(0,212,255,0.25);
@@ -34,6 +34,8 @@ body {
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
   line-height: 1.7;
   overflow-x: hidden;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
 
 /* ─── NAV ─── */
@@ -86,7 +88,7 @@ nav a.active { color: var(--cyan); box-shadow: inset 0 -2px 0 var(--cyan); }
   margin-bottom: 1.25rem;
 }
 .hero-sub {
-  font-size: clamp(1rem, 2.5vw, 1.3rem); color: var(--muted);
+  font-size: clamp(1rem, 2.5vw, 1.3rem); color: #ccdaee;
   max-width: 700px; margin: 0 auto 2.5rem; line-height: 1.65;
 }
 .hero-badges {
@@ -148,7 +150,7 @@ nav a.active { color: var(--cyan); box-shadow: inset 0 -2px 0 var(--cyan); }
   font-size: clamp(1.8rem, 4vw, 2.8rem); font-weight:900; letter-spacing:-0.02em;
 }
 .section-intro {
-  max-width: 860px; color:var(--muted); font-size:1rem; line-height:1.75;
+  max-width: 860px; color: #d0e0f4; font-size: 1.05rem; line-height: 1.8;
   margin-bottom: 1.5rem;
 }
 .section-links {
@@ -187,11 +189,11 @@ nav a.active { color: var(--cyan); box-shadow: inset 0 -2px 0 var(--cyan); }
   border: 1px solid var(--border);
 }
 .img-meta h3 {
-  font-size: clamp(1.1rem, 2.5vw, 1.45rem); font-weight:800;
-  margin-bottom: 0.75rem; letter-spacing:-0.01em;
+  font-size: clamp(1.15rem, 2.5vw, 1.5rem); font-weight:800;
+  margin-bottom: 0.75rem; letter-spacing:-0.01em; color: #ffffff;
 }
 .img-meta p {
-  color: #b8cce8; font-size: 0.97rem; line-height: 1.75;
+  color: #dce8f8; font-size: 1rem; line-height: 1.8;
   margin-bottom: 0.75rem;
 }
 .img-meta p:last-child { margin-bottom:0; }
@@ -216,6 +218,8 @@ nav a.active { color: var(--cyan); box-shadow: inset 0 -2px 0 var(--cyan); }
 .code-snippet .fn  { color: #7ec8ff; }
 .code-snippet .str { color: #7effc8; }
 .code-snippet .cm  { color: #5a6e8a; }
+.img-meta code { background: rgba(0,212,255,0.1); color: #7ef8ff; padding: 0.1em 0.4em; border-radius: 4px; font-size: 0.9em; }
+.img-meta strong { color: #ffffff; font-weight: 700; }
 .img-doc-links { display:flex; gap:0.5rem; flex-wrap:wrap; margin-top:1.25rem; }
 
 /* ─── DIVIDER ─── */
@@ -265,6 +269,11 @@ footer p { color:var(--muted); font-size:0.82rem; }
 }
 .twitter-cta:hover { background: #111; border-color: #555; transform: translateY(-2px); }
 .twitter-cta svg { flex-shrink: 0; }
+.twitter-cta-footer {
+  background: linear-gradient(135deg, #7c3aed, #a855f7);
+  border-color: #9333ea;
+}
+.twitter-cta-footer:hover { background: linear-gradient(135deg, #6d28d9, #9333ea); border-color: #a855f7; }
 
 /* ─── RESPONSIVE ─── */
 @media (max-width: 900px) {
@@ -341,7 +350,7 @@ footer p { color:var(--muted); font-size:0.82rem; }
       <svg width="16" height="16" viewBox="0 0 24 24" fill="white"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-4.714-6.231-5.401 6.231H2.747l7.73-8.835L1.254 2.25H8.08l4.259 5.63zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg>
       Follow for More
     </a>
-    <a href="https://threejs.org/docs/" target="_blank" class="btn btn-s">📄 Docs</a>
+    <a href="https://threejs.org/docs/" target="_blank" class="btn btn-s">📄 Official Docs</a>
     <a href="https://github.com/mrdoob/three.js" target="_blank" class="btn btn-s">⬡ GitHub</a>
   </div>
 </section>
@@ -1049,7 +1058,7 @@ sphere.material.envMap = cubeRT.texture; <span class="cm">// use as reflection</
 <footer>
   <img src="images/encyclopedia/99_footer.png" alt="Three.js Encyclopedia Footer" loading="lazy">
   <div style="margin-bottom:2rem;">
-    <a href="https://x.com/AIOnlyDeveloper" target="_blank" class="twitter-cta" style="font-size:1rem; padding:1rem 2rem;">
+    <a href="https://x.com/AIOnlyDeveloper" target="_blank" class="twitter-cta twitter-cta-footer" style="font-size:1rem; padding:1rem 2rem;">
       <svg width="18" height="18" viewBox="0 0 24 24" fill="white"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-4.714-6.231-5.401 6.231H2.747l7.73-8.835L1.254 2.25H8.08l4.259 5.63zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg>
       Follow @AIOnlyDeveloper for More Game Dev Content
     </a>
