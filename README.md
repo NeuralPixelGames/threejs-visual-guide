@@ -22,7 +22,7 @@
     <td><img src="images/encyclopedia/10b_bloom.webp" alt="Bloom"></td>
   </tr>
   <tr>
-    <td><img src="images/encyclopedia/07a_perspective_camera.webp" alt="Perspective Camera"></td>
+    <td><img src="images/encyclopedia/12a_tsl_concept.webp" alt="TSL Shaders"></td>
     <td><img src="images/encyclopedia/13e_skeletal_animation.webp" alt="Skeletal Animation"></td>
     <td><img src="images/encyclopedia/17a_rigid_body.webp" alt="Physics"></td>
   </tr>
