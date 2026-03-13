@@ -26,6 +26,11 @@
     <td><img src="images/encyclopedia/13e_skeletal_animation.webp" alt="Skeletal Animation"></td>
     <td><img src="images/encyclopedia/17a_rigid_body.webp" alt="Physics"></td>
   </tr>
+  <tr>
+    <td><img src="images/encyclopedia/17c_vehicle_physics.webp" alt="Vehicle Physics"></td>
+    <td><img src="images/encyclopedia/10j_god_rays.webp" alt="God Rays"></td>
+    <td><img src="images/encyclopedia/10d_depth_of_field.webp" alt="Depth of Field"></td>
+  </tr>
 </table>
 
 <br>
