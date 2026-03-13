@@ -3,7 +3,7 @@
 [![View the Guide](https://img.shields.io/badge/View%20the%20Guide-Live%20Site-00d4ff?style=for-the-badge)](https://neuralpixelgames.github.io/threejs-visual-guide/)
 [![Follow on X](https://img.shields.io/badge/Follow-%40AIOnlyDeveloper-000000?style=for-the-badge&logo=x)](https://x.com/AIOnlyDeveloper)
 
-> Built by [@AIOnlyDeveloper](https://x.com/AIOnlyDeveloper) — follow for more Three.js content, visual guides, and browser game development.
+> Built by [@AIOnlyDeveloper](https://x.com/AIOnlyDeveloper) — follow for more Three.js content, visual guides, and game dev.
 
 <br>
 
@@ -74,7 +74,7 @@ Images were generated with AI and may contain inaccuracies. If you spot an error
 
 ## Follow for More
 
-Built by [@AIOnlyDeveloper](https://x.com/AIOnlyDeveloper) — follow for more Three.js content, visual guides, and browser game development.
+Built by [@AIOnlyDeveloper](https://x.com/AIOnlyDeveloper) — follow for more Three.js content, visual guides, and game dev.
 
 ---
 
