@@ -18,9 +18,9 @@
   --amber:    #f5a623;
   --green:    #00ff88;
   --purple:   #a855f7;
-  --text:     #dde6ff;
-  --muted:    #6a7a9a;
-  --subtle:   #1a2035;
+  --text:     #eef2ff;
+  --muted:    #a0b4d0;
+  --subtle:   #1e2a42;
   --border:   rgba(0,212,255,0.12);
   --glow-c:   0 0 30px rgba(0,212,255,0.25);
   --glow-m:   0 0 30px rgba(255,0,204,0.2);
@@ -61,6 +61,7 @@ nav a {
   transition: color 0.2s; border-right: 1px solid rgba(255,255,255,0.03);
 }
 nav a:hover { color: var(--cyan); }
+nav a.active { color: var(--cyan); box-shadow: inset 0 -2px 0 var(--cyan); }
 
 /* ─── HERO ─── */
 .hero {
@@ -163,7 +164,7 @@ nav a:hover { color: var(--cyan); }
 
 /* ─── IMAGE ENTRY (full width) ─── */
 .img-entry {
-  max-width: 1400px; margin: 0 auto 5rem; padding: 0 1.5rem;
+  max-width: 1800px; margin: 0 auto 5rem; padding: 0 1rem;
   display: flex; flex-direction: column; align-items: center;
 }
 .img-entry img {
@@ -190,7 +191,7 @@ nav a:hover { color: var(--cyan); }
   margin-bottom: 0.75rem; letter-spacing:-0.01em;
 }
 .img-meta p {
-  color: var(--muted); font-size: 0.97rem; line-height: 1.75;
+  color: #b8cce8; font-size: 0.97rem; line-height: 1.75;
   margin-bottom: 0.75rem;
 }
 .img-meta p:last-child { margin-bottom:0; }
@@ -199,22 +200,22 @@ nav a:hover { color: var(--cyan); }
   display:flex; flex-wrap:wrap; gap:0.5rem;
 }
 .key-points li {
-  background: var(--subtle); border-radius:6px;
+  background: #1e2a42; border-radius:6px; border: 1px solid rgba(160,180,208,0.15);
   padding: 0.3rem 0.85rem; font-size:0.8rem; font-weight:500;
-  color: var(--text); font-family: 'SF Mono', 'Fira Code', monospace;
+  color: #c8daf0; font-family: 'SF Mono', 'Fira Code', monospace;
 }
 .code-snippet {
-  margin-top: 1rem; background: #010408;
-  border: 1px solid rgba(255,255,255,0.06);
+  margin-top: 1rem; background: #010812;
+  border: 1px solid rgba(0,212,255,0.12);
   border-radius:8px; padding: 1rem 1.25rem;
   font-family: 'SF Mono', 'Fira Code', 'Cascadia Code', monospace;
-  font-size: 0.82rem; line-height: 1.65; color: #8fa0c8;
+  font-size: 0.82rem; line-height: 1.65; color: #b8cce8;
   overflow-x: auto;
 }
-.code-snippet .kw  { color: var(--cyan); }
-.code-snippet .fn  { color: #82aaff; }
-.code-snippet .str { color: var(--green); }
-.code-snippet .cm  { color: #4a5570; }
+.code-snippet .kw  { color: #00d4ff; }
+.code-snippet .fn  { color: #7ec8ff; }
+.code-snippet .str { color: #7effc8; }
+.code-snippet .cm  { color: #5a6e8a; }
 .img-doc-links { display:flex; gap:0.5rem; flex-wrap:wrap; margin-top:1.25rem; }
 
 /* ─── DIVIDER ─── */
@@ -1082,6 +1083,33 @@ function closeLb() {
   document.body.style.overflow = '';
 }
 document.addEventListener('keydown', e => { if (e.key === 'Escape') closeLb(); });
+
+// ── Active nav highlight on scroll ──
+(function() {
+  const navLinks = document.querySelectorAll('nav a[href^="#"]');
+  const ids = Array.from(navLinks).map(a => a.getAttribute('href').slice(1));
+  const targets = ids.map(id => document.getElementById(id)).filter(Boolean);
+  const nav = document.querySelector('nav');
+
+  function setActive(id) {
+    navLinks.forEach(a => a.classList.remove('active'));
+    const active = document.querySelector(`nav a[href="#${id}"]`);
+    if (active) {
+      active.classList.add('active');
+      // Scroll the nav link into view horizontally
+      const navW = nav.offsetWidth;
+      const linkL = active.offsetLeft;
+      const linkW = active.offsetWidth;
+      nav.scrollLeft = linkL - navW / 2 + linkW / 2;
+    }
+  }
+
+  const obs = new IntersectionObserver(entries => {
+    entries.forEach(e => { if (e.isIntersecting) setActive(e.target.id); });
+  }, { rootMargin: '-15% 0px -80% 0px', threshold: 0 });
+
+  targets.forEach(t => obs.observe(t));
+})();
 </script>
 </body>
 </html>
