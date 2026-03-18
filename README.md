@@ -2,6 +2,7 @@
 
 [![View the Guide](https://img.shields.io/badge/View%20the%20Guide-Live%20Site-00d4ff?style=for-the-badge)](https://neuralpixelgames.github.io/threejs-visual-guide/)
 [![Follow on X](https://img.shields.io/badge/Follow-%40AIOnlyDeveloper-000000?style=for-the-badge&logo=x)](https://x.com/AIOnlyDeveloper)
+[![Sponsor](https://img.shields.io/badge/Sponsor-GitHub%20Sponsors-ea4aaa?style=for-the-badge&logo=githubsponsors&logoColor=white)](https://github.com/sponsors/web3dev1337)
 
 > Built by [@AIOnlyDeveloper](https://x.com/AIOnlyDeveloper) — follow for more Three.js content, visual guides, and game dev.
 
@@ -10,6 +11,14 @@
 [![Three.js Visual Encyclopedia](images/encyclopedia/01_hero.webp)](https://neuralpixelgames.github.io/threejs-visual-guide/)
 
 **96 illustrated breakdowns covering every major Three.js concept.** Geometry, materials, cameras, shaders, post-processing, physics, audio, loaders, helpers and more. Designed for visual learners — just scroll.
+
+<br>
+
+## Support This Encyclopedia
+
+If this guide helps your learning or workflow, you can support ongoing updates here:
+
+**👉 [github.com/sponsors/web3dev1337](https://github.com/sponsors/web3dev1337)**
 
 <br>
 
