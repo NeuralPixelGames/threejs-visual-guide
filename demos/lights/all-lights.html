@@ -1,0 +1,834 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<title>Light Comparison Studio -- Three.js Encyclopedia v2</title>
+	<meta charset="utf-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<link rel="stylesheet" href="../shared/demo-base.css">
+	<style>
+		:root {
+			--shell-left: 320px;
+			--shell-top: 78px;
+			--shell-gap: 14px;
+		}
+
+		#info {
+			top: 0;
+			font-size: 12px;
+			letter-spacing: 0.04em;
+			text-transform: uppercase;
+			color: rgba(232, 239, 249, 0.86);
+		}
+
+		#info strong {
+			margin-right: 0.45rem;
+			font-size: 15px;
+			color: #f7fbff;
+		}
+
+		.style-panel {
+			position: fixed;
+			left: 18px;
+			top: var(--shell-top);
+			z-index: 12;
+			width: min(280px, calc(100vw - 36px));
+			padding: 18px 18px 16px;
+			border: 1px solid rgba(255, 193, 87, 0.22);
+			border-radius: 20px;
+			background:
+				linear-gradient(160deg, rgba(6, 13, 28, 0.9), rgba(8, 13, 23, 0.78)),
+				radial-gradient(circle at top right, rgba(255, 193, 87, 0.14), transparent 40%),
+				radial-gradient(circle at bottom left, rgba(74, 158, 255, 0.14), transparent 46%);
+			backdrop-filter: blur(18px);
+			box-shadow: 0 24px 80px rgba(0, 0, 0, 0.34);
+			animation: fadeInUp 0.7s ease-out both;
+			animation-delay: 0.35s;
+		}
+
+		.style-kicker {
+			margin-bottom: 0.45rem;
+			color: #ffc157;
+			font-size: 11px;
+			font-weight: 700;
+			letter-spacing: 0.16em;
+			text-transform: uppercase;
+		}
+
+		.style-panel h2 {
+			margin: 0 0 0.55rem;
+			color: #f8fbff;
+			font-size: clamp(1.3rem, 2vw, 1.85rem);
+			line-height: 1.06;
+		}
+
+		.style-panel p {
+			margin: 0 0 0.8rem;
+			color: rgba(230, 236, 245, 0.78);
+			font-size: 0.88rem;
+			line-height: 1.48;
+		}
+
+		.style-chips {
+			display: flex;
+			flex-wrap: wrap;
+			gap: 0.42rem;
+		}
+
+		.style-chip {
+			padding: 0.35rem 0.68rem;
+			border-radius: 999px;
+			background: rgba(255, 255, 255, 0.08);
+			color: rgba(243, 247, 252, 0.92);
+			font-size: 0.74rem;
+		}
+
+		.sync-note {
+			position: fixed;
+			left: 18px;
+			top: calc(var(--shell-top) + 252px);
+			z-index: 12;
+			width: min(280px, calc(100vw - 36px));
+			padding: 12px 14px;
+			border-radius: 16px;
+			border: 1px solid rgba(74, 158, 255, 0.18);
+			background: rgba(8, 13, 23, 0.82);
+			backdrop-filter: blur(14px);
+			color: rgba(223, 231, 245, 0.82);
+			font-size: 12px;
+			line-height: 1.5;
+			animation: fadeInUp 0.7s ease-out both;
+			animation-delay: 0.5s;
+		}
+
+		.sync-note strong {
+			display: block;
+			margin-bottom: 2px;
+			color: #7dc1ff;
+			font-size: 11px;
+			letter-spacing: 0.12em;
+			text-transform: uppercase;
+		}
+
+		.light-grid {
+			position: fixed;
+			inset: var(--shell-top) 18px 18px var(--shell-left);
+			display: grid;
+			grid-template-columns: repeat(3, minmax(0, 1fr));
+			grid-template-rows: repeat(2, minmax(0, 1fr));
+			gap: var(--shell-gap);
+			z-index: 6;
+			pointer-events: none;
+		}
+
+		.light-panel {
+			position: relative;
+			display: flex;
+			flex-direction: column;
+			border-radius: 22px;
+			border: 1px solid rgba(255, 255, 255, 0.08);
+			background:
+				linear-gradient(180deg, rgba(255, 255, 255, 0.05), rgba(255, 255, 255, 0)),
+				linear-gradient(160deg, rgba(9, 14, 26, 0.18), rgba(8, 12, 20, 0.04));
+			box-shadow:
+				inset 0 0 0 1px rgba(255, 255, 255, 0.02),
+				0 10px 28px rgba(0, 0, 0, 0.18);
+			overflow: hidden;
+		}
+
+		.light-panel::after {
+			content: '';
+			position: absolute;
+			inset: 0;
+			border-radius: inherit;
+			border: 1px solid color-mix(in srgb, var(--accent) 46%, transparent);
+			opacity: 0.45;
+			pointer-events: none;
+		}
+
+		.panel-render {
+			flex: 1;
+			min-height: 0;
+		}
+
+		.panel-head {
+			flex-shrink: 0;
+			padding: 8px 12px;
+			border-top: 1px solid color-mix(in srgb, var(--accent) 25%, transparent);
+			background: rgba(6, 11, 20, 0.88);
+			backdrop-filter: blur(12px);
+		}
+
+		.panel-head strong {
+			display: inline;
+			color: var(--accent);
+			font-size: 12px;
+			letter-spacing: 0.08em;
+			text-transform: uppercase;
+		}
+
+		.panel-head span {
+			display: inline;
+			margin-left: 6px;
+			color: rgba(226, 233, 245, 0.65);
+			font-size: 11px;
+			line-height: 1.35;
+			text-transform: none;
+		}
+
+		body.hide-panel-copy .panel-head {
+			opacity: 0;
+		}
+
+		canvas {
+			position: fixed;
+			inset: 0;
+			z-index: 0;
+		}
+
+		.lil-gui {
+			z-index: 14 !important;
+		}
+
+		@media (max-width: 1100px) {
+			:root {
+				--shell-left: 18px;
+				--shell-top: 210px;
+			}
+
+			.style-panel {
+				top: 66px;
+			}
+
+			.sync-note {
+				top: auto;
+				bottom: 18px;
+				left: 18px;
+				right: auto;
+				width: min(260px, calc(100vw - 36px));
+			}
+		}
+
+		@media (max-width: 840px) {
+			:root {
+				--shell-top: 236px;
+			}
+
+			.light-grid {
+				grid-template-columns: repeat(2, minmax(0, 1fr));
+				grid-template-rows: repeat(3, minmax(0, 1fr));
+			}
+
+			.sync-note {
+				display: none;
+			}
+		}
+
+		@media (max-width: 640px) {
+			:root {
+				--shell-top: 248px;
+				--shell-gap: 10px;
+			}
+
+			.style-panel {
+				left: 10px;
+				top: 56px;
+				width: calc(100vw - 20px);
+				padding: 14px 14px 12px;
+			}
+
+			.light-grid {
+				inset: var(--shell-top) 10px 10px 10px;
+			}
+
+			.panel-head {
+				padding: 6px 10px;
+			}
+
+			.panel-head strong,
+			.panel-head span {
+				font-size: 11px;
+			}
+		}
+	</style>
+</head>
+<body>
+
+<a href="../index.html" id="back-btn">&larr; Hub</a>
+<div id="info"><strong>Light Comparison Studio</strong> -- Same still life, six light types. Orbit once, compare how the lighting model changes the exact same scene.</div>
+
+<section class="style-panel">
+	<div class="style-kicker">Lighting Essentials</div>
+	<h2>One Scene, Six Light Behaviors</h2>
+	<p>This version drops the scattered stations and uses a synchronized product-shot still life instead. Every panel shares the same camera, materials, and composition so the real difference is the light model itself.</p>
+	<div class="style-chips">
+		<span class="style-chip">shared camera</span>
+		<span class="style-chip">same still life</span>
+		<span class="style-chip">real shadows</span>
+		<span class="style-chip">soft area wash</span>
+	</div>
+</section>
+
+<div class="sync-note">
+	<strong>Compare in Sync</strong>
+	Drag anywhere to orbit every viewport together. Use the GUI to tune exposure, turntable speed, and panel copy.
+</div>
+
+<div class="light-grid" id="light-grid">
+	<article class="light-panel" data-panel="ambient" style="--accent:#9d7bff">
+		<div class="panel-render"></div>
+		<div class="panel-head">
+			<strong>AmbientLight</strong>
+			<span>Uniform fill, no shadows</span>
+		</div>
+	</article>
+	<article class="light-panel" data-panel="hemisphere" style="--accent:#74c7ff">
+		<div class="panel-render"></div>
+		<div class="panel-head">
+			<strong>HemisphereLight</strong>
+			<span>Sky + ground ambience</span>
+		</div>
+	</article>
+	<article class="light-panel" data-panel="directional" style="--accent:#ffd166">
+		<div class="panel-render"></div>
+		<div class="panel-head">
+			<strong>DirectionalLight</strong>
+			<span>Parallel rays, crisp shadows</span>
+		</div>
+	</article>
+	<article class="light-panel" data-panel="point" style="--accent:#ff7b54">
+		<div class="panel-render"></div>
+		<div class="panel-head">
+			<strong>PointLight</strong>
+			<span>Omni falloff from source</span>
+		</div>
+	</article>
+	<article class="light-panel" data-panel="spot" style="--accent:#6cff8f">
+		<div class="panel-render"></div>
+		<div class="panel-head">
+			<strong>SpotLight</strong>
+			<span>Targeted cone, stage framing</span>
+		</div>
+	</article>
+	<article class="light-panel" data-panel="rect" style="--accent:#72b7ff">
+		<div class="panel-render"></div>
+		<div class="panel-head">
+			<strong>RectAreaLight</strong>
+			<span>Soft area wash, wide highlights</span>
+		</div>
+	</article>
+</div>
+
+<script type="importmap">
+{
+	"imports": {
+		"three": "https://unpkg.com/three@0.183.0/build/three.module.js",
+		"three/addons/": "https://unpkg.com/three@0.183.0/examples/jsm/"
+	}
+}
+</script>
+
+<script type="module">
+import * as THREE from 'three';
+import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+import { RectAreaLightUniformsLib } from 'three/addons/lights/RectAreaLightUniformsLib.js';
+import { GUI } from 'three/addons/libs/lil-gui.module.min.js';
+
+	const PANEL_DEFS = [
+		{ id: 'ambient', title: 'AmbientLight', accent: 0x9d7bff, detail: 'Uniform fill', baseIntensity: 3.2 },
+		{ id: 'hemisphere', title: 'HemisphereLight', accent: 0x74c7ff, detail: 'Sky + ground', baseIntensity: 2.75 },
+		{ id: 'directional', title: 'DirectionalLight', accent: 0xffd166, detail: 'Parallel rays', baseIntensity: 3.6 },
+		{ id: 'point', title: 'PointLight', accent: 0xff7b54, detail: 'Omni falloff', baseIntensity: 26 },
+		{ id: 'spot', title: 'SpotLight', accent: 0x6cff8f, detail: 'Targeted cone', baseIntensity: 42 },
+		{ id: 'rect', title: 'RectAreaLight', accent: 0x72b7ff, detail: 'Soft area wash', baseIntensity: 22 },
+	];
+
+	const params = {
+		exposure: 1.02,
+		rotationSpeed: 0.16,
+		showCopy: true,
+	};
+
+	let renderer, camera, controls;
+	const clock = new THREE.Clock();
+	const panelScenes = [];
+	const scratchColor = new THREE.Color();
+
+	init();
+
+	function init() {
+
+		renderer = new THREE.WebGLRenderer( { antialias: true, alpha: true } );
+		renderer.setPixelRatio( Math.min( window.devicePixelRatio, 2 ) );
+		renderer.setSize( window.innerWidth, window.innerHeight );
+		renderer.setClearColor( 0x000000, 0 );
+		renderer.shadowMap.enabled = true;
+		renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+		renderer.toneMapping = THREE.ACESFilmicToneMapping;
+		renderer.toneMappingExposure = params.exposure;
+		renderer.setScissorTest( true );
+		document.body.appendChild( renderer.domElement );
+
+		RectAreaLightUniformsLib.init();
+
+		camera = new THREE.PerspectiveCamera( 42, 1, 0.1, 40 );
+		camera.position.set( 0, 2.7, 7.8 );
+
+		controls = new OrbitControls( camera, renderer.domElement );
+		controls.enableDamping = true;
+		controls.dampingFactor = 0.06;
+		controls.target.set( 0, 1.15, 0 );
+		controls.minDistance = 4;
+		controls.maxDistance = 12;
+		controls.maxPolarAngle = Math.PI * 0.48;
+		controls.update();
+
+		PANEL_DEFS.forEach( def => {
+
+			panelScenes.push( createPanelScene( def ) );
+
+		} );
+
+		setupGUI();
+
+		window.addEventListener( 'resize', onResize );
+		renderer.setAnimationLoop( animate );
+
+	}
+
+	function createPanelScene( def ) {
+
+		const scene = new THREE.Scene();
+		scene.background = new THREE.Color( 0x07101a );
+		scene.fog = new THREE.Fog( 0x07101a, 8, 15.5 );
+
+		const stage = buildStillLife( scene, def );
+		const lights = buildLightRig( scene, def );
+
+		const panelEl = document.querySelector( '[data-panel="' + def.id + '"]' );
+
+		return {
+			def,
+			el: panelEl,
+			renderEl: panelEl.querySelector( '.panel-render' ),
+			scene,
+			stage,
+			lights,
+			accentMeshes: stage.accentMeshes.concat( lights.accentMeshes ),
+		};
+
+	}
+
+	function buildStillLife( scene, def ) {
+
+		const root = new THREE.Group();
+		scene.add( root );
+
+		const floor = new THREE.Mesh(
+			new THREE.PlaneGeometry( 10, 10 ),
+			new THREE.MeshStandardMaterial( {
+				color: 0x101621,
+				roughness: 0.92,
+				metalness: 0.08
+			} )
+		);
+		floor.rotation.x = - Math.PI / 2;
+		floor.receiveShadow = true;
+		root.add( floor );
+
+		const backWall = new THREE.Mesh(
+			new THREE.PlaneGeometry( 9.5, 5.5 ),
+			new THREE.MeshStandardMaterial( {
+				color: 0x1a2232,
+				roughness: 0.84,
+				metalness: 0.05
+			} )
+		);
+		backWall.position.set( 0, 2.4, - 3.1 );
+		backWall.receiveShadow = true;
+		root.add( backWall );
+
+		const leftCard = new THREE.Mesh(
+			new THREE.BoxGeometry( 0.08, 2.3, 1.7 ),
+			new THREE.MeshStandardMaterial( {
+				color: 0xdde3f0,
+				roughness: 0.8,
+				metalness: 0.02
+			} )
+		);
+		leftCard.position.set( - 2.2, 1.15, - 0.6 );
+		leftCard.rotation.y = 0.55;
+		leftCard.castShadow = true;
+		leftCard.receiveShadow = true;
+		root.add( leftCard );
+
+		const rightCard = new THREE.Mesh(
+			new THREE.BoxGeometry( 0.08, 1.9, 1.45 ),
+			new THREE.MeshStandardMaterial( {
+				color: 0xe9eef9,
+				roughness: 0.76,
+				metalness: 0.02
+			} )
+		);
+		rightCard.position.set( 2.35, 0.95, - 0.2 );
+		rightCard.rotation.y = - 0.62;
+		rightCard.castShadow = true;
+		rightCard.receiveShadow = true;
+		root.add( rightCard );
+
+		const stageBase = new THREE.Mesh(
+			new THREE.CylinderGeometry( 1.55, 1.72, 0.42, 64 ),
+			new THREE.MeshPhysicalMaterial( {
+				color: 0x121827,
+				roughness: 0.18,
+				metalness: 0.86,
+				clearcoat: 0.6,
+				clearcoatRoughness: 0.18
+			} )
+		);
+		stageBase.position.y = 0.21;
+		stageBase.castShadow = true;
+		stageBase.receiveShadow = true;
+		root.add( stageBase );
+
+		const accentRing = new THREE.Mesh(
+			new THREE.TorusGeometry( 1.6, 0.03, 12, 96 ),
+			new THREE.MeshBasicMaterial( {
+				color: def.accent,
+				transparent: true,
+				opacity: 0.42
+			} )
+		);
+		accentRing.rotation.x = Math.PI / 2;
+		accentRing.position.y = 0.45;
+		root.add( accentRing );
+
+		const heroPivot = new THREE.Group();
+		heroPivot.position.set( 0, 1.22, 0 );
+		root.add( heroPivot );
+
+		const hero = new THREE.Mesh(
+			new THREE.TorusKnotGeometry( 0.58, 0.18, 220, 28 ),
+			new THREE.MeshPhysicalMaterial( {
+				color: 0xf1c87c,
+				roughness: 0.18,
+				metalness: 0.74,
+				clearcoat: 1,
+				clearcoatRoughness: 0.05
+			} )
+		);
+		hero.castShadow = true;
+		hero.receiveShadow = true;
+		hero.rotation.x = 0.28;
+		heroPivot.add( hero );
+
+		const chromeSphere = new THREE.Mesh(
+			new THREE.SphereGeometry( 0.46, 48, 32 ),
+			new THREE.MeshPhysicalMaterial( {
+				color: 0xfafcff,
+				roughness: 0.08,
+				metalness: 0.84,
+				clearcoat: 1,
+				clearcoatRoughness: 0.02
+			} )
+		);
+		chromeSphere.position.set( 1.95, 0.8, 0.6 );
+		chromeSphere.castShadow = true;
+		chromeSphere.receiveShadow = true;
+		root.add( chromeSphere );
+
+		const matteBox = new THREE.Mesh(
+			new THREE.BoxGeometry( 0.72, 1.4, 0.72 ),
+			new THREE.MeshStandardMaterial( {
+				color: 0xdbe2ef,
+				roughness: 0.86,
+				metalness: 0.02
+			} )
+		);
+		matteBox.position.set( - 1.8, 0.86, 0.45 );
+		matteBox.rotation.y = 0.46;
+		matteBox.castShadow = true;
+		matteBox.receiveShadow = true;
+		root.add( matteBox );
+
+		const glassCone = new THREE.Mesh(
+			new THREE.ConeGeometry( 0.34, 1.05, 32 ),
+			new THREE.MeshPhysicalMaterial( {
+				color: scratchColor.setHex( def.accent ).offsetHSL( 0, - 0.12, 0.02 ),
+				roughness: 0.04,
+				metalness: 0.02,
+				transmission: 0.76,
+				thickness: 0.6,
+				ior: 1.28,
+				transparent: true,
+				opacity: 0.94
+			} )
+		);
+		glassCone.position.set( 0.15, 0.72, 1.55 );
+		glassCone.castShadow = true;
+		root.add( glassCone );
+
+		const sideCapsule = new THREE.Mesh(
+			new THREE.CapsuleGeometry( 0.26, 0.82, 10, 22 ),
+			new THREE.MeshStandardMaterial( {
+				color: 0x6d7c98,
+				roughness: 0.42,
+				metalness: 0.14
+			} )
+		);
+		sideCapsule.position.set( 0.95, 0.68, - 1.1 );
+		sideCapsule.rotation.z = 0.7;
+		sideCapsule.castShadow = true;
+		sideCapsule.receiveShadow = true;
+		root.add( sideCapsule );
+
+		const shadowPlate = new THREE.Mesh(
+			new THREE.CircleGeometry( 2.6, 48 ),
+			new THREE.MeshStandardMaterial( {
+				color: 0x111827,
+				roughness: 0.5,
+				metalness: 0.18
+			} )
+		);
+		shadowPlate.rotation.x = - Math.PI / 2;
+		shadowPlate.position.y = 0.001;
+		shadowPlate.receiveShadow = true;
+		root.add( shadowPlate );
+
+		[ chromeSphere, matteBox, glassCone, sideCapsule ].forEach( mesh => {
+
+			mesh.userData.baseY = mesh.position.y;
+
+		} );
+
+		return {
+			root,
+			heroPivot,
+			hero,
+			hoverMeshes: [ chromeSphere, matteBox, glassCone, sideCapsule ],
+			accentMeshes: [ accentRing ],
+		};
+
+	}
+
+	function buildLightRig( scene, def ) {
+
+		const accentMeshes = [];
+		const lights = [];
+		scene.add( new THREE.AmbientLight( 0x0a1220, 0.18 ) );
+
+		if ( def.id === 'ambient' ) {
+
+			const light = new THREE.AmbientLight( def.accent, def.baseIntensity );
+			scene.add( light );
+			lights.push( light );
+
+		} else if ( def.id === 'hemisphere' ) {
+
+			const light = new THREE.HemisphereLight( def.accent, 0x180c16, def.baseIntensity );
+			scene.add( light );
+			lights.push( light );
+
+		} else if ( def.id === 'directional' ) {
+
+			const light = new THREE.DirectionalLight( def.accent, def.baseIntensity );
+			light.position.set( 3.8, 5.6, 3.5 );
+			light.castShadow = true;
+			light.shadow.mapSize.setScalar( 1024 );
+			light.shadow.camera.near = 0.5;
+			light.shadow.camera.far = 18;
+			light.shadow.camera.left = - 4.5;
+			light.shadow.camera.right = 4.5;
+			light.shadow.camera.top = 4.5;
+			light.shadow.camera.bottom = - 4.5;
+			light.shadow.bias = - 0.0008;
+			scene.add( light );
+			lights.push( light );
+
+		} else if ( def.id === 'point' ) {
+
+			const light = new THREE.PointLight( def.accent, def.baseIntensity, 11, 2 );
+			light.position.set( 2.35, 2.55, 2.6 );
+			light.castShadow = true;
+			light.shadow.mapSize.setScalar( 1024 );
+			scene.add( light );
+			lights.push( light );
+
+			const bulb = new THREE.Mesh(
+				new THREE.SphereGeometry( 0.12, 24, 16 ),
+				new THREE.MeshBasicMaterial( {
+					color: def.accent,
+					transparent: true,
+					opacity: 0.86
+				} )
+			);
+			bulb.position.copy( light.position );
+			scene.add( bulb );
+			accentMeshes.push( bulb );
+
+		} else if ( def.id === 'spot' ) {
+
+			const light = new THREE.SpotLight( def.accent, def.baseIntensity, 14, Math.PI / 6.2, 0.36, 1 );
+			light.position.set( - 2.45, 5.2, 3.75 );
+			light.target.position.set( 0, 1.1, 0.1 );
+			light.castShadow = true;
+			light.shadow.mapSize.setScalar( 1024 );
+			light.shadow.bias = - 0.0006;
+			scene.add( light );
+			scene.add( light.target );
+			lights.push( light );
+
+			const source = new THREE.Mesh(
+				new THREE.CylinderGeometry( 0.09, 0.09, 0.48, 18 ),
+				new THREE.MeshBasicMaterial( {
+					color: def.accent,
+					transparent: true,
+					opacity: 0.8
+				} )
+			);
+			source.position.copy( light.position );
+			source.rotation.z = Math.PI / 2;
+			scene.add( source );
+			accentMeshes.push( source );
+
+		} else if ( def.id === 'rect' ) {
+
+			const light = new THREE.RectAreaLight( def.accent, def.baseIntensity, 3.3, 2.1 );
+			light.position.set( 0.2, 3.0, 3.4 );
+			light.lookAt( 0, 1.05, 0 );
+			scene.add( light );
+			lights.push( light );
+
+			const source = new THREE.Mesh(
+				new THREE.PlaneGeometry( 3.1, 1.9 ),
+				new THREE.MeshBasicMaterial( {
+					color: def.accent,
+					transparent: true,
+					opacity: 0.28,
+					side: THREE.DoubleSide
+				} )
+			);
+			source.position.copy( light.position );
+			source.lookAt( 0, 1.05, 0 );
+			scene.add( source );
+			accentMeshes.push( source );
+
+		}
+
+		return { lights, accentMeshes };
+
+	}
+
+	function setupGUI() {
+
+		const gui = new GUI();
+
+		const globalFolder = gui.addFolder( 'Global' );
+		globalFolder.add( params, 'exposure', 0.6, 1.6, 0.01 ).name( 'Exposure' ).onChange( value => {
+
+			renderer.toneMappingExposure = value;
+
+		} );
+		globalFolder.add( params, 'rotationSpeed', 0, 0.5, 0.01 ).name( 'Turntable' );
+		globalFolder.add( params, 'showCopy' ).name( 'Panel Labels' ).onChange( value => {
+
+			document.body.classList.toggle( 'hide-panel-copy', ! value );
+
+		} );
+
+		panelScenes.forEach( panel => {
+
+			const light = panel.lights.lights[ 0 ];
+			if ( ! light ) return;
+
+			const folder = gui.addFolder( panel.def.title );
+			const colorObj = { color: '#' + light.color.getHexString() };
+
+			folder.add( light, 'intensity', 0, panel.def.baseIntensity * 3, 0.01 ).name( 'Intensity' );
+			folder.addColor( colorObj, 'color' ).name( 'Color' ).onChange( value => {
+
+				light.color.set( value );
+
+			} );
+
+			if ( panel.def.id === 'hemisphere' ) {
+
+				const groundObj = { groundColor: '#' + light.groundColor.getHexString() };
+				folder.addColor( groundObj, 'groundColor' ).name( 'Ground Color' ).onChange( value => {
+
+					light.groundColor.set( value );
+
+				} );
+
+			}
+
+			if ( panel.def.id === 'spot' ) {
+
+				folder.add( light, 'angle', 0.05, Math.PI / 2, 0.01 ).name( 'Angle' );
+				folder.add( light, 'penumbra', 0, 1, 0.01 ).name( 'Penumbra' );
+
+			}
+
+			if ( panel.def.id === 'rect' ) {
+
+				folder.add( light, 'width', 0.5, 8, 0.1 ).name( 'Width' );
+				folder.add( light, 'height', 0.5, 6, 0.1 ).name( 'Height' );
+
+			}
+
+			folder.close();
+
+		} );
+
+	}
+
+	function onResize() {
+
+		renderer.setSize( window.innerWidth, window.innerHeight );
+
+	}
+
+	function animate() {
+
+		const elapsed = clock.getElapsedTime();
+		controls.update();
+		renderer.clear();
+
+		panelScenes.forEach( panel => {
+
+			panel.stage.heroPivot.rotation.y = elapsed * params.rotationSpeed;
+			panel.stage.heroPivot.rotation.x = Math.sin( elapsed * 0.5 ) * 0.05;
+
+			panel.stage.hoverMeshes.forEach( ( mesh, index ) => {
+
+				mesh.position.y = mesh.userData.baseY + Math.sin( elapsed * 0.9 + index * 1.6 ) * 0.04;
+				mesh.rotation.y += 0.003 + index * 0.0004;
+
+			} );
+
+			panel.accentMeshes.forEach( ( mesh, index ) => {
+
+				mesh.material.opacity = 0.18 + 0.16 * Math.sin( elapsed * 1.2 + index );
+
+			} );
+
+			const rect = panel.renderEl.getBoundingClientRect();
+			if ( rect.width < 2 || rect.height < 2 ) return;
+
+			const left = Math.floor( rect.left );
+			const width = Math.floor( rect.width );
+			const height = Math.floor( rect.height );
+			const bottom = Math.floor( window.innerHeight - rect.bottom );
+
+			camera.aspect = width / height;
+			camera.updateProjectionMatrix();
+			renderer.setViewport( left, bottom, width, height );
+			renderer.setScissor( left, bottom, width, height );
+			renderer.render( panel.scene, camera );
+
+		} );
+
+	}
+</script>
+<script src="../shared/demo-nav.js"></script>
+</body>
+</html>

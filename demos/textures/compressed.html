@@ -1,0 +1,1200 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<title>Compressed Textures - Three.js Encyclopedia</title>
+	<meta charset="utf-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<link rel="stylesheet" href="../shared/demo-base.css">
+	<style>
+		#mode-bar {
+			position: fixed;
+			top: 58px;
+			left: 50%;
+			transform: translateX(-50%);
+			z-index: 30;
+			display: flex;
+			gap: 6px;
+			background: rgba(10, 14, 26, 0.9);
+			backdrop-filter: blur(12px);
+			border: 1px solid rgba(74, 158, 255, 0.3);
+			border-radius: 8px;
+			padding: 6px 10px;
+		}
+		#mode-bar button {
+			background: rgba(74, 158, 255, 0.08);
+			border: 1px solid rgba(74, 158, 255, 0.25);
+			border-radius: 6px;
+			color: #d0d8e8;
+			padding: 5px 14px;
+			font-size: 12px;
+			font-family: inherit;
+			cursor: pointer;
+			transition: all 0.2s;
+			white-space: nowrap;
+			text-shadow: 0 1px 2px rgba(0,0,0,0.6);
+		}
+		#mode-bar button:hover { background: rgba(74, 158, 255, 0.15); color: #fff; }
+		#mode-bar button.active {
+			background: rgba(74, 158, 255, 0.25);
+			border-color: #4a9eff;
+			color: #fff;
+			font-weight: 600;
+		}
+
+		/* Format grid labels */
+		#grid-labels {
+			position: absolute;
+			top: 0; left: 0; width: 100%; height: 100%;
+			z-index: 12;
+			pointer-events: none;
+			display: grid;
+		}
+		#grid-labels.cols-4 { grid-template-columns: 1fr 1fr 1fr 1fr; }
+		#grid-labels.rows-2 { grid-template-rows: 1fr 1fr; }
+		.fmt-label {
+			display: flex;
+			flex-direction: column;
+			align-items: center;
+			justify-content: flex-end;
+			padding: 10px 6px;
+			gap: 4px;
+		}
+		.fmt-name {
+			background: rgba(10, 14, 26, 0.92);
+			backdrop-filter: blur(10px);
+			border: 1px solid rgba(74, 158, 255, 0.3);
+			border-radius: 6px;
+			padding: 4px 10px;
+			color: #fff;
+			font-size: 12px;
+			font-weight: 600;
+			font-family: 'Inter', system-ui, sans-serif;
+			text-align: center;
+			text-shadow: 0 1px 3px rgba(0,0,0,0.9), 0 0 6px rgba(0,0,0,0.7);
+		}
+		.fmt-size {
+			font-size: 11px;
+			font-weight: 700;
+			font-family: 'Inter', system-ui, sans-serif;
+			padding: 2px 8px;
+			border-radius: 4px;
+			text-shadow: 0 1px 3px rgba(0,0,0,0.9), 0 0 6px rgba(0,0,0,0.7);
+			border: 1px solid rgba(0,0,0,0.3);
+		}
+		.fmt-desc {
+			background: rgba(10, 14, 26, 0.92);
+			border: 1px solid rgba(0,0,0,0.3);
+			border-radius: 4px;
+			padding: 2px 8px;
+			color: #c0ccdd;
+			font-size: 10px;
+			font-family: 'Inter', system-ui, sans-serif;
+			text-align: center;
+			max-width: 180px;
+			text-shadow: 0 1px 3px rgba(0,0,0,0.9), 0 0 6px rgba(0,0,0,0.7);
+		}
+		.size-huge { background: rgba(239, 68, 68, 0.4); color: #ff8a8a; }
+		.size-large { background: rgba(245, 158, 11, 0.4); color: #ffd050; }
+		.size-medium { background: rgba(34, 197, 94, 0.35); color: #6aea9a; }
+		.size-small { background: rgba(74, 158, 255, 0.35); color: #6ab0ff; }
+		.size-tiny { background: rgba(168, 85, 247, 0.35); color: #d0a0ff; }
+
+		/* Dividers */
+		.panel-divider-v { position: absolute; top: 0; width: 1px; height: 100%; background: rgba(74, 158, 255, 0.3); z-index: 11; pointer-events: none; }
+		.panel-divider-h { position: absolute; left: 0; height: 1px; width: 100%; background: rgba(74, 158, 255, 0.3); z-index: 11; pointer-events: none; }
+
+		/* Magnifier lens */
+		#magnifier {
+			position: fixed;
+			width: 200px;
+			height: 200px;
+			border-radius: 50%;
+			border: 2px solid rgba(74, 158, 255, 0.7);
+			box-shadow: 0 0 20px rgba(0,0,0,0.6), inset 0 0 30px rgba(0,0,0,0.3);
+			pointer-events: none;
+			z-index: 50;
+			display: none;
+			overflow: hidden;
+			background: #000;
+		}
+		#mag-canvas {
+			position: absolute;
+			top: 0; left: 0;
+			width: 100%;
+			height: 100%;
+			image-rendering: pixelated;
+		}
+		#mag-label {
+			position: absolute;
+			bottom: 4px;
+			left: 50%;
+			transform: translateX(-50%);
+			background: rgba(10, 14, 26, 0.95);
+			border: 1px solid rgba(74, 158, 255, 0.4);
+			border-radius: 4px;
+			padding: 2px 8px;
+			color: #6ab0ff;
+			font-size: 10px;
+			font-weight: 600;
+			font-family: 'Inter', system-ui, sans-serif;
+			white-space: nowrap;
+			text-shadow: 0 1px 3px rgba(0,0,0,0.9), 0 0 6px rgba(0,0,0,0.7);
+		}
+		#mag-hint {
+			position: fixed;
+			bottom: 14px;
+			left: 50%;
+			transform: translateX(-50%);
+			z-index: 30;
+			background: rgba(10, 14, 26, 0.95);
+			backdrop-filter: blur(8px);
+			border: 1px solid rgba(74, 158, 255, 0.3);
+			border-radius: 6px;
+			padding: 6px 14px;
+			color: #c0ccdd;
+			font-size: 12px;
+			font-family: 'Inter', system-ui, sans-serif;
+			transition: opacity 0.3s;
+			text-shadow: 0 1px 2px rgba(0,0,0,0.8);
+		}
+
+		/* Size comparison bar chart */
+		#size-chart {
+			position: fixed;
+			right: 16px;
+			top: 50%;
+			transform: translateY(-50%);
+			z-index: 25;
+			background: rgba(10, 14, 26, 0.92);
+			backdrop-filter: blur(10px);
+			border: 1px solid rgba(74, 158, 255, 0.25);
+			border-radius: 10px;
+			padding: 14px 14px 10px;
+			font-family: 'Inter', system-ui, sans-serif;
+			max-width: 200px;
+		}
+		#size-chart h4 {
+			margin: 0 0 10px;
+			font-size: 11px;
+			color: #6ab0ff;
+			text-transform: uppercase;
+			letter-spacing: 0.08em;
+			font-weight: 600;
+			text-shadow: 0 1px 2px rgba(0,0,0,0.8);
+		}
+		.size-row {
+			display: flex;
+			align-items: center;
+			gap: 6px;
+			margin-bottom: 5px;
+			font-size: 10px;
+			color: #d0d8e8;
+			text-shadow: 0 1px 2px rgba(0,0,0,0.8);
+		}
+		.size-bar-bg {
+			flex: 1;
+			height: 12px;
+			background: rgba(255,255,255,0.05);
+			border-radius: 3px;
+			overflow: hidden;
+			position: relative;
+		}
+		.size-bar-fill {
+			height: 100%;
+			border-radius: 3px;
+			transition: width 0.5s ease-out;
+		}
+		.size-val {
+			min-width: 44px;
+			text-align: right;
+			font-weight: 600;
+			font-size: 10px;
+			text-shadow: 0 1px 2px rgba(0,0,0,0.8);
+		}
+		.size-name {
+			min-width: 55px;
+			font-size: 10px;
+			font-weight: 600;
+			text-shadow: 0 1px 2px rgba(0,0,0,0.8);
+		}
+		.ratio-badge {
+			font-size: 9px;
+			color: #6aea9a;
+			font-weight: 600;
+			text-shadow: 0 1px 3px rgba(0,0,0,0.9), 0 0 6px rgba(0,0,0,0.7);
+		}
+
+		/* Comparison slider mode */
+		#compare-container {
+			position: absolute;
+			top: 0; left: 0; width: 100%; height: 100%;
+			z-index: 15;
+			display: none;
+			cursor: col-resize;
+		}
+		#compare-slider {
+			position: absolute;
+			top: 0;
+			width: 3px;
+			height: 100%;
+			background: #fff;
+			box-shadow: 0 0 8px rgba(0,0,0,0.5);
+			z-index: 2;
+			left: 50%;
+		}
+		#compare-slider::after {
+			content: '\2194';
+			position: absolute;
+			top: 50%;
+			left: 50%;
+			transform: translate(-50%, -50%);
+			background: #fff;
+			color: #0a0e1a;
+			width: 32px;
+			height: 32px;
+			border-radius: 50%;
+			display: flex;
+			align-items: center;
+			justify-content: center;
+			font-size: 16px;
+			font-weight: bold;
+			box-shadow: 0 2px 10px rgba(0,0,0,0.4);
+		}
+		#compare-left-label, #compare-right-label {
+			position: absolute;
+			top: 60px;
+			z-index: 3;
+			background: rgba(10, 14, 26, 0.95);
+			backdrop-filter: blur(8px);
+			border: 1px solid rgba(74, 158, 255, 0.4);
+			border-radius: 6px;
+			padding: 6px 12px;
+			color: #fff;
+			font-size: 13px;
+			font-weight: 600;
+			font-family: 'Inter', system-ui, sans-serif;
+			text-shadow: 0 1px 3px rgba(0,0,0,0.9), 0 0 6px rgba(0,0,0,0.7);
+		}
+		#compare-left-label { left: 16px; }
+		#compare-right-label { right: 16px; }
+		#compare-selectors {
+			position: fixed;
+			bottom: 20px;
+			left: 50%;
+			transform: translateX(-50%);
+			z-index: 30;
+			display: none;
+			gap: 12px;
+			align-items: center;
+			background: rgba(10, 14, 26, 0.95);
+			backdrop-filter: blur(10px);
+			border: 1px solid rgba(74, 158, 255, 0.3);
+			border-radius: 8px;
+			padding: 8px 16px;
+			font-family: 'Inter', system-ui, sans-serif;
+			font-size: 12px;
+			color: #d0d8e8;
+			text-shadow: 0 1px 2px rgba(0,0,0,0.8);
+		}
+		#compare-selectors select {
+			background: rgba(30, 39, 64, 0.9);
+			border: 1px solid rgba(74, 158, 255, 0.3);
+			border-radius: 4px;
+			color: #fff;
+			padding: 4px 8px;
+			font-size: 12px;
+			font-family: inherit;
+		}
+	</style>
+	<script type="importmap">
+	{
+		"imports": {
+			"three": "https://unpkg.com/three@0.183.0/build/three.module.js",
+			"three/addons/": "https://unpkg.com/three@0.183.0/examples/jsm/"
+		}
+	}
+	</script>
+</head>
+<body>
+<a href="../index.html" id="back-btn">&larr; Hub</a>
+
+<div id="info">
+	<strong>Texture Compression</strong><br>
+	8 formats compared. Hold <kbd style="background:rgba(74,158,255,0.2);border:1px solid rgba(74,158,255,0.4);border-radius:3px;padding:1px 5px;color:#4a9eff;">M</kbd> to magnify &middot; Zoom to see artifacts
+</div>
+
+<div id="mode-bar">
+	<button id="btn-grid" class="active" onclick="setMode('grid')">Grid View</button>
+	<button id="btn-compare" onclick="setMode('compare')">Swipe Compare</button>
+</div>
+
+<!-- Grid labels populated by JS -->
+<div id="grid-labels" class="cols-4 rows-2"></div>
+
+<!-- Dividers for grid mode -->
+<div class="panel-divider-v" id="div-v1" style="left:25%;"></div>
+<div class="panel-divider-v" id="div-v2" style="left:50%;"></div>
+<div class="panel-divider-v" id="div-v3" style="left:75%;"></div>
+<div class="panel-divider-h" id="div-h1" style="top:50%;"></div>
+
+<!-- Size comparison chart -->
+<div id="size-chart"></div>
+
+<!-- Magnifier -->
+<div id="magnifier">
+	<canvas id="mag-canvas"></canvas>
+	<div id="mag-label">4x Zoom</div>
+</div>
+<div id="mag-hint">Hold <strong style="color:#4a9eff;">M</strong> + hover to magnify &middot; <strong style="color:#4a9eff;">Scroll</strong> to zoom</div>
+
+<!-- Compare mode overlay -->
+<div id="compare-container">
+	<div id="compare-slider"></div>
+	<div id="compare-left-label">PNG (Original)</div>
+	<div id="compare-right-label">ASTC 8x8</div>
+</div>
+<div id="compare-selectors">
+	<span>Left:</span>
+	<select id="sel-left"></select>
+	<span style="color:#4a9eff;font-weight:600;">vs</span>
+	<span>Right:</span>
+	<select id="sel-right"></select>
+</div>
+
+<div id="container"></div>
+
+<script type="module">
+import * as THREE from 'three';
+import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+
+// ── Format definitions ────────────────────────────────────────
+const formats = [
+	{
+		name: 'PNG (Lossless)',
+		shortName: 'PNG',
+		sizeKB: 2100,
+		sizeLabel: '2.1 MB',
+		color: '#ef4444',
+		sizeClass: 'size-huge',
+		desc: 'Lossless. Perfect quality.',
+		useCase: 'Source assets, UI icons',
+		ratio: '1:1',
+		quality: 1.0,
+		blockSize: 0,
+		quantize: 0,
+		noiseAmt: 0,
+		blockBlend: 0
+	},
+	{
+		name: 'JPEG (Q90)',
+		shortName: 'JPEG 90',
+		sizeKB: 340,
+		sizeLabel: '340 KB',
+		color: '#f59e0b',
+		sizeClass: 'size-large',
+		desc: 'Lossy DCT. 8x8 block artifacts.',
+		useCase: 'Photos, diffuse maps',
+		ratio: '6:1',
+		quality: 0.9,
+		blockSize: 8,
+		quantize: 3,
+		noiseAmt: 6,
+		blockBlend: 0.08
+	},
+	{
+		name: 'WebP (Q85)',
+		shortName: 'WebP',
+		sizeKB: 220,
+		sizeLabel: '220 KB',
+		color: '#84cc16',
+		sizeClass: 'size-medium',
+		desc: 'Modern lossy/lossless. Smaller than JPEG.',
+		useCase: 'Web delivery, thumbnails',
+		ratio: '10:1',
+		quality: 0.85,
+		blockSize: 0,
+		quantize: 4,
+		noiseAmt: 4,
+		blockBlend: 0
+	},
+	{
+		name: 'Basis / KTX2',
+		shortName: 'KTX2',
+		sizeKB: 160,
+		sizeLabel: '160 KB',
+		color: '#22c55e',
+		sizeClass: 'size-medium',
+		desc: 'Universal GPU. Transcodes at load.',
+		useCase: 'Cross-platform 3D, WebGL',
+		ratio: '13:1',
+		quality: 0.8,
+		blockSize: 4,
+		quantize: 6,
+		noiseAmt: 3,
+		blockBlend: 0.18
+	},
+	{
+		name: 'BC1 / DXT1 (S3TC)',
+		shortName: 'BC1',
+		sizeKB: 170,
+		sizeLabel: '170 KB',
+		color: '#06b6d4',
+		sizeClass: 'size-medium',
+		desc: 'Desktop GPU. 4x4 blocks, no alpha.',
+		useCase: 'Opaque textures, terrain',
+		ratio: '6:1',
+		quality: 0.75,
+		blockSize: 4,
+		quantize: 8,
+		noiseAmt: 2,
+		blockBlend: 0.25
+	},
+	{
+		name: 'ETC2 (Mobile)',
+		shortName: 'ETC2',
+		sizeKB: 170,
+		sizeLabel: '170 KB',
+		color: '#4a9eff',
+		sizeClass: 'size-medium',
+		desc: 'Mobile GPU standard. GLES 3.0+.',
+		useCase: 'Android, mobile games',
+		ratio: '6:1',
+		quality: 0.78,
+		blockSize: 4,
+		quantize: 7,
+		noiseAmt: 3,
+		blockBlend: 0.22
+	},
+	{
+		name: 'ASTC 4x4',
+		shortName: 'ASTC 4x4',
+		sizeKB: 170,
+		sizeLabel: '170 KB',
+		color: '#a855f7',
+		sizeClass: 'size-medium',
+		desc: 'Flexible blocks. High quality.',
+		useCase: 'iOS, modern mobile + desktop',
+		ratio: '6:1',
+		quality: 0.82,
+		blockSize: 4,
+		quantize: 5,
+		noiseAmt: 2,
+		blockBlend: 0.15
+	},
+	{
+		name: 'ASTC 8x8',
+		shortName: 'ASTC 8x8',
+		sizeKB: 43,
+		sizeLabel: '43 KB',
+		color: '#f472b6',
+		sizeClass: 'size-tiny',
+		desc: 'Extreme compression. Visible loss.',
+		useCase: 'Distant objects, LODs',
+		ratio: '49:1',
+		quality: 0.5,
+		blockSize: 8,
+		quantize: 14,
+		noiseAmt: 5,
+		blockBlend: 0.45
+	}
+];
+
+// ── Renderer setup ────────────────────────────────────────────
+const renderer = new THREE.WebGLRenderer( { antialias: true, preserveDrawingBuffer: true } );
+renderer.setPixelRatio( window.devicePixelRatio );
+renderer.setSize( window.innerWidth, window.innerHeight );
+renderer.toneMapping = THREE.ACESFilmicToneMapping;
+renderer.toneMappingExposure = 1.0;
+renderer.setScissorTest( true );
+document.getElementById( 'container' ).appendChild( renderer.domElement );
+
+// ── Create high-detail test texture ───────────────────────────
+// This texture has fine text, thin lines, sharp edges, smooth gradients,
+// and color patches -- all things that degrade visibly under compression.
+
+function createTestPattern( fmt ) {
+
+	const size = 512;
+	const canvas = document.createElement( 'canvas' );
+	canvas.width = size;
+	canvas.height = size;
+	const ctx = canvas.getContext( '2d' );
+
+	// 1) Smooth multi-stop gradient background (shows banding)
+	const grad = ctx.createRadialGradient( size * 0.3, size * 0.3, 0, size * 0.5, size * 0.5, size * 0.7 );
+	grad.addColorStop( 0.0, '#ff7744' );
+	grad.addColorStop( 0.25, '#dd2266' );
+	grad.addColorStop( 0.5, '#5533cc' );
+	grad.addColorStop( 0.75, '#2244aa' );
+	grad.addColorStop( 1.0, '#0a1128' );
+	ctx.fillStyle = grad;
+	ctx.fillRect( 0, 0, size, size );
+
+	// 2) Fine grid lines (1px -- destroyed by block compression)
+	ctx.strokeStyle = 'rgba(255,255,255,0.35)';
+	ctx.lineWidth = 1;
+	for ( let i = 0; i < size; i += 8 ) {
+
+		ctx.beginPath();
+		ctx.moveTo( i + 0.5, 0 );
+		ctx.lineTo( i + 0.5, size );
+		ctx.stroke();
+		ctx.beginPath();
+		ctx.moveTo( 0, i + 0.5 );
+		ctx.lineTo( size, i + 0.5 );
+		ctx.stroke();
+
+	}
+
+	// 3) Concentric rings (moiré and ringing artifacts)
+	for ( let r = 12; r < size * 0.45; r += 10 ) {
+
+		ctx.strokeStyle = `rgba(255,255,255,${0.08 + ( r / size ) * 0.25})`;
+		ctx.lineWidth = 1;
+		ctx.beginPath();
+		ctx.arc( size * 0.5, size * 0.5, r, 0, Math.PI * 2 );
+		ctx.stroke();
+
+	}
+
+	// 4) Diagonal lines at various angles (aliasing under block quant)
+	ctx.strokeStyle = 'rgba(255,200,100,0.4)';
+	ctx.lineWidth = 1;
+	for ( let i = -size; i < size * 2; i += 20 ) {
+
+		ctx.beginPath();
+		ctx.moveTo( i, 0 );
+		ctx.lineTo( i + size * 0.5, size );
+		ctx.stroke();
+
+	}
+
+	// 5) Sharp text at multiple sizes (blur/smear under compression)
+	ctx.fillStyle = '#ffffff';
+	ctx.strokeStyle = '#000000';
+	ctx.lineWidth = 3;
+	ctx.lineJoin = 'round';
+	ctx.font = 'bold 24px monospace';
+	ctx.strokeText( 'QUALITY TEST', 14, 36 );
+	ctx.fillText( 'QUALITY TEST', 14, 36 );
+	ctx.lineWidth = 2;
+	ctx.font = '14px monospace';
+	ctx.strokeText( 'Fine detail preservation check', 14, 58 );
+	ctx.fillText( 'Fine detail preservation check', 14, 58 );
+	ctx.lineWidth = 1.5;
+	ctx.font = '10px monospace';
+	ctx.strokeText( 'abcdefghijklmnopqrstuvwxyz 0123456789', 14, 74 );
+	ctx.fillText( 'abcdefghijklmnopqrstuvwxyz 0123456789', 14, 74 );
+	ctx.strokeText( '!@#$%^&*() The quick brown fox jumps', 14, 88 );
+	ctx.fillText( '!@#$%^&*() The quick brown fox jumps', 14, 88 );
+
+	// 6) Single-pixel checkerboard patch (worst case for block compression)
+	for ( let y = 100; y < 148; y ++ ) {
+
+		for ( let x = 14; x < 110; x ++ ) {
+
+			ctx.fillStyle = ( ( x + y ) % 2 === 0 ) ? '#ffffff' : '#000000';
+			ctx.fillRect( x, y, 1, 1 );
+
+		}
+
+	}
+	ctx.fillStyle = 'rgba(255,255,255,0.9)';
+	ctx.strokeStyle = '#000000';
+	ctx.lineWidth = 1.5;
+	ctx.lineJoin = 'round';
+	ctx.font = '9px monospace';
+	ctx.strokeText( '1px checker', 115, 128 );
+	ctx.fillText( '1px checker', 115, 128 );
+
+	// 7) Color patches with labels
+	const patches = [
+		{ color: '#ff0000', label: 'R' },
+		{ color: '#00ff00', label: 'G' },
+		{ color: '#0000ff', label: 'B' },
+		{ color: '#ffff00', label: 'Y' },
+		{ color: '#ff00ff', label: 'M' },
+		{ color: '#00ffff', label: 'C' },
+		{ color: '#ffffff', label: 'W' },
+		{ color: '#808080', label: '50%' }
+	];
+	const patchSize = 32;
+	const patchY = size - patchSize - 30;
+	ctx.font = 'bold 9px monospace';
+	patches.forEach( ( p, i ) => {
+
+		const px = 14 + i * ( patchSize + 4 );
+		ctx.fillStyle = p.color;
+		ctx.fillRect( px, patchY, patchSize, patchSize );
+		ctx.strokeStyle = 'rgba(255,255,255,0.5)';
+		ctx.lineWidth = 1;
+		ctx.strokeRect( px, patchY, patchSize, patchSize );
+		ctx.fillStyle = '#ffffff';
+		ctx.strokeStyle = '#000000';
+		ctx.lineWidth = 2;
+		ctx.lineJoin = 'round';
+		ctx.strokeText( p.label, px + 2, patchY + patchSize + 12 );
+		ctx.fillText( p.label, px + 2, patchY + patchSize + 12 );
+
+	} );
+
+	// 8) Thin gradient bar (smooth to test banding)
+	const barGrad = ctx.createLinearGradient( 14, 0, size - 14, 0 );
+	barGrad.addColorStop( 0, '#000000' );
+	barGrad.addColorStop( 0.5, '#888888' );
+	barGrad.addColorStop( 1, '#ffffff' );
+	ctx.fillStyle = barGrad;
+	ctx.fillRect( 14, 156, size - 28, 16 );
+	ctx.fillStyle = 'rgba(255,255,255,0.9)';
+	ctx.strokeStyle = '#000000';
+	ctx.lineWidth = 1.5;
+	ctx.lineJoin = 'round';
+	ctx.font = '9px monospace';
+	ctx.strokeText( 'gradient banding test', 14, 184 );
+	ctx.fillText( 'gradient banding test', 14, 184 );
+
+	// 9) Star burst (radial high-frequency detail)
+	ctx.save();
+	ctx.translate( size * 0.72, size * 0.35 );
+	const rays = 36;
+	for ( let i = 0; i < rays; i ++ ) {
+
+		const angle = ( i / rays ) * Math.PI * 2;
+		ctx.strokeStyle = ( i % 2 === 0 ) ? 'rgba(255,255,255,0.5)' : 'rgba(255,200,100,0.4)';
+		ctx.lineWidth = 1;
+		ctx.beginPath();
+		ctx.moveTo( 0, 0 );
+		ctx.lineTo( Math.cos( angle ) * 60, Math.sin( angle ) * 60 );
+		ctx.stroke();
+
+	}
+	ctx.restore();
+
+	// ── Now apply simulated compression artifacts ────────────────
+	if ( fmt.quality >= 1.0 ) {
+
+		// PNG: no artifacts
+		const tex = new THREE.CanvasTexture( canvas );
+		tex.colorSpace = THREE.SRGBColorSpace;
+		return tex;
+
+	}
+
+	const imageData = ctx.getImageData( 0, 0, size, size );
+	const data = imageData.data;
+
+	const blockSize = fmt.blockSize || 1;
+	const quantStep = fmt.quantize;
+	const noiseAmt = fmt.noiseAmt;
+	const blockBlend = fmt.blockBlend;
+
+	if ( blockSize > 1 && blockBlend > 0 ) {
+
+		// Block compression: average within blocks + quantize
+		for ( let by = 0; by < size; by += blockSize ) {
+
+			for ( let bx = 0; bx < size; bx += blockSize ) {
+
+				let rSum = 0, gSum = 0, bSum = 0, count = 0;
+
+				for ( let dy = 0; dy < blockSize && ( by + dy ) < size; dy ++ ) {
+
+					for ( let dx = 0; dx < blockSize && ( bx + dx ) < size; dx ++ ) {
+
+						const idx = ( ( by + dy ) * size + ( bx + dx ) ) * 4;
+						rSum += data[ idx ];
+						gSum += data[ idx + 1 ];
+						bSum += data[ idx + 2 ];
+						count ++;
+
+					}
+
+				}
+
+				const avgR = rSum / count;
+				const avgG = gSum / count;
+				const avgB = bSum / count;
+
+				// Compute block endpoints (min/max simplification)
+				let minR = 255, minG = 255, minB = 255;
+				let maxR = 0, maxG = 0, maxB = 0;
+
+				for ( let dy = 0; dy < blockSize && ( by + dy ) < size; dy ++ ) {
+
+					for ( let dx = 0; dx < blockSize && ( bx + dx ) < size; dx ++ ) {
+
+						const idx = ( ( by + dy ) * size + ( bx + dx ) ) * 4;
+						if ( data[ idx ] < minR ) minR = data[ idx ];
+						if ( data[ idx ] > maxR ) maxR = data[ idx ];
+						if ( data[ idx + 1 ] < minG ) minG = data[ idx + 1 ];
+						if ( data[ idx + 1 ] > maxG ) maxG = data[ idx + 1 ];
+						if ( data[ idx + 2 ] < minB ) minB = data[ idx + 2 ];
+						if ( data[ idx + 2 ] > maxB ) maxB = data[ idx + 2 ];
+
+					}
+
+				}
+
+				// Quantize endpoints
+				const qMinR = Math.floor( minR / ( quantStep * 2 ) ) * ( quantStep * 2 );
+				const qMaxR = Math.ceil( maxR / ( quantStep * 2 ) ) * ( quantStep * 2 );
+				const qMinG = Math.floor( minG / ( quantStep * 2 ) ) * ( quantStep * 2 );
+				const qMaxG = Math.ceil( maxG / ( quantStep * 2 ) ) * ( quantStep * 2 );
+				const qMinB = Math.floor( minB / ( quantStep * 2 ) ) * ( quantStep * 2 );
+				const qMaxB = Math.ceil( maxB / ( quantStep * 2 ) ) * ( quantStep * 2 );
+
+				for ( let dy = 0; dy < blockSize && ( by + dy ) < size; dy ++ ) {
+
+					for ( let dx = 0; dx < blockSize && ( bx + dx ) < size; dx ++ ) {
+
+						const idx = ( ( by + dy ) * size + ( bx + dx ) ) * 4;
+
+						// Blend toward block average
+						let r = data[ idx ] * ( 1 - blockBlend ) + avgR * blockBlend;
+						let g = data[ idx + 1 ] * ( 1 - blockBlend ) + avgG * blockBlend;
+						let b = data[ idx + 2 ] * ( 1 - blockBlend ) + avgB * blockBlend;
+
+						// Quantize color channels
+						r = Math.floor( r / quantStep ) * quantStep;
+						g = Math.floor( g / quantStep ) * quantStep;
+						b = Math.floor( b / quantStep ) * quantStep;
+
+						// Block boundary emphasis (seam artifact)
+						if ( dy === 0 || dx === 0 ) {
+
+							const seam = quantStep * 0.3;
+							r = Math.max( 0, Math.min( 255, r + seam ) );
+							g = Math.max( 0, Math.min( 255, g + seam ) );
+							b = Math.max( 0, Math.min( 255, b + seam ) );
+
+						}
+
+						data[ idx ] = Math.max( 0, Math.min( 255, r ) );
+						data[ idx + 1 ] = Math.max( 0, Math.min( 255, g ) );
+						data[ idx + 2 ] = Math.max( 0, Math.min( 255, b ) );
+
+					}
+
+				}
+
+			}
+
+		}
+
+	}
+
+	// Quantize + noise for non-block formats (JPEG DCT, WebP)
+	if ( quantStep > 0 && ( blockSize <= 1 || blockBlend === 0 ) ) {
+
+		for ( let i = 0; i < data.length; i += 4 ) {
+
+			data[ i ] = Math.floor( data[ i ] / quantStep ) * quantStep;
+			data[ i + 1 ] = Math.floor( data[ i + 1 ] / quantStep ) * quantStep;
+			data[ i + 2 ] = Math.floor( data[ i + 2 ] / quantStep ) * quantStep;
+
+		}
+
+	}
+
+	// Per-pixel noise (DCT/transform ringing)
+	if ( noiseAmt > 0 ) {
+
+		for ( let i = 0; i < data.length; i += 4 ) {
+
+			const n = ( Math.random() - 0.5 ) * noiseAmt * 2;
+			data[ i ] = Math.max( 0, Math.min( 255, data[ i ] + n ) );
+			data[ i + 1 ] = Math.max( 0, Math.min( 255, data[ i + 1 ] + n * 0.8 ) );
+			data[ i + 2 ] = Math.max( 0, Math.min( 255, data[ i + 2 ] + n ) );
+
+		}
+
+	}
+
+	// JPEG-specific: 8x8 DCT block edge ringing
+	if ( fmt.shortName === 'JPEG 90' ) {
+
+		for ( let by = 0; by < size; by += 8 ) {
+
+			for ( let bx = 0; bx < size; bx += 8 ) {
+
+				for ( let dy = 0; dy < 8 && ( by + dy ) < size; dy ++ ) {
+
+					for ( let dx = 0; dx < 8 && ( bx + dx ) < size; dx ++ ) {
+
+						if ( dy === 0 || dx === 0 ) {
+
+							const idx = ( ( by + dy ) * size + ( bx + dx ) ) * 4;
+							data[ idx ] = Math.max( 0, Math.min( 255, data[ idx ] + 3 ) );
+							data[ idx + 1 ] = Math.max( 0, Math.min( 255, data[ idx + 1 ] + 3 ) );
+							data[ idx + 2 ] = Math.max( 0, Math.min( 255, data[ idx + 2 ] + 3 ) );
+
+						}
+
+					}
+
+				}
+
+			}
+
+		}
+
+	}
+
+	ctx.putImageData( imageData, 0, 0 );
+
+	const tex = new THREE.CanvasTexture( canvas );
+	tex.colorSpace = THREE.SRGBColorSpace;
+	return tex;
+
+}
+
+// ── Create 8 scenes (4x2 grid) ──────────────────────────────
+const scenes = [];
+
+for ( let i = 0; i < 8; i ++ ) {
+
+	const scene = new THREE.Scene();
+	scene.background = new THREE.Color( 0x0a0e1a );
+
+	const cam = new THREE.PerspectiveCamera( 50, 1, 0.1, 100 );
+	cam.position.set( 0, 0, 2.8 );
+
+	const ambient = new THREE.AmbientLight( 0xffffff, 0.6 );
+	scene.add( ambient );
+
+	const dir = new THREE.DirectionalLight( 0xffffff, 1.2 );
+	dir.position.set( 3, 4, 3 );
+	scene.add( dir );
+
+	const texture = createTestPattern( formats[ i ] );
+
+	// Flat plane showing the texture clearly
+	const plane = new THREE.Mesh(
+		new THREE.PlaneGeometry( 2.4, 2.4 ),
+		new THREE.MeshBasicMaterial( { map: texture } )
+	);
+	scene.add( plane );
+
+	scenes.push( { scene, camera: cam, plane, texture } );
+
+}
+
+// ── OrbitControls on the first panel, synced to all ──────────
+const controls = new OrbitControls( scenes[ 0 ].camera, renderer.domElement );
+controls.enableDamping = true;
+controls.dampingFactor = 0.05;
+controls.enableRotate = false;
+controls.update();
+
+// ── Build grid labels ────────────────────────────────────────
+const gridLabels = document.getElementById( 'grid-labels' );
+
+formats.forEach( ( fmt ) => {
+
+	const div = document.createElement( 'div' );
+	div.className = 'fmt-label';
+	div.innerHTML = `
+		<div class="fmt-desc">${fmt.useCase}</div>
+		<div class="fmt-name">${fmt.name}</div>
+		<div class="fmt-size ${fmt.sizeClass}">${fmt.sizeLabel}  <span class="ratio-badge">${fmt.ratio}</span></div>
+		<div class="fmt-desc">${fmt.desc}</div>
+	`;
+	gridLabels.appendChild( div );
+
+} );
+
+// ── Build size chart ─────────────────────────────────────────
+const sizeChart = document.getElementById( 'size-chart' );
+const maxSize = Math.max( ...formats.map( f => f.sizeKB ) );
+let chartHTML = '<h4>File Size Comparison</h4>';
+
+formats.forEach( ( fmt ) => {
+
+	const pct = ( fmt.sizeKB / maxSize * 100 ).toFixed( 1 );
+	chartHTML += `
+		<div class="size-row">
+			<span class="size-name" style="color:${fmt.color};">${fmt.shortName}</span>
+			<div class="size-bar-bg">
+				<div class="size-bar-fill" style="width:${pct}%;background:${fmt.color};"></div>
+			</div>
+			<span class="size-val" style="color:${fmt.color};">${fmt.sizeLabel}</span>
+		</div>
+	`;
+
+} );
+
+sizeChart.innerHTML = chartHTML;
+
+// ── Build compare selectors ──────────────────────────────────
+const selLeft = document.getElementById( 'sel-left' );
+const selRight = document.getElementById( 'sel-right' );
+
+formats.forEach( ( fmt, i ) => {
+
+	selLeft.innerHTML += `<option value="${i}" ${i === 0 ? 'selected' : ''}>${fmt.name}</option>`;
+	selRight.innerHTML += `<option value="${i}" ${i === 7 ? 'selected' : ''}>${fmt.name}</option>`;
+
+} );
+
+// ── Mode switching ───────────────────────────────────────────
+let mode = 'grid'; // 'grid' | 'compare'
+let comparePos = 0.5;
+let compareLeft = 0;
+let compareRight = 7;
+let isDraggingSlider = false;
+
+function setMode( m ) {
+
+	mode = m;
+	document.getElementById( 'btn-grid' ).classList.toggle( 'active', m === 'grid' );
+	document.getElementById( 'btn-compare' ).classList.toggle( 'active', m === 'compare' );
+
+	document.getElementById( 'grid-labels' ).style.display = m === 'grid' ? 'grid' : 'none';
+	document.getElementById( 'div-v1' ).style.display = m === 'grid' ? '' : 'none';
+	document.getElementById( 'div-v2' ).style.display = m === 'grid' ? '' : 'none';
+	document.getElementById( 'div-v3' ).style.display = m === 'grid' ? '' : 'none';
+	document.getElementById( 'div-h1' ).style.display = m === 'grid' ? '' : 'none';
+	document.getElementById( 'size-chart' ).style.display = m === 'grid' ? '' : 'none';
+
+	document.getElementById( 'compare-container' ).style.display = m === 'compare' ? 'block' : 'none';
+	document.getElementById( 'compare-selectors' ).style.display = m === 'compare' ? 'flex' : 'none';
+
+	if ( m === 'compare' ) updateCompareLabels();
+
+}
+window.setMode = setMode;
+
+function updateCompareLabels() {
+
+	document.getElementById( 'compare-left-label' ).textContent =
+		formats[ compareLeft ].name + ' (' + formats[ compareLeft ].sizeLabel + ')';
+	document.getElementById( 'compare-right-label' ).textContent =
+		formats[ compareRight ].name + ' (' + formats[ compareRight ].sizeLabel + ')';
+
+}
+
+selLeft.addEventListener( 'change', () => {
+
+	compareLeft = parseInt( selLeft.value );
+	updateCompareLabels();
+
+} );
+selRight.addEventListener( 'change', () => {
+
+	compareRight = parseInt( selRight.value );
+	updateCompareLabels();
+
+} );
+
+// Compare slider drag
+const compareCont = document.getElementById( 'compare-container' );
+const slider = document.getElementById( 'compare-slider' );
+
+compareCont.addEventListener( 'mousedown', ( e ) => {
+
+	isDraggingSlider = true;
+	comparePos = e.clientX / window.innerWidth;
+	slider.style.left = ( comparePos * 100 ) + '%';
+
+} );
+
+window.addEventListener( 'mousemove', ( e ) => {
+
+	if ( isDraggingSlider ) {
+
+		comparePos = Math.max( 0, Math.min( 1, e.clientX / window.innerWidth ) );
+		slider.style.left = ( comparePos * 100 ) + '%';
+
+	}
+
+} );
+
+window.addEventListener( 'mouseup', () => { isDraggingSlider = false; } );
+
+// ── Magnifier ────────────────────────────────────────────────
+const magEl = document.getElementById( 'magnifier' );
+const magCanvas = document.getElementById( 'mag-canvas' );
+const magCtx = magCanvas.getContext( '2d' );
+const magHint = document.getElementById( 'mag-hint' );
+let magActive = false;
+let mouseX = 0, mouseY = 0;
+const magSize = 200;
+const magZoom = 4;
+
+magCanvas.width = magSize;
+magCanvas.height = magSize;
+
+window.addEventListener( 'keydown', ( e ) => {
+
+	if ( e.key === 'm' || e.key === 'M' ) {
+
+		magActive = true;
+		magEl.style.display = 'block';
+		magHint.style.opacity = '0';
+
+	}
+
+} );
+
+window.addEventListener( 'keyup', ( e ) => {
+
+	if ( e.key === 'm' || e.key === 'M' ) {
+
+		magActive = false;
+		magEl.style.display = 'none';
+		magHint.style.opacity = '1';
+
+	}
+
+} );
+
+renderer.domElement.addEventListener( 'mousemove', ( e ) => {
+
+	mouseX = e.clientX;
+	mouseY = e.clientY;
+
+} );
+
+function updateMagnifier() {
+
+	if ( ! magActive ) return;
+
+	// Position magnifier offset from cursor
+	let mx = mouseX + 20;
+	let my = mouseY - magSize - 10;
+	if ( mx + magSize > window.innerWidth ) mx = mouseX - magSize - 20;
+	if ( my < 0 ) my = mouseY + 20;
+	magEl.style.left = mx + 'px';
+	magEl.style.top = my + 'px';
+
+	// Read from the renderer canvas
+	const srcCanvas = renderer.domElement;
+	const dpr = window.devicePixelRatio || 1;
+	const sx = mouseX * dpr;
+	const sy = mouseY * dpr;
+	const sampleR = magSize / ( magZoom * 2 );
+
+	magCtx.clearRect( 0, 0, magSize, magSize );
+	magCtx.drawImage(
+		srcCanvas,
+		sx - sampleR, sy - sampleR, sampleR * 2, sampleR * 2,
+		0, 0, magSize, magSize
+	);
+
+	// Crosshair
+	magCtx.strokeStyle = 'rgba(74,158,255,0.5)';
+	magCtx.lineWidth = 1;
+	magCtx.beginPath();
+	magCtx.moveTo( magSize / 2, 0 );
+	magCtx.lineTo( magSize / 2, magSize );
+	magCtx.moveTo( 0, magSize / 2 );
+	magCtx.lineTo( magSize, magSize / 2 );
+	magCtx.stroke();
+
+}
+
+// ── Resize ───────────────────────────────────────────────────
+window.addEventListener( 'resize', () => {
+
+	renderer.setSize( window.innerWidth, window.innerHeight );
+
+} );
+
+// ── Animate ──────────────────────────────────────────────────
+function animate() {
+
+	requestAnimationFrame( animate );
+
+	controls.update();
+
+	const w = window.innerWidth;
+	const h = window.innerHeight;
+
+	if ( mode === 'grid' ) {
+
+		// 4x2 grid
+		const cols = 4;
+		const rows = 2;
+		const panelW = Math.floor( w / cols );
+		const panelH = Math.floor( h / rows );
+
+		scenes.forEach( ( s, i ) => {
+
+			const col = i % cols;
+			const row = Math.floor( i / cols );
+
+			// Sync cameras
+			if ( i > 0 ) {
+
+				s.camera.position.copy( scenes[ 0 ].camera.position );
+				s.camera.quaternion.copy( scenes[ 0 ].camera.quaternion );
+
+			}
+
+			s.camera.aspect = panelW / panelH;
+			s.camera.updateProjectionMatrix();
+
+			const x = col * panelW;
+			const y = ( rows - 1 - row ) * panelH; // WebGL y is bottom-up
+			renderer.setViewport( x, y, panelW, panelH );
+			renderer.setScissor( x, y, panelW, panelH );
+			renderer.render( s.scene, s.camera );
+
+		} );
+
+	} else {
+
+		// Compare mode: two full-screen renders with scissor split
+		const splitX = Math.floor( w * comparePos );
+
+		const sL = scenes[ compareLeft ];
+		const sR = scenes[ compareRight ];
+
+		// Sync cameras
+		sR.camera.position.copy( sL.camera.position );
+		sR.camera.quaternion.copy( sL.camera.quaternion );
+
+		// Use left scene's controls
+		if ( compareLeft !== 0 ) {
+
+			sL.camera.position.copy( scenes[ 0 ].camera.position );
+			sL.camera.quaternion.copy( scenes[ 0 ].camera.quaternion );
+			sR.camera.position.copy( scenes[ 0 ].camera.position );
+			sR.camera.quaternion.copy( scenes[ 0 ].camera.quaternion );
+
+		}
+
+		// Left side
+		sL.camera.aspect = w / h;
+		sL.camera.updateProjectionMatrix();
+		renderer.setViewport( 0, 0, w, h );
+		renderer.setScissor( 0, 0, splitX, h );
+		renderer.render( sL.scene, sL.camera );
+
+		// Right side
+		sR.camera.aspect = w / h;
+		sR.camera.updateProjectionMatrix();
+		renderer.setViewport( 0, 0, w, h );
+		renderer.setScissor( splitX, 0, w - splitX, h );
+		renderer.render( sR.scene, sR.camera );
+
+	}
+
+	updateMagnifier();
+
+}
+
+animate();
+
+// Fade out the hint after 6 seconds
+setTimeout( () => {
+
+	magHint.style.opacity = '0.4';
+
+}, 6000 );
+
+</script>
+
+<script src="../shared/demo-nav.js"></script>
+</body>
+</html>

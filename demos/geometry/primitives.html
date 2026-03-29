@@ -1,0 +1,483 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<title>Geometry Primitives - Three.js Encyclopedia</title>
+	<meta charset="utf-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<link rel="stylesheet" href="../shared/demo-base.css">
+	<style>
+		.label-canvas {
+			position: absolute;
+			top: 0;
+			left: 0;
+			pointer-events: none;
+		}
+	</style>
+</head>
+<body>
+<a href="../index.html" id="back-btn">&larr; Hub</a>
+<div id="info">
+	<strong>Geometry Primitives</strong><br>
+	All built-in Three.js geometries on display. Orbit to explore.
+</div>
+<div id="container"></div>
+
+<script type="importmap">
+{
+	"imports": {
+		"three": "https://unpkg.com/three@0.183.0/build/three.module.js",
+		"three/addons/": "https://unpkg.com/three@0.183.0/examples/jsm/"
+	}
+}
+</script>
+
+<script type="module">
+import * as THREE from 'three';
+import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+import { GUI } from 'three/addons/libs/lil-gui.module.min.js';
+
+// --- Scene setup ---
+const container = document.getElementById( 'container' );
+const renderer = new THREE.WebGLRenderer( { antialias: true } );
+renderer.setPixelRatio( window.devicePixelRatio );
+renderer.setSize( window.innerWidth, window.innerHeight );
+renderer.toneMapping = THREE.ACESFilmicToneMapping;
+renderer.toneMappingExposure = 1.2;
+renderer.shadowMap.enabled = true;
+renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+container.appendChild( renderer.domElement );
+
+const scene = new THREE.Scene();
+scene.background = new THREE.Color( 0x0a0e1a );
+scene.fog = new THREE.FogExp2( 0x0a0e1a, 0.012 );
+
+const camera = new THREE.PerspectiveCamera( 50, window.innerWidth / window.innerHeight, 0.1, 200 );
+camera.position.set( 15.8, 12.3, 19.4 );
+
+const controls = new OrbitControls( camera, renderer.domElement );
+controls.enableDamping = true;
+controls.dampingFactor = 0.08;
+controls.target.set( 0, 1, 0 );
+controls.minDistance = 5;
+controls.maxDistance = 60;
+
+// --- Lights ---
+const ambientLight = new THREE.AmbientLight( 0x303850, 0.8 );
+scene.add( ambientLight );
+
+const mainLight = new THREE.DirectionalLight( 0xffeedd, 2.5 );
+mainLight.position.set( 12, 20, 10 );
+mainLight.castShadow = true;
+mainLight.shadow.mapSize.set( 2048, 2048 );
+mainLight.shadow.camera.left = - 30;
+mainLight.shadow.camera.right = 30;
+mainLight.shadow.camera.top = 30;
+mainLight.shadow.camera.bottom = - 30;
+mainLight.shadow.camera.near = 1;
+mainLight.shadow.camera.far = 60;
+mainLight.shadow.bias = - 0.001;
+scene.add( mainLight );
+
+const fillLight = new THREE.DirectionalLight( 0x4488ff, 0.6 );
+fillLight.position.set( - 8, 8, - 6 );
+scene.add( fillLight );
+
+const rimLight = new THREE.PointLight( 0xff6622, 0.8, 50 );
+rimLight.position.set( - 10, 12, - 10 );
+scene.add( rimLight );
+
+// --- Ground ---
+const groundGeo = new THREE.PlaneGeometry( 120, 120 );
+const groundMat = new THREE.MeshStandardMaterial( {
+	color: 0x0d1220,
+	roughness: 0.85,
+	metalness: 0.15
+} );
+const ground = new THREE.Mesh( groundGeo, groundMat );
+ground.rotation.x = - Math.PI / 2;
+ground.receiveShadow = true;
+scene.add( ground );
+
+// --- Grid ---
+const gridHelper = new THREE.GridHelper( 80, 80, 0x1a2540, 0x111a2e );
+gridHelper.position.y = 0.01;
+scene.add( gridHelper );
+
+// --- Color palette ---
+const colors = [
+	0x4a9eff, 0x22c55e, 0xa855f7, 0xf97316, 0xf43f5e,
+	0x06b6d4, 0xfbbf24, 0xec4899, 0x8b5cf6, 0x10b981,
+	0xd946ef, 0x0ea5e9, 0xef4444, 0x14b8a6, 0xeab308,
+	0x64748b, 0xf59e0b, 0x6366f1, 0xe879f9, 0x34d399
+];
+
+// --- Lathe shape ---
+const lathePoints = [];
+for ( let i = 0; i < 12; i ++ ) {
+	const t = i / 11;
+	lathePoints.push( new THREE.Vector2(
+		Math.sin( t * Math.PI ) * 0.5 + 0.15,
+		t * 1.5 - 0.75
+	) );
+}
+
+// --- Heart shape for ExtrudeGeometry ---
+const heartShape = new THREE.Shape();
+heartShape.moveTo( 0, 0.35 );
+heartShape.bezierCurveTo( 0, 0.55, - 0.1, 0.7, - 0.35, 0.7 );
+heartShape.bezierCurveTo( - 0.7, 0.7, - 0.7, 0.35, - 0.7, 0.35 );
+heartShape.bezierCurveTo( - 0.7, 0.1, - 0.5, - 0.15, 0, - 0.5 );
+heartShape.bezierCurveTo( 0.5, - 0.15, 0.7, 0.1, 0.7, 0.35 );
+heartShape.bezierCurveTo( 0.7, 0.35, 0.7, 0.7, 0.35, 0.7 );
+heartShape.bezierCurveTo( 0.1, 0.7, 0, 0.55, 0, 0.35 );
+
+// --- Star shape for ShapeGeometry ---
+const starShape = new THREE.Shape();
+const outerR = 0.7, innerR = 0.3;
+for ( let i = 0; i < 10; i ++ ) {
+	const angle = ( i / 10 ) * Math.PI * 2 - Math.PI / 2;
+	const r = i % 2 === 0 ? outerR : innerR;
+	if ( i === 0 ) starShape.moveTo( Math.cos( angle ) * r, Math.sin( angle ) * r );
+	else starShape.lineTo( Math.cos( angle ) * r, Math.sin( angle ) * r );
+}
+starShape.closePath();
+
+// --- Tube path ---
+const tubePath = new THREE.CatmullRomCurve3( [
+	new THREE.Vector3( - 0.6, - 0.5, 0 ),
+	new THREE.Vector3( - 0.3, 0.5, 0.3 ),
+	new THREE.Vector3( 0.3, - 0.2, - 0.3 ),
+	new THREE.Vector3( 0.6, 0.5, 0 )
+] );
+
+// --- Geometry definitions ---
+const geometryDefs = [
+	{ name: 'Box', fn: () => new THREE.BoxGeometry( 1.2, 1.2, 1.2 ) },
+	{ name: 'Sphere', fn: () => new THREE.SphereGeometry( 0.7, 32, 24 ) },
+	{ name: 'Cylinder', fn: () => new THREE.CylinderGeometry( 0.5, 0.5, 1.4, 32 ) },
+	{ name: 'Cone', fn: () => new THREE.ConeGeometry( 0.65, 1.4, 32 ) },
+	{ name: 'Torus', fn: () => new THREE.TorusGeometry( 0.55, 0.22, 24, 48 ) },
+	{ name: 'TorusKnot', fn: () => new THREE.TorusKnotGeometry( 0.45, 0.15, 100, 16 ) },
+	{ name: 'Dodecahedron', fn: () => new THREE.DodecahedronGeometry( 0.7 ) },
+	{ name: 'Icosahedron', fn: () => new THREE.IcosahedronGeometry( 0.7 ) },
+	{ name: 'Octahedron', fn: () => new THREE.OctahedronGeometry( 0.7 ) },
+	{ name: 'Tetrahedron', fn: () => new THREE.TetrahedronGeometry( 0.7 ) },
+	{ name: 'Ring', fn: () => new THREE.RingGeometry( 0.3, 0.7, 32 ) },
+	{ name: 'Circle', fn: () => new THREE.CircleGeometry( 0.7, 32 ) },
+	{ name: 'Plane', fn: () => new THREE.PlaneGeometry( 1.2, 1.2 ) },
+	{ name: 'Capsule', fn: () => new THREE.CapsuleGeometry( 0.35, 0.7, 16, 32 ) },
+	{ name: 'Lathe', fn: () => new THREE.LatheGeometry( lathePoints, 32 ) },
+	{ name: 'Extrude', fn: () => new THREE.ExtrudeGeometry( heartShape, {
+		depth: 0.3, bevelEnabled: true, bevelThickness: 0.05,
+		bevelSize: 0.05, bevelSegments: 3
+	} ) },
+	{ name: 'Shape', fn: () => new THREE.ShapeGeometry( starShape ) },
+	{ name: 'Tube', fn: () => new THREE.TubeGeometry( tubePath, 64, 0.12, 12, false ) },
+	{ name: 'Edges', fn: () => {
+		const box = new THREE.BoxGeometry( 1.2, 1.2, 1.2 );
+		return new THREE.EdgesGeometry( box );
+	}, isEdges: true },
+	{ name: 'Wireframe', fn: () => {
+		const ico = new THREE.IcosahedronGeometry( 0.7, 1 );
+		return new THREE.WireframeGeometry( ico );
+	}, isWireframe: true }
+];
+
+// --- Layout ---
+const COLS = 5;
+const SPACING = 4.5;
+const meshes = [];
+const pedestals = [];
+const labelSprites = [];
+
+const params = {
+	wireframe: false,
+	flatShading: false,
+	autoRotate: true,
+	rotateSpeed: 0.5,
+	material: 'Standard'
+};
+
+// Create a canvas texture for labels
+function createLabelTexture( text ) {
+
+	const canvas = document.createElement( 'canvas' );
+	const ctx = canvas.getContext( '2d' );
+	canvas.width = 256;
+	canvas.height = 64;
+
+	ctx.clearRect( 0, 0, canvas.width, canvas.height );
+
+	ctx.fillStyle = 'rgba(10, 14, 26, 0.7)';
+	const radius = 8;
+	const x = 8, y = 8, w = canvas.width - 16, h = canvas.height - 16;
+	ctx.beginPath();
+	ctx.moveTo( x + radius, y );
+	ctx.lineTo( x + w - radius, y );
+	ctx.quadraticCurveTo( x + w, y, x + w, y + radius );
+	ctx.lineTo( x + w, y + h - radius );
+	ctx.quadraticCurveTo( x + w, y + h, x + w - radius, y + h );
+	ctx.lineTo( x + radius, y + h );
+	ctx.quadraticCurveTo( x, y + h, x, y + h - radius );
+	ctx.lineTo( x, y + radius );
+	ctx.quadraticCurveTo( x, y, x + radius, y );
+	ctx.closePath();
+	ctx.fill();
+
+	ctx.font = 'bold 36px Inter, system-ui, sans-serif';
+	ctx.textAlign = 'center';
+	ctx.textBaseline = 'middle';
+	ctx.fillStyle = '#e0e5f0';
+	ctx.fillText( text, canvas.width / 2, canvas.height / 2 );
+
+	const texture = new THREE.CanvasTexture( canvas );
+	texture.colorSpace = THREE.SRGBColorSpace;
+	return texture;
+
+}
+
+function createLabelSprite( text, position ) {
+
+	const texture = createLabelTexture( text );
+	const mat = new THREE.SpriteMaterial( {
+		map: texture,
+		transparent: true,
+		depthTest: false,
+		sizeAttenuation: true
+	} );
+	const sprite = new THREE.Sprite( mat );
+	sprite.position.copy( position );
+	sprite.position.y = - 0.15;
+	sprite.scale.set( 2.2, 0.55, 1 );
+	scene.add( sprite );
+	return sprite;
+
+}
+
+function createMaterial( colorHex ) {
+
+	if ( params.material === 'Phong' ) {
+
+		return new THREE.MeshPhongMaterial( {
+			color: colorHex,
+			shininess: 80,
+			specular: 0x444444,
+			wireframe: params.wireframe,
+			flatShading: params.flatShading,
+			side: THREE.DoubleSide
+		} );
+
+	} else if ( params.material === 'Lambert' ) {
+
+		return new THREE.MeshLambertMaterial( {
+			color: colorHex,
+			wireframe: params.wireframe,
+			flatShading: params.flatShading,
+			side: THREE.DoubleSide
+		} );
+
+	} else if ( params.material === 'Toon' ) {
+
+		return new THREE.MeshToonMaterial( {
+			color: colorHex,
+			wireframe: params.wireframe,
+			side: THREE.DoubleSide
+		} );
+
+	}
+
+	return new THREE.MeshStandardMaterial( {
+		color: colorHex,
+		roughness: 0.35,
+		metalness: 0.3,
+		wireframe: params.wireframe,
+		flatShading: params.flatShading,
+		side: THREE.DoubleSide
+	} );
+
+}
+
+// Pedestal material
+const pedestalMat = new THREE.MeshStandardMaterial( {
+	color: 0x151c2e,
+	roughness: 0.6,
+	metalness: 0.4
+} );
+
+const pedestalGeo = new THREE.CylinderGeometry( 0.9, 1.05, 0.3, 32 );
+
+function buildScene() {
+
+	// Clear old meshes
+	meshes.forEach( m => scene.remove( m ) );
+	pedestals.forEach( p => scene.remove( p ) );
+	labelSprites.forEach( s => scene.remove( s ) );
+	meshes.length = 0;
+	pedestals.length = 0;
+	labelSprites.length = 0;
+
+	const totalItems = geometryDefs.length;
+	const offsetX = ( ( Math.min( totalItems, COLS ) - 1 ) * SPACING ) / 2;
+	const totalRows = Math.ceil( totalItems / COLS );
+	const offsetZ = ( ( totalRows - 1 ) * SPACING ) / 2;
+
+	geometryDefs.forEach( ( def, i ) => {
+
+		const col = i % COLS;
+		const row = Math.floor( i / COLS );
+		const x = col * SPACING - offsetX;
+		const z = row * SPACING - offsetZ;
+
+		// Pedestal
+		const pedestal = new THREE.Mesh( pedestalGeo, pedestalMat );
+		pedestal.position.set( x, 0.15, z );
+		pedestal.castShadow = true;
+		pedestal.receiveShadow = true;
+		scene.add( pedestal );
+		pedestals.push( pedestal );
+
+		// Accent ring on pedestal
+		const ringGeo = new THREE.TorusGeometry( 0.97, 0.02, 8, 48 );
+		const ringMat = new THREE.MeshStandardMaterial( {
+			color: colors[ i % colors.length ],
+			emissive: colors[ i % colors.length ],
+			emissiveIntensity: 0.5,
+			roughness: 0.2,
+			metalness: 0.8
+		} );
+		const ring = new THREE.Mesh( ringGeo, ringMat );
+		ring.rotation.x = - Math.PI / 2;
+		ring.position.set( x, 0.31, z );
+		scene.add( ring );
+		pedestals.push( ring );
+
+		// Geometry mesh
+		const geometry = def.fn();
+		let mesh;
+
+		if ( def.isEdges || def.isWireframe ) {
+
+			const lineMat = new THREE.LineBasicMaterial( {
+				color: colors[ i % colors.length ],
+				linewidth: 1
+			} );
+			mesh = new THREE.LineSegments( geometry, lineMat );
+
+		} else {
+
+			const mat = createMaterial( colors[ i % colors.length ] );
+			mesh = new THREE.Mesh( geometry, mat );
+			mesh.castShadow = true;
+			mesh.receiveShadow = true;
+
+		}
+
+		// Center the geometry
+		geometry.computeBoundingBox();
+		const bbox = geometry.boundingBox;
+		const center = new THREE.Vector3();
+		bbox.getCenter( center );
+		const height = bbox.max.y - bbox.min.y;
+
+		mesh.position.set( x - center.x, 0.3 + height / 2 + 0.2 - center.y, z - center.z );
+		// Adjust: for flat geometries (Ring, Circle, Plane, Shape), tilt them
+		if ( [ 'Ring', 'Circle', 'Plane', 'Shape' ].includes( def.name ) ) {
+
+			mesh.position.set( x, 1.2, z );
+			mesh.rotation.x = - Math.PI * 0.3;
+			mesh.rotation.y = Math.PI * 0.15;
+
+		} else {
+
+			mesh.position.set( x, 0.3 + height / 2 + 0.2, z );
+
+		}
+
+		mesh.userData.baseY = mesh.position.y;
+		mesh.userData.index = i;
+		scene.add( mesh );
+		meshes.push( mesh );
+
+		// Label
+		const labelPos = new THREE.Vector3( x, 0, z );
+		const sprite = createLabelSprite( def.name, labelPos );
+		labelSprites.push( sprite );
+
+	} );
+
+}
+
+buildScene();
+
+// --- GUI ---
+const gui = new GUI();
+gui.title( 'Geometry Controls' );
+
+gui.add( params, 'wireframe' ).name( 'Wireframe' ).onChange( rebuildMaterials );
+gui.add( params, 'flatShading' ).name( 'Flat Shading' ).onChange( rebuildMaterials );
+gui.add( params, 'autoRotate' ).name( 'Auto Rotate' );
+gui.add( params, 'rotateSpeed', 0.1, 2.0, 0.1 ).name( 'Rotate Speed' );
+gui.add( params, 'material', [ 'Standard', 'Phong', 'Lambert', 'Toon' ] ).name( 'Material' ).onChange( rebuildMaterials );
+
+function rebuildMaterials() {
+
+	meshes.forEach( ( mesh, i ) => {
+
+		const def = geometryDefs[ i ];
+		if ( def.isEdges || def.isWireframe ) return;
+
+		mesh.material.dispose();
+		mesh.material = createMaterial( colors[ i % colors.length ] );
+
+	} );
+
+}
+
+// --- Animate ---
+const clock = new THREE.Clock();
+
+function animate() {
+
+	requestAnimationFrame( animate );
+
+	const elapsed = clock.getElapsedTime();
+
+	// Rotate meshes
+	meshes.forEach( ( mesh, i ) => {
+
+		const def = geometryDefs[ i ];
+
+		if ( params.autoRotate ) {
+
+			mesh.rotation.y += params.rotateSpeed * 0.01;
+
+			if ( ! [ 'Ring', 'Circle', 'Plane', 'Shape' ].includes( def.name ) ) {
+
+				// Gentle bob
+				mesh.position.y = mesh.userData.baseY + Math.sin( elapsed * 1.2 + i * 0.5 ) * 0.08;
+
+			}
+
+		}
+
+	} );
+
+	controls.update();
+	renderer.render( scene, camera );
+
+}
+
+animate();
+
+// --- Resize ---
+window.addEventListener( 'resize', () => {
+
+	camera.aspect = window.innerWidth / window.innerHeight;
+	camera.updateProjectionMatrix();
+	renderer.setSize( window.innerWidth, window.innerHeight );
+
+} );
+</script>
+<script src="../shared/demo-nav.js"></script>
+</body>
+</html>

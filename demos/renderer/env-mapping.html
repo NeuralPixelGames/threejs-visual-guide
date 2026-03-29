@@ -1,0 +1,524 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<title>Three.js Encyclopedia - Environment Mapping</title>
+	<meta charset="utf-8">
+	<meta name="viewport" content="width=device-width, user-scalable=no, minimum-scale=1.0, maximum-scale=1.0">
+	<link rel="stylesheet" href="../shared/demo-base.css">
+	<style>
+		.sphere-label {
+			position: absolute;
+			z-index: 10;
+			background: rgba(10, 14, 26, 0.85);
+			backdrop-filter: blur(8px);
+			-webkit-backdrop-filter: blur(8px);
+			border: 1px solid rgba(74, 158, 255, 0.25);
+			border-radius: 6px;
+			padding: 3px 10px;
+			color: rgba(224, 229, 240, 0.9);
+			font-family: 'Inter', system-ui, sans-serif;
+			font-size: 11px;
+			pointer-events: none;
+			white-space: nowrap;
+			text-align: center;
+		}
+		.sphere-label strong { color: #4a9eff; }
+		.shaderball-label {
+			position: absolute;
+			z-index: 10;
+			background: rgba(10, 14, 26, 0.88);
+			backdrop-filter: blur(10px);
+			-webkit-backdrop-filter: blur(10px);
+			border: 1px solid rgba(255, 170, 60, 0.4);
+			border-radius: 8px;
+			padding: 6px 14px;
+			color: #e0e5f0;
+			font-family: 'Inter', system-ui, sans-serif;
+			font-size: 11px;
+			pointer-events: none;
+			white-space: nowrap;
+			text-align: center;
+			line-height: 1.4;
+		}
+		.shaderball-label strong { color: #ffaa3c; }
+	</style>
+</head>
+<body>
+	<a href="../index.html" id="back-btn">&larr; Hub</a>
+	<div id="info"><strong>Environment Mapping</strong><br>Roughness gradient showing how reflections blur with increasing roughness</div>
+	<div id="loading-overlay" style="position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(10,14,26,0.95);display:flex;align-items:center;justify-content:center;z-index:1000;color:#4a9eff;font-family:Inter,system-ui,sans-serif;font-size:16px;">Loading model...</div>
+	<div id="container"></div>
+	<script type="importmap">
+	{ "imports": { "three": "https://unpkg.com/three@0.183.0/build/three.module.js", "three/addons/": "https://unpkg.com/three@0.183.0/examples/jsm/" } }
+	</script>
+	<script type="module">
+		import * as THREE from 'three';
+		import { GUI } from 'three/addons/libs/lil-gui.module.min.js';
+		import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+		import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
+		import { DRACOLoader } from 'three/addons/loaders/DRACOLoader.js';
+
+		let renderer, scene, camera, controls;
+		let spheres = [];
+		let envMap;
+		const allLabels = [];
+		const tempV = new THREE.Vector3();
+
+		const params = {
+			envMapIntensity: 1.0,
+			metalness: 1.0,
+			sphereCount: 7,
+			autoRotate: true,
+			bgIntensity: 0.3
+		};
+
+		init();
+
+		function init() {
+
+			const container = document.getElementById( 'container' );
+
+			renderer = new THREE.WebGLRenderer( { antialias: true } );
+			renderer.setPixelRatio( window.devicePixelRatio );
+			renderer.setSize( window.innerWidth, window.innerHeight );
+			renderer.toneMapping = THREE.ACESFilmicToneMapping;
+			renderer.toneMappingExposure = 1.2;
+			renderer.shadowMap.enabled = true;
+			renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+			container.appendChild( renderer.domElement );
+
+			scene = new THREE.Scene();
+
+			camera = new THREE.PerspectiveCamera( 45, window.innerWidth / window.innerHeight, 0.1, 1000 );
+			camera.position.set( 0, 3, 14 );
+
+			controls = new OrbitControls( camera, renderer.domElement );
+			controls.enableDamping = true;
+			controls.dampingFactor = 0.05;
+			controls.target.set( 0, 1, 0 );
+			controls.autoRotate = params.autoRotate;
+			controls.autoRotateSpeed = 0.6;
+			controls.update();
+
+			createProceduralEnvMap();
+			buildScene();
+			buildLighting();
+			buildGUI();
+
+			window.addEventListener( 'resize', onResize );
+			renderer.setAnimationLoop( animate );
+
+		}
+
+		function createProceduralEnvMap() {
+
+			// Create a procedural cubemap environment using a CubeRenderTarget and a scene
+			const cubeRT = new THREE.WebGLCubeRenderTarget( 512, {
+				generateMipmaps: true,
+				minFilter: THREE.LinearMipmapLinearFilter
+			} );
+
+			const cubeCamera = new THREE.CubeCamera( 0.1, 100, cubeRT );
+			const envScene = new THREE.Scene();
+
+			// Gradient sky sphere
+			const skyGeo = new THREE.SphereGeometry( 50, 64, 64 );
+			const skyCanvas = document.createElement( 'canvas' );
+			skyCanvas.width = 1024;
+			skyCanvas.height = 512;
+			const ctx = skyCanvas.getContext( '2d' );
+
+			// Create a rich gradient sky
+			const gradient = ctx.createLinearGradient( 0, 0, 0, 512 );
+			gradient.addColorStop( 0, '#0a0e2a' );
+			gradient.addColorStop( 0.2, '#1a1040' );
+			gradient.addColorStop( 0.35, '#2a1860' );
+			gradient.addColorStop( 0.5, '#4a2080' );
+			gradient.addColorStop( 0.65, '#802060' );
+			gradient.addColorStop( 0.8, '#ff4060' );
+			gradient.addColorStop( 0.9, '#ff8040' );
+			gradient.addColorStop( 1.0, '#ffcc60' );
+			ctx.fillStyle = gradient;
+			ctx.fillRect( 0, 0, 1024, 512 );
+
+			// Add stars
+			for ( let i = 0; i < 200; i ++ ) {
+
+				const x = Math.random() * 1024;
+				const y = Math.random() * 256;
+				const size = Math.random() * 2 + 0.5;
+				const brightness = Math.floor( Math.random() * 155 + 100 );
+				ctx.fillStyle = `rgba(${brightness}, ${brightness}, ${Math.min( 255, brightness + 50 )}, ${Math.random() * 0.8 + 0.2})`;
+				ctx.beginPath();
+				ctx.arc( x, y, size, 0, Math.PI * 2 );
+				ctx.fill();
+
+			}
+
+			// Add nebula-like color patches
+			for ( let i = 0; i < 15; i ++ ) {
+
+				const x = Math.random() * 1024;
+				const y = Math.random() * 350;
+				const r = Math.random() * 80 + 30;
+				const hue = Math.random() * 60 + 240;
+				const grad = ctx.createRadialGradient( x, y, 0, x, y, r );
+				grad.addColorStop( 0, `hsla(${hue}, 80%, 60%, 0.15)` );
+				grad.addColorStop( 1, 'transparent' );
+				ctx.fillStyle = grad;
+				ctx.fillRect( x - r, y - r, r * 2, r * 2 );
+
+			}
+
+			const skyTexture = new THREE.CanvasTexture( skyCanvas );
+			skyTexture.mapping = THREE.EquirectangularReflectionMapping;
+
+			const skyMat = new THREE.MeshBasicMaterial( { map: skyTexture, side: THREE.BackSide } );
+			const sky = new THREE.Mesh( skyGeo, skyMat );
+			envScene.add( sky );
+
+			// Add some emissive objects to the env scene for interesting reflections
+			const envColors = [ 0xff3366, 0x4a9eff, 0x33ff99, 0xffaa22, 0xaa44ff, 0x22ccff ];
+			for ( let i = 0; i < 6; i ++ ) {
+
+				const angle = ( i / 6 ) * Math.PI * 2;
+				const geo = new THREE.SphereGeometry( 3, 16, 16 );
+				const mat = new THREE.MeshBasicMaterial( { color: envColors[ i ] } );
+				const mesh = new THREE.Mesh( geo, mat );
+				mesh.position.set( Math.cos( angle ) * 20, 5 + Math.sin( i * 2 ) * 8, Math.sin( angle ) * 20 );
+				envScene.add( mesh );
+
+			}
+
+			// Render the env map
+			cubeCamera.update( renderer, envScene );
+			envMap = cubeRT.texture;
+
+			// Set scene background using the env map
+			scene.background = envMap;
+			scene.backgroundIntensity = params.bgIntensity;
+			scene.environment = envMap;
+
+		}
+
+		function buildScene() {
+
+			// Ground plane
+			const groundGeo = new THREE.PlaneGeometry( 30, 30 );
+			const groundMat = new THREE.MeshStandardMaterial( {
+				color: 0x111522,
+				roughness: 0.15,
+				metalness: 0.85,
+				envMap: envMap,
+				envMapIntensity: 0.5
+			} );
+			const ground = new THREE.Mesh( groundGeo, groundMat );
+			ground.rotation.x = - Math.PI / 2;
+			ground.position.y = - 1;
+			ground.receiveShadow = true;
+			scene.add( ground );
+
+			// Create roughness gradient spheres
+			createSpheres();
+
+			// Load ShaderBall
+			loadShaderBall();
+
+			// Labels (projected below each sphere)
+			rebuildLabels();
+			createShaderBallLabel();
+
+		}
+
+		function createSpheres() {
+
+			// Remove old spheres
+			spheres.forEach( s => {
+
+				scene.remove( s );
+				s.geometry.dispose();
+				s.material.dispose();
+
+			} );
+			spheres = [];
+
+			const count = params.sphereCount;
+			const spacing = 2.2;
+			const startX = - ( count - 1 ) * spacing / 2;
+
+			for ( let i = 0; i < count; i ++ ) {
+
+				const roughness = i / ( count - 1 );
+				const geo = new THREE.SphereGeometry( 0.9, 64, 64 );
+				const mat = new THREE.MeshStandardMaterial( {
+					color: 0xffffff,
+					roughness: roughness,
+					metalness: params.metalness,
+					envMap: envMap,
+					envMapIntensity: params.envMapIntensity
+				} );
+				const sphere = new THREE.Mesh( geo, mat );
+				sphere.position.set( startX + i * spacing, 1, 0 );
+				sphere.castShadow = true;
+				scene.add( sphere );
+				spheres.push( sphere );
+
+			}
+
+		}
+
+		function loadShaderBall() {
+
+			const dracoLoader = new DRACOLoader();
+			dracoLoader.setDecoderPath( 'https://unpkg.com/three@0.183.0/examples/jsm/libs/draco/gltf/' );
+			const gltfLoader = new GLTFLoader();
+			gltfLoader.setDRACOLoader( dracoLoader );
+
+			gltfLoader.load( 'https://unpkg.com/three@0.183.0/examples/models/gltf/ShaderBall.glb', ( gltf ) => {
+
+				const model = gltf.scene;
+
+				// Position the shader ball behind/above the roughness spheres
+				const box = new THREE.Box3().setFromObject( model );
+				const size = box.getSize( new THREE.Vector3() );
+				const center = box.getCenter( new THREE.Vector3() );
+				const maxDim = Math.max( size.x, size.y, size.z );
+				const scale = 3 / maxDim;
+				model.scale.setScalar( scale );
+				model.position.set( - center.x * scale, - box.min.y * scale - 1 + 1.5, - center.z * scale - 4 );
+
+				model.traverse( ( child ) => {
+
+					if ( child.isMesh ) {
+
+						child.castShadow = true;
+						child.receiveShadow = true;
+
+						// Apply env map to the shader ball for reflection showcase
+						if ( child.material ) {
+
+							child.material.envMap = envMap;
+							child.material.envMapIntensity = params.envMapIntensity;
+							child.material.metalness = 0.9;
+							child.material.roughness = 0.1;
+							child.material.needsUpdate = true;
+
+						}
+
+					}
+
+				} );
+				scene.add( model );
+
+				const overlay = document.getElementById( 'loading-overlay' );
+				if ( overlay ) overlay.style.display = 'none';
+
+			} );
+
+		}
+
+		function rebuildLabels() {
+
+			// Remove old labels
+			allLabels.forEach( l => l.el.remove() );
+			allLabels.length = 0;
+
+			const count = params.sphereCount;
+			const spacing = 2.2;
+			const startX = - ( count - 1 ) * spacing / 2;
+
+			for ( let i = 0; i < count; i ++ ) {
+
+				const roughness = ( i / ( count - 1 ) ).toFixed( 2 );
+				const el = document.createElement( 'div' );
+				el.className = 'sphere-label';
+				el.innerHTML = '<strong>R:</strong> ' + roughness;
+				document.body.appendChild( el );
+
+				allLabels.push( {
+					el: el,
+					// Position below the sphere (sphere y=1, radius~0.9, so below ~ -0.2)
+					worldPos: new THREE.Vector3( startX + i * spacing, - 0.3, 0 ),
+					sphereIndex: i
+				} );
+
+			}
+
+		}
+
+		function createShaderBallLabel() {
+
+			const el = document.createElement( 'div' );
+			el.className = 'shaderball-label';
+			el.innerHTML = '<strong>Shader Ball</strong><br>Low roughness (0.1) · High metalness (0.9)<br>Full environment reflection reference';
+			document.body.appendChild( el );
+
+			// ShaderBall is positioned at roughly y=1.5, z=-4
+			allLabels.push( {
+				el: el,
+				worldPos: new THREE.Vector3( 0, 3.8, - 4 ),
+				isShaderBall: true
+			} );
+
+		}
+
+		function projectLabels() {
+
+			const halfW = window.innerWidth / 2;
+			const halfH = window.innerHeight / 2;
+
+			for ( let i = 0; i < allLabels.length; i ++ ) {
+
+				const label = allLabels[ i ];
+				tempV.copy( label.worldPos );
+
+				// For sphere labels, track the floating animation
+				if ( ! label.isShaderBall && label.sphereIndex !== undefined ) {
+
+					tempV.y = spheres[ label.sphereIndex ].position.y - 1.2;
+
+				}
+
+				tempV.project( camera );
+
+				if ( tempV.z > 1 ) {
+
+					label.el.style.display = 'none';
+					continue;
+
+				}
+
+				label.el.style.display = '';
+
+				const x = ( tempV.x * halfW ) + halfW;
+				const y = - ( tempV.y * halfH ) + halfH;
+
+				label.el.style.left = x + 'px';
+				label.el.style.top = y + 'px';
+				label.el.style.transform = 'translate(-50%, -50%)';
+
+			}
+
+		}
+
+		function buildLighting() {
+
+			scene.add( new THREE.AmbientLight( 0xffffff, 0.2 ) );
+
+			const keyLight = new THREE.DirectionalLight( 0xffffff, 1.5 );
+			keyLight.position.set( 5, 10, 5 );
+			keyLight.castShadow = true;
+			keyLight.shadow.mapSize.setScalar( 2048 );
+			keyLight.shadow.camera.near = 0.5;
+			keyLight.shadow.camera.far = 40;
+			keyLight.shadow.camera.left = - 12;
+			keyLight.shadow.camera.right = 12;
+			keyLight.shadow.camera.top = 12;
+			keyLight.shadow.camera.bottom = - 12;
+			keyLight.shadow.bias = - 0.001;
+			scene.add( keyLight );
+
+			scene.add( new THREE.DirectionalLight( 0x4488ff, 0.5 ).translateX( - 4 ).translateY( 3 ).translateZ( - 3 ) );
+			scene.add( new THREE.DirectionalLight( 0xff8844, 0.7 ).translateX( - 2 ).translateY( 5 ).translateZ( - 6 ) );
+
+		}
+
+		function buildGUI() {
+
+			const gui = new GUI();
+
+			gui.add( params, 'envMapIntensity', 0, 3, 0.05 ).name( 'Env Intensity' ).onChange( v => {
+
+				spheres.forEach( s => {
+
+					s.material.envMapIntensity = v;
+
+				} );
+
+			} );
+
+			gui.add( params, 'metalness', 0, 1, 0.01 ).name( 'Metalness' ).onChange( v => {
+
+				spheres.forEach( s => {
+
+					s.material.metalness = v;
+
+				} );
+
+			} );
+
+			gui.add( params, 'sphereCount', 3, 11, 1 ).name( 'Sphere Count' ).onChange( () => {
+
+				createSpheres();
+				// Rebuild projected labels (keep ShaderBall label)
+				const shaderBallLabels = allLabels.filter( l => l.isShaderBall );
+				allLabels.forEach( l => { if ( ! l.isShaderBall ) l.el.remove(); } );
+				allLabels.length = 0;
+				shaderBallLabels.forEach( l => allLabels.push( l ) );
+				// Re-add sphere roughness labels
+				const count = params.sphereCount;
+				const spacing = 2.2;
+				const startX = - ( count - 1 ) * spacing / 2;
+				for ( let i = 0; i < count; i ++ ) {
+
+					const roughness = ( i / ( count - 1 ) ).toFixed( 2 );
+					const el = document.createElement( 'div' );
+					el.className = 'sphere-label';
+					el.innerHTML = '<strong>R:</strong> ' + roughness;
+					document.body.appendChild( el );
+					allLabels.push( {
+						el: el,
+						worldPos: new THREE.Vector3( startX + i * spacing, - 0.3, 0 ),
+						sphereIndex: i
+					} );
+
+				}
+
+			} );
+
+			gui.add( params, 'bgIntensity', 0, 1, 0.05 ).name( 'BG Intensity' ).onChange( v => {
+
+				scene.backgroundIntensity = v;
+
+			} );
+
+			gui.add( params, 'autoRotate' ).name( 'Auto-Rotate' ).onChange( v => {
+
+				controls.autoRotate = v;
+
+			} );
+
+		}
+
+		function onResize() {
+
+			camera.aspect = window.innerWidth / window.innerHeight;
+			camera.updateProjectionMatrix();
+			renderer.setSize( window.innerWidth, window.innerHeight );
+
+		}
+
+		function animate() {
+
+			controls.update();
+
+			// Gentle sphere floating
+			const time = performance.now() * 0.001;
+			spheres.forEach( ( s, i ) => {
+
+				s.position.y = 1 + Math.sin( time * 0.8 + i * 0.5 ) * 0.15;
+				s.rotation.y = time * 0.2;
+
+			} );
+
+			// Update projected labels each frame
+			projectLabels();
+
+			renderer.render( scene, camera );
+
+		}
+
+	</script>
+<script src="../shared/demo-nav.js"></script>
+</body>
+</html>

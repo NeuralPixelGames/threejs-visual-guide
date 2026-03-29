@@ -1,0 +1,619 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<title>Shadow Types — Three.js Encyclopedia</title>
+	<meta charset="utf-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<link rel="stylesheet" href="../shared/demo-base.css">
+	<script type="importmap">
+	{
+		"imports": {
+			"three": "https://unpkg.com/three@0.183.0/build/three.module.js",
+			"three/addons/": "https://unpkg.com/three@0.183.0/examples/jsm/"
+		}
+	}
+	</script>
+</head>
+<body>
+
+<a href="../index.html" id="back-btn">&larr; Hub</a>
+
+<div class="multi-panel-grid grid-2x2">
+	<div class="panel-label"><span><strong>No Shadows</strong></span></div>
+	<div class="panel-label"><span><strong>BasicShadowMap</strong></span></div>
+	<div class="panel-label"><span><strong>PCFShadowMap</strong></span></div>
+	<div class="panel-label"><span><strong>VSMShadowMap</strong></span></div>
+</div>
+
+<div class="panel-divider-v" style="left:50%"></div>
+<div class="panel-divider-h" style="top:50%"></div>
+
+<div class="style-panel">
+	<span class="style-kicker">Renderer</span>
+	<h3>Shadow Comparison</h3>
+	<p>Four shadow modes side by side. Switch between light types to see how each algorithm handles different shadow sources.</p>
+	<div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:8px;">
+		<span class="style-chip" id="chip-light">DirectionalLight</span>
+		<span class="style-chip purple">MeshPhysicalMaterial</span>
+		<span class="style-chip pink">Clearcoat</span>
+	</div>
+</div>
+
+<script type="module">
+import * as THREE from 'three';
+import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+import { GUI } from 'three/addons/libs/lil-gui.module.min.js';
+
+const renderer = new THREE.WebGLRenderer( { antialias: true } );
+renderer.setPixelRatio( window.devicePixelRatio );
+renderer.setSize( window.innerWidth, window.innerHeight );
+renderer.setScissorTest( true );
+renderer.shadowMap.enabled = true;
+renderer.toneMapping = THREE.ACESFilmicToneMapping;
+renderer.toneMappingExposure = 0.9;
+document.body.appendChild( renderer.domElement );
+
+const shadowTypes = [
+	{ type: null, label: 'No Shadows' },
+	{ type: THREE.BasicShadowMap, label: 'BasicShadowMap' },
+	{ type: THREE.PCFShadowMap, label: 'PCFShadowMap' },
+	{ type: THREE.VSMShadowMap, label: 'VSMShadowMap' }
+];
+
+const scenes = [];
+const cameras = [];
+
+const accentColors = [ 0x4a9eff, 0x22c55e, 0xa855f7, 0xf97316, 0xf43f5e, 0x06b6d4 ];
+
+const params = {
+	lightType: 'Directional',
+	lightX: - 3,
+	lightY: 8,
+	lightZ: 6,
+	shadowMapSize: 1024,
+	shadowBias: - 0.0015
+};
+
+const lightChip = document.getElementById( 'chip-light' );
+
+function createPanelScene( shadowConfig, index ) {
+
+	const scene = new THREE.Scene();
+	scene.background = new THREE.Color( 0x0a0e1a );
+	scene.fog = new THREE.FogExp2( 0x0a0e1a, 0.025 );
+
+	// Floor
+	const floorGeo = new THREE.PlaneGeometry( 30, 30 );
+	const floorMat = new THREE.MeshPhysicalMaterial( {
+		color: 0x445566,
+		roughness: 0.4,
+		metalness: 0.2,
+		clearcoat: 0.3,
+		clearcoatRoughness: 0.2,
+		envMapIntensity: 0.3
+	} );
+	const floor = new THREE.Mesh( floorGeo, floorMat );
+	floor.rotation.x = - Math.PI / 2;
+	floor.position.y = 0;
+	floor.receiveShadow = true;
+	scene.add( floor );
+
+	// Grid on floor
+	const grid = new THREE.GridHelper( 20, 20, 0x2a3a55, 0x1a2540 );
+	grid.position.y = 0.01;
+	scene.add( grid );
+
+	// Back wall
+	const wallGeo = new THREE.PlaneGeometry( 30, 12 );
+	const wallMat = new THREE.MeshPhysicalMaterial( {
+		color: 0x334455,
+		roughness: 0.6,
+		metalness: 0.15,
+		clearcoat: 0.15,
+		clearcoatRoughness: 0.4
+	} );
+	const backWall = new THREE.Mesh( wallGeo, wallMat );
+	backWall.position.set( 0, 6, - 6 );
+	backWall.receiveShadow = true;
+	scene.add( backWall );
+
+	// Side wall right
+	const sideWallR = new THREE.Mesh( wallGeo, wallMat );
+	sideWallR.rotation.y = - Math.PI / 2;
+	sideWallR.position.set( 8, 6, 0 );
+	sideWallR.receiveShadow = true;
+	scene.add( sideWallR );
+
+	// --- Central torus knot ---
+	const knotGeo = new THREE.TorusKnotGeometry( 0.9, 0.28, 128, 32 );
+	const knotMat = new THREE.MeshPhysicalMaterial( {
+		color: 0xa855f7,
+		roughness: 0.1,
+		metalness: 0.85,
+		clearcoat: 1.0,
+		clearcoatRoughness: 0.08,
+		envMapIntensity: 0.6
+	} );
+	const knot = new THREE.Mesh( knotGeo, knotMat );
+	knot.position.set( 0, 2.5, 0 );
+	knot.castShadow = true;
+	knot.receiveShadow = true;
+	scene.add( knot );
+
+	// --- Floating sphere ---
+	const sphereGeo = new THREE.SphereGeometry( 0.7, 64, 64 );
+	const sphereMat = new THREE.MeshPhysicalMaterial( {
+		color: 0x4a9eff,
+		roughness: 0.05,
+		metalness: 0.9,
+		clearcoat: 1.0,
+		clearcoatRoughness: 0.05,
+		envMapIntensity: 0.8
+	} );
+	const sphere = new THREE.Mesh( sphereGeo, sphereMat );
+	sphere.position.set( 2.0, 2.2, - 1.5 );
+	sphere.castShadow = true;
+	sphere.receiveShadow = true;
+	scene.add( sphere );
+
+	// --- Ring of colored spheres (from v1) ---
+	const ringSphereGeo = new THREE.SphereGeometry( 0.35, 32, 24 );
+	const ringSpheres = [];
+
+	for ( let s = 0; s < 6; s ++ ) {
+
+		const angle = ( s / 6 ) * Math.PI * 2;
+		const mat = new THREE.MeshPhysicalMaterial( {
+			color: accentColors[ s ],
+			roughness: 0.2,
+			metalness: 0.6,
+			clearcoat: 0.8,
+			clearcoatRoughness: 0.1
+		} );
+		const rs = new THREE.Mesh( ringSphereGeo, mat );
+		rs.position.set( Math.cos( angle ) * 3.5, 0.6, Math.sin( angle ) * 3.5 );
+		rs.castShadow = true;
+		rs.receiveShadow = true;
+		scene.add( rs );
+		ringSpheres.push( rs );
+
+	}
+
+	// --- Floating cubes ring (from v1) ---
+	const cubeGeo = new THREE.BoxGeometry( 0.45, 0.45, 0.45 );
+	const cubes = [];
+
+	for ( let c = 0; c < 8; c ++ ) {
+
+		const angle = ( c / 8 ) * Math.PI * 2;
+		const mat = new THREE.MeshPhysicalMaterial( {
+			color: accentColors[ c % accentColors.length ],
+			roughness: 0.25,
+			metalness: 0.5,
+			clearcoat: 0.6,
+			clearcoatRoughness: 0.15
+		} );
+		const cube = new THREE.Mesh( cubeGeo, mat );
+		cube.position.set(
+			Math.cos( angle ) * 2.0,
+			1.2 + Math.sin( c * 1.3 ) * 0.4,
+			Math.sin( angle ) * 2.0
+		);
+		cube.rotation.set( c * 0.3, c * 0.5, c * 0.2 );
+		cube.castShadow = true;
+		cube.receiveShadow = true;
+		scene.add( cube );
+		cubes.push( cube );
+
+	}
+
+	// --- Cylindrical pillars with glowing orbs (from v1) ---
+	const pillarGeo = new THREE.CylinderGeometry( 0.2, 0.25, 2.8, 16 );
+
+	for ( let p = 0; p < 4; p ++ ) {
+
+		const angle = ( p / 4 ) * Math.PI * 2 + Math.PI / 4;
+		const pillarMat = new THREE.MeshPhysicalMaterial( {
+			color: 0x2a3a4e,
+			roughness: 0.3,
+			metalness: 0.6,
+			clearcoat: 0.5,
+			clearcoatRoughness: 0.2
+		} );
+		const pillar = new THREE.Mesh( pillarGeo, pillarMat );
+		pillar.position.set( Math.cos( angle ) * 5.5, 1.4, Math.sin( angle ) * 5.5 );
+		pillar.castShadow = true;
+		pillar.receiveShadow = true;
+		scene.add( pillar );
+
+		// Glowing orb on top of pillar
+		const orbGeo = new THREE.SphereGeometry( 0.15, 16, 12 );
+		const orbMat = new THREE.MeshPhysicalMaterial( {
+			color: accentColors[ p ],
+			emissive: accentColors[ p ],
+			emissiveIntensity: 0.8,
+			roughness: 0.1,
+			metalness: 0.9,
+			clearcoat: 1.0,
+			clearcoatRoughness: 0.05
+		} );
+		const orb = new THREE.Mesh( orbGeo, orbMat );
+		orb.position.set( Math.cos( angle ) * 5.5, 3.0, Math.sin( angle ) * 5.5 );
+		scene.add( orb );
+
+	}
+
+	// --- Small contact sphere on floor ---
+	const smallSphereGeo = new THREE.SphereGeometry( 0.3, 32, 32 );
+	const smallSphereMat = new THREE.MeshPhysicalMaterial( {
+		color: 0xff6b9d,
+		roughness: 0.15,
+		metalness: 0.8,
+		clearcoat: 0.9,
+		clearcoatRoughness: 0.1
+	} );
+	const smallSphere = new THREE.Mesh( smallSphereGeo, smallSphereMat );
+	smallSphere.position.set( - 2.0, 0.3, 2.0 );
+	smallSphere.castShadow = true;
+	smallSphere.receiveShadow = true;
+	scene.add( smallSphere );
+
+	// --- Ambient light ---
+	const ambient = new THREE.AmbientLight( 0x1a1e30, 0.3 );
+	scene.add( ambient );
+
+	// Hemisphere light for subtle sky/ground fill
+	const hemi = new THREE.HemisphereLight( 0x1a2744, 0x080c16, 0.2 );
+	scene.add( hemi );
+
+	// --- Primary shadow-casting light (created per type) ---
+	const shadowCastingLight = createShadowLight( params.lightType, shadowConfig );
+	scene.add( shadowCastingLight );
+
+	// SpotLight needs a target
+	const lightTarget = new THREE.Object3D();
+	lightTarget.position.set( 0, 0, 0 );
+	scene.add( lightTarget );
+
+	if ( shadowCastingLight.target !== undefined ) {
+
+		shadowCastingLight.target = lightTarget;
+
+	}
+
+	// Accent rim light (non-shadow, subtle)
+	const rimLight = new THREE.DirectionalLight( 0x4a9eff, 0.35 );
+	rimLight.position.set( - 3, 4, 5 );
+	scene.add( rimLight );
+
+	// Warm fill (dim)
+	const fillLight = new THREE.PointLight( 0xff9955, 0.5, 14, 2 );
+	fillLight.position.set( 5, 3, 2 );
+	scene.add( fillLight );
+
+	const camera = new THREE.PerspectiveCamera( 42, 1, 0.1, 100 );
+	camera.position.set( 6.0, 6.5, 8.0 );
+	camera.lookAt( 0.5, 0.5, 0 );
+
+	scenes.push( {
+		scene,
+		shadowLight: shadowCastingLight,
+		lightTarget,
+		knot,
+		sphere,
+		ringSpheres,
+		cubes
+	} );
+	cameras.push( camera );
+
+}
+
+function createShadowLight( lightType, shadowConfig ) {
+
+	let light;
+
+	if ( lightType === 'Point' ) {
+
+		light = new THREE.PointLight( 0xfff0d6, 5.0, 30, 1.5 );
+		light.position.set( params.lightX, params.lightY, params.lightZ );
+
+		if ( shadowConfig.type !== null ) {
+
+			light.castShadow = true;
+			light.shadow.mapSize.setScalar( params.shadowMapSize );
+			light.shadow.camera.near = 0.5;
+			light.shadow.camera.far = 25;
+			light.shadow.bias = params.shadowBias;
+			light.shadow.normalBias = 0.02;
+
+			if ( shadowConfig.type === THREE.VSMShadowMap ) {
+
+				light.shadow.blurSamples = 25;
+				light.shadow.radius = 15;
+
+			} else if ( shadowConfig.type === THREE.PCFShadowMap ) {
+
+				light.shadow.radius = 1;
+
+			}
+
+		}
+
+	} else if ( lightType === 'Spot' ) {
+
+		light = new THREE.SpotLight( 0xfff0d6, 8.0, 30, Math.PI / 5, 0.4, 1.5 );
+		light.position.set( params.lightX, params.lightY, params.lightZ );
+
+		if ( shadowConfig.type !== null ) {
+
+			light.castShadow = true;
+			light.shadow.mapSize.setScalar( params.shadowMapSize );
+			light.shadow.camera.near = 0.5;
+			light.shadow.camera.far = 30;
+			light.shadow.bias = params.shadowBias;
+			light.shadow.normalBias = 0.02;
+
+			if ( shadowConfig.type === THREE.VSMShadowMap ) {
+
+				light.shadow.blurSamples = 25;
+				light.shadow.radius = 15;
+
+			} else if ( shadowConfig.type === THREE.PCFShadowMap ) {
+
+				light.shadow.radius = 1;
+
+			}
+
+		}
+
+	} else {
+
+		light = new THREE.DirectionalLight( 0xfff0d6, 4.0 );
+		light.position.set( params.lightX, params.lightY, params.lightZ );
+
+		if ( shadowConfig.type !== null ) {
+
+			light.castShadow = true;
+			light.shadow.mapSize.setScalar( params.shadowMapSize );
+			light.shadow.camera.near = 0.5;
+			light.shadow.camera.far = 30;
+			light.shadow.camera.left = - 10;
+			light.shadow.camera.right = 10;
+			light.shadow.camera.top = 10;
+			light.shadow.camera.bottom = - 10;
+			light.shadow.bias = params.shadowBias;
+			light.shadow.normalBias = 0.02;
+
+			if ( shadowConfig.type === THREE.VSMShadowMap ) {
+
+				light.shadow.blurSamples = 25;
+				light.shadow.radius = 15;
+
+			} else if ( shadowConfig.type === THREE.PCFShadowMap ) {
+
+				light.shadow.radius = 1;
+
+			}
+
+		}
+
+	}
+
+	return light;
+
+}
+
+function rebuildAllScenes() {
+
+	// Dispose existing scenes
+	for ( let i = scenes.length - 1; i >= 0; i -- ) {
+
+		scenes[ i ].scene.traverse( child => {
+
+			if ( child.geometry ) child.geometry.dispose();
+			if ( child.material ) {
+
+				if ( Array.isArray( child.material ) ) {
+
+					child.material.forEach( m => m.dispose() );
+
+				} else {
+
+					child.material.dispose();
+
+				}
+
+			}
+
+		} );
+
+	}
+
+	scenes.length = 0;
+	cameras.length = 0;
+
+	for ( let i = 0; i < 4; i ++ ) {
+
+		createPanelScene( shadowTypes[ i ], i );
+
+	}
+
+	// Re-sync orbit controls to new camera[0]
+	controls.object = cameras[ 0 ];
+	controls.update();
+
+	// Update all materials for shadow type
+	for ( let i = 0; i < 4; i ++ ) {
+
+		scenes[ i ].scene.traverse( child => {
+
+			if ( child.material ) child.material.needsUpdate = true;
+
+		} );
+
+	}
+
+}
+
+for ( let i = 0; i < 4; i ++ ) {
+
+	createPanelScene( shadowTypes[ i ], i );
+
+}
+
+const controls = new OrbitControls( cameras[ 0 ], renderer.domElement );
+controls.enableDamping = true;
+controls.dampingFactor = 0.05;
+controls.target.set( 0.5, 0.5, 0 );
+controls.update();
+
+// GUI
+const gui = new GUI( { width: 300 } );
+
+gui.add( params, 'lightType', [ 'Directional', 'Point', 'Spot' ] ).name( 'Light Type' ).onChange( v => {
+
+	lightChip.textContent = v === 'Directional' ? 'DirectionalLight'
+		: v === 'Point' ? 'PointLight' : 'SpotLight';
+
+	rebuildAllScenes();
+
+} );
+
+gui.add( params, 'lightX', - 8, 8, 0.1 ).name( 'Light X' ).onChange( updateLights );
+gui.add( params, 'lightY', 1, 12, 0.1 ).name( 'Light Y' ).onChange( updateLights );
+gui.add( params, 'lightZ', - 8, 8, 0.1 ).name( 'Light Z' ).onChange( updateLights );
+gui.add( params, 'shadowMapSize', [ 256, 512, 1024, 2048, 4096 ] ).name( 'Map Size' ).onChange( rebuildShadowMaps );
+gui.add( params, 'shadowBias', - 0.01, 0.01, 0.0001 ).name( 'Shadow Bias' ).onChange( updateLights );
+
+function updateLights() {
+
+	for ( let i = 0; i < 4; i ++ ) {
+
+		scenes[ i ].shadowLight.position.set( params.lightX, params.lightY, params.lightZ );
+
+		if ( scenes[ i ].shadowLight.shadow ) {
+
+			scenes[ i ].shadowLight.shadow.bias = params.shadowBias;
+
+		}
+
+	}
+
+}
+
+function rebuildShadowMaps() {
+
+	const size = parseInt( params.shadowMapSize );
+
+	for ( let i = 0; i < 4; i ++ ) {
+
+		const light = scenes[ i ].shadowLight;
+
+		if ( light.shadow && light.shadow.map ) {
+
+			light.shadow.map.dispose();
+			light.shadow.map = null;
+
+		}
+
+		if ( light.shadow ) {
+
+			light.shadow.mapSize.setScalar( size );
+
+		}
+
+	}
+
+}
+
+const clock = new THREE.Clock();
+
+function animate() {
+
+	requestAnimationFrame( animate );
+	controls.update();
+
+	const t = clock.getElapsedTime();
+
+	for ( let i = 0; i < 4; i ++ ) {
+
+		const s = scenes[ i ];
+
+		cameras[ i ].position.copy( cameras[ 0 ].position );
+		cameras[ i ].quaternion.copy( cameras[ 0 ].quaternion );
+
+		// Torus knot rotation
+		s.knot.rotation.y = t * 0.3;
+		s.knot.rotation.x = t * 0.2;
+
+		// Floating sphere bob
+		s.sphere.position.y = 2.2 + Math.sin( t * 0.8 ) * 0.4;
+
+		// Ring spheres orbit and bob
+		for ( let j = 0; j < s.ringSpheres.length; j ++ ) {
+
+			const angle = ( j / 6 ) * Math.PI * 2 + t * 0.2;
+			s.ringSpheres[ j ].position.x = Math.cos( angle ) * 3.5;
+			s.ringSpheres[ j ].position.z = Math.sin( angle ) * 3.5;
+			s.ringSpheres[ j ].position.y = 0.6 + Math.sin( t * 1.5 + j ) * 0.25;
+
+		}
+
+		// Floating cubes tumble
+		for ( let j = 0; j < s.cubes.length; j ++ ) {
+
+			s.cubes[ j ].rotation.x += 0.004;
+			s.cubes[ j ].rotation.y += 0.006;
+			s.cubes[ j ].position.y = 1.2 + Math.sin( t * 1.2 + j * 0.8 ) * 0.35;
+
+		}
+
+	}
+
+	const w = window.innerWidth;
+	const h = window.innerHeight;
+	const halfW = Math.floor( w / 2 );
+	const halfH = Math.floor( h / 2 );
+
+	for ( let i = 0; i < 4; i ++ ) {
+
+		const col = i % 2;
+		const row = 1 - Math.floor( i / 2 );
+		const x = col * halfW;
+		const y = row * halfH;
+
+		cameras[ i ].aspect = halfW / halfH;
+		cameras[ i ].updateProjectionMatrix();
+
+		if ( shadowTypes[ i ].type !== null ) {
+
+			renderer.shadowMap.enabled = true;
+			renderer.shadowMap.type = shadowTypes[ i ].type;
+			renderer.shadowMap.needsUpdate = true;
+
+		} else {
+
+			renderer.shadowMap.enabled = false;
+
+		}
+
+		renderer.setViewport( x, y, halfW, halfH );
+		renderer.setScissor( x, y, halfW, halfH );
+		renderer.render( scenes[ i ].scene, cameras[ i ] );
+
+	}
+
+}
+
+window.addEventListener( 'resize', () => {
+
+	renderer.setSize( window.innerWidth, window.innerHeight );
+
+} );
+
+animate();
+</script>
+
+<script src="../shared/demo-nav.js"></script>
+</body>
+</html>

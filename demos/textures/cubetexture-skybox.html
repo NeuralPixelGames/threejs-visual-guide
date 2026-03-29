@@ -1,0 +1,581 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<title>Three.js Encyclopedia - CubeTexture Skybox</title>
+	<meta charset="utf-8">
+	<meta name="viewport" content="width=device-width, user-scalable=no, minimum-scale=1.0, maximum-scale=1.0">
+	<link rel="stylesheet" href="../shared/demo-base.css">
+	<style>
+		/* ── Reflection annotation ────────────────────────── */
+		#reflection-note {
+			position: fixed;
+			top: 60px;
+			left: 50%;
+			transform: translateX(-50%);
+			z-index: 10;
+			background: rgba(10, 14, 26, 0.85);
+			backdrop-filter: blur(8px);
+			border: 1px solid rgba(168, 85, 247, 0.4);
+			border-radius: 8px;
+			padding: 8px 16px;
+			color: #e0e5f0;
+			font-size: 12px;
+			max-width: 520px;
+			text-align: center;
+			pointer-events: none;
+			line-height: 1.5;
+		}
+		#reflection-note .note-icon {
+			display: inline-block;
+			width: 18px;
+			height: 18px;
+			line-height: 18px;
+			text-align: center;
+			border-radius: 50%;
+			background: rgba(168, 85, 247, 0.5);
+			color: #fff;
+			font-size: 11px;
+			font-weight: 700;
+			font-style: italic;
+			margin-right: 6px;
+			vertical-align: middle;
+		}
+		#reflection-note strong {
+			color: #a855f7;
+		}
+
+		/* ── Infographic panel ────────────────────────────── */
+		#info-panel {
+			position: fixed;
+			bottom: 16px;
+			left: 16px;
+			z-index: 20;
+			font-family: 'Inter', system-ui, sans-serif;
+			width: 280px;
+		}
+		#info-panel-tab {
+			display: inline-flex;
+			align-items: center;
+			gap: 6px;
+			background: rgba(10, 14, 26, 0.9);
+			backdrop-filter: blur(8px);
+			border: 1px solid rgba(74, 158, 255, 0.4);
+			border-radius: 8px;
+			padding: 8px 14px;
+			cursor: pointer;
+			user-select: none;
+			transition: all 0.2s;
+		}
+		#info-panel-tab:hover {
+			border-color: #4a9eff;
+			background: rgba(74, 158, 255, 0.12);
+		}
+		.tab-icon {
+			display: inline-flex;
+			align-items: center;
+			justify-content: center;
+			width: 22px;
+			height: 22px;
+			border-radius: 50%;
+			background: #4a9eff;
+			color: #0a0e1a;
+			font-weight: 700;
+			font-size: 14px;
+		}
+		.tab-label {
+			color: #4a9eff;
+			font-size: 13px;
+			font-weight: 600;
+		}
+		#info-panel-body {
+			display: none;
+			background: rgba(10, 14, 26, 0.92);
+			backdrop-filter: blur(12px);
+			border: 1px solid rgba(74, 158, 255, 0.3);
+			border-radius: 10px;
+			padding: 16px;
+			margin-top: 8px;
+			color: #c8cdd8;
+			font-size: 12px;
+			line-height: 1.6;
+			max-height: 70vh;
+			overflow-y: auto;
+		}
+		#info-panel.expanded #info-panel-body {
+			display: block;
+		}
+		#info-panel.expanded #info-panel-tab {
+			border-color: #4a9eff;
+		}
+		#info-panel-body h3 {
+			color: #fff;
+			font-size: 13px;
+			margin: 12px 0 4px;
+			padding-bottom: 3px;
+			border-bottom: 1px solid rgba(74, 158, 255, 0.2);
+		}
+		#info-panel-body h3:first-child {
+			margin-top: 0;
+		}
+		#info-panel-body p {
+			margin: 4px 0 8px;
+		}
+		#info-panel-body code {
+			background: rgba(74, 158, 255, 0.12);
+			color: #7ec8ff;
+			padding: 1px 5px;
+			border-radius: 3px;
+			font-size: 11px;
+		}
+		.note-box {
+			background: rgba(168, 85, 247, 0.1);
+			border: 1px solid rgba(168, 85, 247, 0.3);
+			border-radius: 6px;
+			padding: 8px 10px;
+			margin-top: 10px;
+			font-size: 11px;
+			line-height: 1.5;
+		}
+		.note-box strong {
+			color: #a855f7;
+		}
+
+		/* ── Cube cross diagram ───────────────────────────── */
+		.cube-cross {
+			display: grid;
+			grid-template-columns: repeat(4, 1fr);
+			grid-template-rows: repeat(3, 1fr);
+			gap: 2px;
+			width: 200px;
+			margin: 10px auto;
+		}
+		.cross-cell {
+			aspect-ratio: 1;
+			border-radius: 2px;
+			display: flex;
+			align-items: center;
+			justify-content: center;
+		}
+		.cross-cell.empty {
+			background: transparent;
+		}
+		.cross-cell.face {
+			background: rgba(74, 158, 255, 0.12);
+			border: 1px solid rgba(74, 158, 255, 0.35);
+		}
+		.cross-cell.face.front {
+			background: rgba(74, 158, 255, 0.25);
+			border-color: #4a9eff;
+		}
+		.cross-cell.face span {
+			color: #7ec8ff;
+			font-size: 10px;
+			font-weight: 600;
+		}
+		.cross-cell.face.front span {
+			color: #fff;
+		}
+
+		@media (max-width: 640px) {
+			#info-panel { width: 240px; bottom: 8px; left: 8px; }
+			#info-panel-body { font-size: 11px; padding: 12px; }
+			#reflection-note { font-size: 11px; max-width: 90%; top: 50px; padding: 6px 12px; }
+			.cube-cross { width: 160px; }
+		}
+	</style>
+</head>
+<body>
+	<a href="../index.html" id="back-btn">← Hub</a>
+	<div id="info"><strong>CubeTexture Skybox</strong><br>Procedural gradient skybox cubemap with reflective / refractive sphere</div>
+
+	<!-- Annotation: static envMap vs real-time reflections -->
+	<div id="reflection-note">
+		<span class="note-icon">i</span>
+		The sphere reflects the skybox environment map only. For real-time reflections of other scene objects, a <strong>CubeCamera</strong> is needed (see the Cube Camera demo).
+	</div>
+
+	<!-- Infographic panel -->
+	<div id="info-panel">
+		<div id="info-panel-tab" title="Click to expand">
+			<span class="tab-icon">?</span>
+			<span class="tab-label">CubeTexture</span>
+		</div>
+		<div id="info-panel-body">
+			<h3>What is a CubeTexture?</h3>
+			<p>Six images arranged as faces of a cube, creating a seamless 360&deg; environment.</p>
+
+			<div class="cube-cross">
+				<div class="cross-cell empty"></div>
+				<div class="cross-cell face" data-label="+Y"><span>+Y</span></div>
+				<div class="cross-cell empty"></div>
+				<div class="cross-cell empty"></div>
+				<div class="cross-cell face" data-label="-X"><span>-X</span></div>
+				<div class="cross-cell face front" data-label="+Z"><span>+Z</span></div>
+				<div class="cross-cell face" data-label="+X"><span>+X</span></div>
+				<div class="cross-cell face" data-label="-Z"><span>-Z</span></div>
+				<div class="cross-cell empty"></div>
+				<div class="cross-cell face" data-label="-Y"><span>-Y</span></div>
+				<div class="cross-cell empty"></div>
+				<div class="cross-cell empty"></div>
+			</div>
+
+			<h3>As a Skybox</h3>
+			<p>Assigned to <code>scene.background</code>, it wraps the entire scene in the cube image &mdash; the camera sits inside looking out.</p>
+
+			<h3>As an Environment Map</h3>
+			<p>Assigned to <code>material.envMap</code>, it gives surfaces reflective or refractive appearance based on the surrounding cubemap.</p>
+
+			<div class="note-box">
+				<strong>Note:</strong> This is a <em>static</em> environment map. Objects in the scene do not appear in each other's reflections. Use a <strong>CubeCamera</strong> for real-time inter-object reflections.
+			</div>
+		</div>
+	</div>
+
+	<div id="container"></div>
+
+	<script type="importmap">
+	{ "imports": { "three": "https://unpkg.com/three@0.183.0/build/three.module.js", "three/addons/": "https://unpkg.com/three@0.183.0/examples/jsm/" } }
+	</script>
+	<script type="module">
+		import * as THREE from 'three';
+		import { GUI } from 'three/addons/libs/lil-gui.module.min.js';
+		import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+
+		let camera, scene, renderer, controls;
+		let sphere, secondarySpheres = [];
+		let cubeTexture;
+
+		const params = {
+			reflectivity: 0.98,
+			refractionMode: false,
+			refractionRatio: 0.95,
+			metalness: 1.0,
+			roughness: 0.0,
+			skyTopColor: '#0a1628',
+			skyMiddleColor: '#ff6633',
+			skyBottomColor: '#1a0a2e'
+		};
+
+		function createSkyFace( direction, topColor, midColor, bottomColor ) {
+
+			const size = 512;
+			const canvas = document.createElement( 'canvas' );
+			canvas.width = size;
+			canvas.height = size;
+			const ctx = canvas.getContext( '2d' );
+
+			// Gradient sky
+			const grad = ctx.createLinearGradient( 0, 0, 0, size );
+
+			if ( direction === 'top' ) {
+
+				ctx.fillStyle = topColor;
+				ctx.fillRect( 0, 0, size, size );
+
+				// Stars
+				for ( let i = 0; i < 200; i ++ ) {
+
+					const x = Math.random() * size;
+					const y = Math.random() * size;
+					const r = Math.random() * 2;
+					const alpha = 0.3 + Math.random() * 0.7;
+					ctx.fillStyle = `rgba(255,255,255,${alpha})`;
+					ctx.beginPath();
+					ctx.arc( x, y, r, 0, Math.PI * 2 );
+					ctx.fill();
+
+				}
+
+				return canvas;
+
+			}
+
+			if ( direction === 'bottom' ) {
+
+				ctx.fillStyle = bottomColor;
+				ctx.fillRect( 0, 0, size, size );
+
+				// Ground pattern
+				for ( let i = 0; i < 100; i ++ ) {
+
+					const x = Math.random() * size;
+					const y = Math.random() * size;
+					ctx.fillStyle = `rgba(255,255,255,${Math.random() * 0.05})`;
+					ctx.fillRect( x, y, 4 + Math.random() * 8, 2 );
+
+				}
+
+				return canvas;
+
+			}
+
+			// Side faces
+			grad.addColorStop( 0, topColor );
+			grad.addColorStop( 0.35, topColor );
+			grad.addColorStop( 0.5, midColor );
+			grad.addColorStop( 0.65, bottomColor );
+			grad.addColorStop( 1, bottomColor );
+			ctx.fillStyle = grad;
+			ctx.fillRect( 0, 0, size, size );
+
+			// Sun glow on one face
+			if ( direction === 'front' ) {
+
+				const grd = ctx.createRadialGradient( size * 0.5, size * 0.45, 0, size * 0.5, size * 0.45, size * 0.3 );
+				grd.addColorStop( 0, 'rgba(255,200,100,0.8)' );
+				grd.addColorStop( 0.2, 'rgba(255,150,50,0.4)' );
+				grd.addColorStop( 0.5, 'rgba(255,100,30,0.1)' );
+				grd.addColorStop( 1, 'rgba(0,0,0,0)' );
+				ctx.fillStyle = grd;
+				ctx.fillRect( 0, 0, size, size );
+
+			}
+
+			// Stars in upper portion
+			for ( let i = 0; i < 60; i ++ ) {
+
+				const x = Math.random() * size;
+				const y = Math.random() * size * 0.4;
+				const alpha = 0.2 + Math.random() * 0.6;
+				ctx.fillStyle = `rgba(255,255,255,${alpha})`;
+				ctx.beginPath();
+				ctx.arc( x, y, Math.random() * 1.5, 0, Math.PI * 2 );
+				ctx.fill();
+
+			}
+
+			// Clouds / haze
+			for ( let i = 0; i < 8; i ++ ) {
+
+				const cx = Math.random() * size;
+				const cy = size * 0.3 + Math.random() * size * 0.3;
+				const w = 40 + Math.random() * 120;
+				const h = 10 + Math.random() * 20;
+				ctx.fillStyle = `rgba(255,150,80,${0.03 + Math.random() * 0.08})`;
+				ctx.beginPath();
+				ctx.ellipse( cx, cy, w, h, 0, 0, Math.PI * 2 );
+				ctx.fill();
+
+			}
+
+			return canvas;
+
+		}
+
+		function buildCubeTexture() {
+
+			const top = params.skyTopColor;
+			const mid = params.skyMiddleColor;
+			const bot = params.skyBottomColor;
+
+			const faces = [
+				createSkyFace( 'right', top, mid, bot ),   // +X
+				createSkyFace( 'left', top, mid, bot ),    // -X
+				createSkyFace( 'top', top, mid, bot ),     // +Y
+				createSkyFace( 'bottom', top, mid, bot ),  // -Y
+				createSkyFace( 'front', top, mid, bot ),   // +Z
+				createSkyFace( 'back', top, mid, bot ),    // -Z
+			];
+
+			const ct = new THREE.CubeTexture( faces );
+			ct.needsUpdate = true;
+			return ct;
+
+		}
+
+		init();
+
+		function init() {
+
+			scene = new THREE.Scene();
+
+			renderer = new THREE.WebGLRenderer( { antialias: true } );
+			renderer.setPixelRatio( window.devicePixelRatio );
+			renderer.setSize( window.innerWidth, window.innerHeight );
+			renderer.setAnimationLoop( animate );
+			renderer.toneMapping = THREE.ACESFilmicToneMapping;
+			renderer.toneMappingExposure = 1.0;
+			document.getElementById( 'container' ).appendChild( renderer.domElement );
+
+			camera = new THREE.PerspectiveCamera( 55, window.innerWidth / window.innerHeight, 0.1, 1000 );
+			camera.position.set( 0, 1, 6 );
+
+			controls = new OrbitControls( camera, renderer.domElement );
+			controls.enableDamping = true;
+			controls.dampingFactor = 0.05;
+			controls.enablePan = false;
+
+			// Build procedural cubemap
+			cubeTexture = buildCubeTexture();
+			scene.background = cubeTexture;
+
+			// Main reflective sphere
+			const sphereGeo = new THREE.SphereGeometry( 1.5, 64, 64 );
+			const sphereMat = new THREE.MeshStandardMaterial( {
+				envMap: cubeTexture,
+				envMapIntensity: params.reflectivity,
+				metalness: params.metalness,
+				roughness: params.roughness,
+				color: 0xffffff
+			} );
+			sphere = new THREE.Mesh( sphereGeo, sphereMat );
+			sphere.position.y = 0.5;
+			scene.add( sphere );
+
+			// Secondary smaller spheres in orbit
+			const colors = [ 0xff4444, 0x44ff44, 0x4444ff, 0xffff44, 0xff44ff ];
+			for ( let i = 0; i < 5; i ++ ) {
+
+				const geo = new THREE.SphereGeometry( 0.3, 32, 32 );
+				const mat = new THREE.MeshStandardMaterial( {
+					envMap: cubeTexture,
+					envMapIntensity: 0.8,
+					metalness: 0.9,
+					roughness: 0.05,
+					color: colors[ i ]
+				} );
+				const s = new THREE.Mesh( geo, mat );
+				secondarySpheres.push( s );
+				scene.add( s );
+
+			}
+
+			// Torus knot for extra visual interest
+			const knotGeo = new THREE.TorusKnotGeometry( 0.6, 0.2, 100, 16 );
+			const knotMat = new THREE.MeshStandardMaterial( {
+				envMap: cubeTexture,
+				envMapIntensity: 1.0,
+				metalness: 1.0,
+				roughness: 0.0,
+				color: 0xccccff
+			} );
+			const knot = new THREE.Mesh( knotGeo, knotMat );
+			knot.position.set( 3.5, 0.5, - 1 );
+			scene.add( knot );
+			secondarySpheres.push( knot );
+
+			// Ambient light
+			const ambientLight = new THREE.AmbientLight( 0xffffff, 0.3 );
+			scene.add( ambientLight );
+
+			// Directional sun light
+			const dirLight = new THREE.DirectionalLight( 0xffaa44, 1.5 );
+			dirLight.position.set( 0, 5, 10 );
+			scene.add( dirLight );
+
+			const gui = new GUI();
+			gui.add( params, 'reflectivity', 0, 2, 0.01 ).name( 'Env Intensity' ).onChange( updateMaterial );
+			gui.add( params, 'metalness', 0, 1, 0.01 ).name( 'Metalness' ).onChange( updateMaterial );
+			gui.add( params, 'roughness', 0, 1, 0.01 ).name( 'Roughness' ).onChange( updateMaterial );
+			gui.add( params, 'refractionMode' ).name( 'Refraction Mode' ).onChange( rebuildEnvMap );
+			gui.add( params, 'refractionRatio', 0.5, 1, 0.01 ).name( 'Refraction Ratio' ).onChange( rebuildEnvMap );
+			gui.addColor( params, 'skyTopColor' ).name( 'Sky Top' ).onChange( rebuildEnvMap );
+			gui.addColor( params, 'skyMiddleColor' ).name( 'Sky Mid' ).onChange( rebuildEnvMap );
+			gui.addColor( params, 'skyBottomColor' ).name( 'Sky Bottom' ).onChange( rebuildEnvMap );
+
+			window.addEventListener( 'resize', onWindowResize );
+
+			// Info panel toggle
+			const infoPanel = document.getElementById( 'info-panel' );
+			const infoPanelTab = document.getElementById( 'info-panel-tab' );
+
+			infoPanelTab.addEventListener( 'click', () => {
+
+				infoPanel.classList.toggle( 'expanded' );
+
+			} );
+
+			// Close panel when clicking outside
+			document.addEventListener( 'click', ( e ) => {
+
+				if ( ! infoPanel.contains( e.target ) ) {
+
+					infoPanel.classList.remove( 'expanded' );
+
+				}
+
+			} );
+
+		}
+
+		function updateMaterial() {
+
+			sphere.material.envMapIntensity = params.reflectivity;
+			sphere.material.metalness = params.metalness;
+			sphere.material.roughness = params.roughness;
+
+		}
+
+		function rebuildEnvMap() {
+
+			if ( cubeTexture ) cubeTexture.dispose();
+
+			cubeTexture = buildCubeTexture();
+
+			if ( params.refractionMode ) {
+
+				cubeTexture.mapping = THREE.CubeRefractionMapping;
+
+			} else {
+
+				cubeTexture.mapping = THREE.CubeReflectionMapping;
+
+			}
+
+			scene.background = cubeTexture;
+			sphere.material.envMap = cubeTexture;
+			sphere.material.refractionRatio = params.refractionRatio;
+			sphere.material.needsUpdate = true;
+
+			secondarySpheres.forEach( s => {
+
+				s.material.envMap = cubeTexture;
+				s.material.needsUpdate = true;
+
+			} );
+
+		}
+
+		function onWindowResize() {
+
+			camera.aspect = window.innerWidth / window.innerHeight;
+			camera.updateProjectionMatrix();
+			renderer.setSize( window.innerWidth, window.innerHeight );
+
+		}
+
+		function animate() {
+
+			controls.update();
+
+			const t = performance.now() * 0.001;
+
+			// Orbit secondary spheres
+			for ( let i = 0; i < 5; i ++ ) {
+
+				const angle = t * 0.5 + ( i / 5 ) * Math.PI * 2;
+				const radius = 2.8;
+				const yOff = Math.sin( t * 0.8 + i * 1.2 ) * 0.5;
+				secondarySpheres[ i ].position.set(
+					Math.cos( angle ) * radius,
+					0.5 + yOff,
+					Math.sin( angle ) * radius
+				);
+
+			}
+
+			// Animate torus knot
+			if ( secondarySpheres[ 5 ] ) {
+
+				secondarySpheres[ 5 ].rotation.x = t * 0.3;
+				secondarySpheres[ 5 ].rotation.y = t * 0.5;
+
+			}
+
+			renderer.render( scene, camera );
+
+		}
+	</script>
+<script src="../shared/demo-nav.js"></script>
+</body>
+</html>

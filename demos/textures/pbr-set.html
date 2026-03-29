@@ -1,0 +1,1245 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<title>PBR Texture Set - Three.js Encyclopedia</title>
+	<meta charset="utf-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<link rel="stylesheet" href="../shared/demo-base.css">
+	<style>
+		/* ── Thumbnail strip at bottom ───────────────────── */
+		#pbr-thumbs {
+			position: fixed;
+			bottom: 24px;
+			left: 50%;
+			transform: translateX(-50%);
+			display: flex;
+			gap: 10px;
+			z-index: 60;
+			padding: 12px 18px;
+			background: linear-gradient(135deg, rgba(8, 12, 24, 0.92) 0%, rgba(12, 16, 30, 0.88) 100%);
+			backdrop-filter: blur(20px);
+			-webkit-backdrop-filter: blur(20px);
+			border: 1px solid rgba(74, 158, 255, 0.2);
+			border-radius: 14px;
+			box-shadow: 0 8px 40px rgba(0, 0, 0, 0.5), 0 0 60px rgba(74, 158, 255, 0.04);
+			animation: fadeInUp 0.6s ease-out both;
+			animation-delay: 0.5s;
+		}
+
+		.pbr-thumb {
+			width: 72px;
+			text-align: center;
+			cursor: pointer;
+			transition: transform 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+			position: relative;
+		}
+
+		.pbr-thumb:hover {
+			transform: translateY(-4px);
+		}
+
+		.pbr-thumb canvas {
+			width: 64px;
+			height: 64px;
+			border-radius: 8px;
+			border: 2px solid rgba(74, 158, 255, 0.35);
+			display: block;
+			margin: 0 auto 5px;
+			transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+			box-shadow: 0 2px 12px rgba(0, 0, 0, 0.3);
+		}
+
+		.pbr-thumb:hover canvas {
+			border-color: #4a9eff;
+			box-shadow: 0 0 20px rgba(74, 158, 255, 0.3), 0 4px 16px rgba(0, 0, 0, 0.4);
+		}
+
+		.pbr-thumb.active canvas {
+			border-color: #4a9eff;
+			box-shadow: 0 0 16px rgba(74, 158, 255, 0.25);
+		}
+
+		.pbr-thumb.disabled canvas {
+			opacity: 0.25;
+			border-color: rgba(255, 80, 80, 0.4);
+			box-shadow: none;
+			filter: grayscale(0.6);
+		}
+
+		.pbr-thumb span {
+			font-size: 10px;
+			color: #8898b8;
+			font-family: 'Inter', system-ui, sans-serif;
+			letter-spacing: 0.02em;
+			transition: color 0.2s;
+			display: block;
+		}
+
+		.pbr-thumb:hover span {
+			color: #c0ccdd;
+		}
+
+		.pbr-thumb.active span {
+			color: #4a9eff;
+			font-weight: 600;
+		}
+
+		.pbr-thumb.disabled span {
+			color: #555;
+			text-decoration: line-through;
+		}
+
+		/* ── Highlight indicator on hover ────────────────── */
+		.pbr-thumb .thumb-indicator {
+			position: absolute;
+			top: -6px;
+			left: 50%;
+			transform: translateX(-50%);
+			width: 6px;
+			height: 6px;
+			border-radius: 50%;
+			background: #4a9eff;
+			opacity: 0;
+			transition: opacity 0.2s;
+		}
+
+		.pbr-thumb.active .thumb-indicator {
+			opacity: 1;
+		}
+
+		.pbr-thumb.disabled .thumb-indicator {
+			background: #ff5050;
+		}
+
+		/* ── Build-up progress bar ──────────────────────── */
+		#build-progress {
+			position: fixed;
+			bottom: 130px;
+			left: 50%;
+			transform: translateX(-50%);
+			display: none;
+			align-items: center;
+			gap: 12px;
+			padding: 8px 16px;
+			background: rgba(10, 14, 26, 0.9);
+			backdrop-filter: blur(12px);
+			border: 1px solid rgba(74, 158, 255, 0.2);
+			border-radius: 10px;
+			z-index: 55;
+			animation: fadeInUp 0.4s ease-out both;
+		}
+
+		#build-progress .progress-track {
+			width: 200px;
+			height: 4px;
+			background: rgba(74, 158, 255, 0.15);
+			border-radius: 2px;
+			overflow: hidden;
+		}
+
+		#build-progress .progress-fill {
+			height: 100%;
+			background: linear-gradient(90deg, #4a9eff, #a855f7);
+			border-radius: 2px;
+			width: 0%;
+			transition: width 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+		}
+
+		#build-progress .progress-label {
+			font-size: 11px;
+			color: #8898b8;
+			font-family: 'Inter', system-ui, sans-serif;
+			white-space: nowrap;
+		}
+
+		/* ── Split view divider ──────────────────────────── */
+		#split-line {
+			position: fixed;
+			top: 42px;
+			left: 50%;
+			width: 2px;
+			height: calc(100% - 42px);
+			background: rgba(74, 158, 255, 0.4);
+			z-index: 10;
+			pointer-events: none;
+			display: none;
+		}
+
+		.split-tag {
+			position: fixed;
+			top: 56px;
+			z-index: 11;
+			background: rgba(10, 14, 26, 0.85);
+			backdrop-filter: blur(12px);
+			border: 1px solid rgba(74, 158, 255, 0.25);
+			border-radius: 6px;
+			padding: 4px 12px;
+			font-size: 11px;
+			color: #b0b8cc;
+			font-family: 'Inter', system-ui, sans-serif;
+			pointer-events: none;
+			display: none;
+			animation: fadeInUp 0.4s ease-out both;
+		}
+
+		.split-tag strong { color: #4a9eff; }
+		#split-tag-left { left: 16px; }
+		#split-tag-right { right: 16px; }
+
+		/* ── Style panel override ────────────────────────── */
+		.style-panel {
+			position: fixed;
+			left: 22px;
+			bottom: 140px;
+			z-index: 50;
+			max-width: 260px;
+			background: linear-gradient(135deg, rgba(8, 12, 24, 0.92) 0%, rgba(12, 16, 30, 0.88) 100%);
+			backdrop-filter: blur(20px);
+			-webkit-backdrop-filter: blur(20px);
+			border: 1px solid rgba(74, 158, 255, 0.18);
+			border-radius: 14px;
+			padding: 16px 20px;
+			color: #e0e5f0;
+			font-family: 'Inter', system-ui, sans-serif;
+			font-size: 13px;
+			box-shadow: 0 8px 40px rgba(0, 0, 0, 0.5), 0 0 60px rgba(74, 158, 255, 0.04);
+			animation: fadeInUp 0.6s ease-out both;
+			animation-delay: 0.4s;
+		}
+
+		.style-kicker {
+			display: inline-block;
+			font-size: 10px;
+			font-weight: 600;
+			text-transform: uppercase;
+			letter-spacing: 0.12em;
+			color: #4a9eff;
+			margin-bottom: 6px;
+		}
+
+		.style-panel h3 {
+			margin: 0 0 8px;
+			font-size: 15px;
+			font-weight: 600;
+			color: #f8fbff;
+			letter-spacing: 0.01em;
+		}
+
+		.style-panel p {
+			margin: 0 0 10px;
+			color: rgba(230, 236, 245, 0.78);
+			line-height: 1.55;
+			font-size: 12px;
+		}
+
+		.style-chips {
+			display: flex;
+			flex-wrap: wrap;
+			gap: 6px;
+		}
+
+		.style-chip {
+			display: inline-block;
+			background: rgba(74, 158, 255, 0.1);
+			border: 1px solid rgba(74, 158, 255, 0.25);
+			border-radius: 100px;
+			padding: 3px 10px;
+			font-size: 10px;
+			color: #4a9eff;
+			font-family: 'Inter', system-ui, sans-serif;
+			letter-spacing: 0.03em;
+			white-space: nowrap;
+		}
+
+		.style-chip.purple {
+			background: rgba(168, 85, 247, 0.1);
+			border-color: rgba(168, 85, 247, 0.25);
+			color: #a855f7;
+		}
+
+		.style-chip.green {
+			background: rgba(34, 197, 94, 0.08);
+			border-color: rgba(34, 197, 94, 0.25);
+			color: #22c55e;
+		}
+
+		.style-chip.amber {
+			background: rgba(245, 158, 11, 0.08);
+			border-color: rgba(245, 158, 11, 0.25);
+			color: #f59e0b;
+		}
+
+		.style-chip.rose {
+			background: rgba(244, 63, 94, 0.08);
+			border-color: rgba(244, 63, 94, 0.25);
+			color: #f43f5e;
+		}
+
+		@media (max-width: 900px) {
+			#pbr-thumbs {
+				bottom: 12px;
+				gap: 6px;
+				padding: 8px 12px;
+			}
+			.pbr-thumb { width: 52px; }
+			.pbr-thumb canvas { width: 46px; height: 46px; }
+			.pbr-thumb span { font-size: 8px; }
+			.style-panel {
+				left: 10px;
+				bottom: 110px;
+				max-width: 200px;
+				padding: 12px 14px;
+			}
+		}
+	</style>
+	<script type="importmap">
+	{
+		"imports": {
+			"three": "https://unpkg.com/three@0.183.0/build/three.module.js",
+			"three/addons/": "https://unpkg.com/three@0.183.0/examples/jsm/"
+		}
+	}
+	</script>
+</head>
+<body>
+<a href="../index.html" id="back-btn">&larr; Hub</a>
+
+<div id="info">
+	<strong>PBR Texture Set</strong><br>
+	Procedural stone textures -- click thumbnails to toggle maps, watch lighting interact with each layer
+</div>
+
+<div id="split-line"></div>
+<div class="split-tag" id="split-tag-left"><strong>Albedo Only</strong></div>
+<div class="split-tag" id="split-tag-right"><strong>Full PBR Stack</strong></div>
+
+<section class="style-panel">
+	<div class="style-kicker">Textures</div>
+	<h3>PBR Texture Set</h3>
+	<p>Six procedural canvas maps combine on a single MeshPhysicalMaterial to create realistic stone masonry -- toggle each to see its contribution.</p>
+	<div class="style-chips">
+		<span class="style-chip">albedo</span>
+		<span class="style-chip purple">normal map</span>
+		<span class="style-chip green">roughness</span>
+		<span class="style-chip amber">metalness</span>
+		<span class="style-chip rose">AO</span>
+	</div>
+</section>
+
+<div id="build-progress">
+	<span class="progress-label" id="build-label">Building...</span>
+	<div class="progress-track"><div class="progress-fill" id="build-fill"></div></div>
+</div>
+
+<div id="pbr-thumbs"></div>
+
+<div id="container"></div>
+
+<script type="module">
+import * as THREE from 'three';
+import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+import { GUI } from 'three/addons/libs/lil-gui.module.min.js';
+import { EffectComposer } from 'three/addons/postprocessing/EffectComposer.js';
+import { RenderPass } from 'three/addons/postprocessing/RenderPass.js';
+import { UnrealBloomPass } from 'three/addons/postprocessing/UnrealBloomPass.js';
+import { OutputPass } from 'three/addons/postprocessing/OutputPass.js';
+import { loadHDREnvironment } from '../shared/scene-builders.js';
+
+// ═══════════════════════════════════════════════════════════════
+// Procedural PBR Texture Generation
+// ═══════════════════════════════════════════════════════════════
+
+const TEX_SIZE = 512;
+
+function createBrickLayout( size ) {
+
+	const data = [];
+	const brickW = size / 4;
+	const brickH = size / 8;
+	const mortarW = size * 0.02;
+
+	for ( let y = 0; y < size; y ++ ) {
+
+		const row = Math.floor( y / brickH );
+		const yInBrick = y % brickH;
+		const isHMortar = yInBrick < mortarW || yInBrick > brickH - mortarW - 1;
+		const offset = ( row % 2 === 0 ) ? 0 : brickW * 0.5;
+
+		for ( let x = 0; x < size; x ++ ) {
+
+			const xShifted = ( x + offset ) % size;
+			const xInBrick = xShifted % brickW;
+			const isVMortar = xInBrick < mortarW || xInBrick > brickW - mortarW - 1;
+			const isMortar = isHMortar || isVMortar;
+
+			const brickCol = Math.floor( xShifted / brickW );
+			const brickId = row * 100 + brickCol;
+
+			data.push( { isMortar, brickId, xInBrick: xInBrick / brickW, yInBrick: yInBrick / brickH, row, col: brickCol } );
+
+		}
+
+	}
+
+	return data;
+
+}
+
+function seededRandom( seed ) {
+
+	let s = seed;
+	return function () {
+
+		s = ( s * 16807 + 0 ) % 2147483647;
+		return ( s - 1 ) / 2147483646;
+
+	};
+
+}
+
+function generateAlbedo( size ) {
+
+	const canvas = document.createElement( 'canvas' );
+	canvas.width = size;
+	canvas.height = size;
+	const ctx = canvas.getContext( '2d' );
+	const layout = createBrickLayout( size );
+	const rng = seededRandom( 42 );
+
+	const brickColors = {};
+
+	for ( let i = 0; i < layout.length; i ++ ) {
+
+		const info = layout[ i ];
+		const px = i % size;
+		const py = Math.floor( i / size );
+
+		if ( info.isMortar ) {
+
+			const v = 90 + rng() * 20;
+			ctx.fillStyle = `rgb(${v}, ${v - 5}, ${v - 10})`;
+
+		} else {
+
+			if ( ! brickColors[ info.brickId ] ) {
+
+				const baseR = 140 + rng() * 60;
+				const baseG = 100 + rng() * 40;
+				const baseB = 70 + rng() * 30;
+				brickColors[ info.brickId ] = [ baseR, baseG, baseB ];
+
+			}
+
+			const [ br, bg, bb ] = brickColors[ info.brickId ];
+			const noise = ( rng() - 0.5 ) * 20;
+			const edgeDarken = Math.min( info.xInBrick, 1 - info.xInBrick, info.yInBrick, 1 - info.yInBrick );
+			const edgeFactor = Math.min( 1, edgeDarken * 8 );
+			const r = Math.max( 0, Math.min( 255, ( br + noise ) * ( 0.75 + 0.25 * edgeFactor ) ) );
+			const g = Math.max( 0, Math.min( 255, ( bg + noise * 0.8 ) * ( 0.75 + 0.25 * edgeFactor ) ) );
+			const b = Math.max( 0, Math.min( 255, ( bb + noise * 0.6 ) * ( 0.75 + 0.25 * edgeFactor ) ) );
+			ctx.fillStyle = `rgb(${r|0}, ${g|0}, ${b|0})`;
+
+		}
+
+		ctx.fillRect( px, py, 1, 1 );
+
+	}
+
+	return canvas;
+
+}
+
+function generateNormal( size ) {
+
+	const canvas = document.createElement( 'canvas' );
+	canvas.width = size;
+	canvas.height = size;
+	const ctx = canvas.getContext( '2d' );
+	const layout = createBrickLayout( size );
+	const rng = seededRandom( 77 );
+
+	const heightMap = new Float32Array( size * size );
+
+	for ( let i = 0; i < layout.length; i ++ ) {
+
+		const info = layout[ i ];
+
+		if ( info.isMortar ) {
+
+			heightMap[ i ] = 0;
+
+		} else {
+
+			const edgeDist = Math.min( info.xInBrick, 1 - info.xInBrick, info.yInBrick, 1 - info.yInBrick );
+			const edgeFalloff = Math.min( 1, edgeDist * 12 );
+			heightMap[ i ] = 0.6 + 0.4 * edgeFalloff + ( rng() - 0.5 ) * 0.08;
+
+		}
+
+	}
+
+	const strength = 3.0;
+
+	for ( let y = 0; y < size; y ++ ) {
+
+		for ( let x = 0; x < size; x ++ ) {
+
+			const idx = y * size + x;
+			const left = heightMap[ y * size + ( ( x - 1 + size ) % size ) ];
+			const right = heightMap[ y * size + ( ( x + 1 ) % size ) ];
+			const up = heightMap[ ( ( y - 1 + size ) % size ) * size + x ];
+			const down = heightMap[ ( ( y + 1 ) % size ) * size + x ];
+
+			let nx = ( left - right ) * strength;
+			let ny = ( up - down ) * strength;
+			let nz = 1.0;
+
+			const len = Math.sqrt( nx * nx + ny * ny + nz * nz );
+			nx /= len;
+			ny /= len;
+			nz /= len;
+
+			const r = Math.max( 0, Math.min( 255, ( nx * 0.5 + 0.5 ) * 255 ) );
+			const g = Math.max( 0, Math.min( 255, ( ny * 0.5 + 0.5 ) * 255 ) );
+			const b = Math.max( 0, Math.min( 255, ( nz * 0.5 + 0.5 ) * 255 ) );
+
+			ctx.fillStyle = `rgb(${r|0}, ${g|0}, ${b|0})`;
+			ctx.fillRect( x, y, 1, 1 );
+
+		}
+
+	}
+
+	return canvas;
+
+}
+
+function generateRoughness( size ) {
+
+	const canvas = document.createElement( 'canvas' );
+	canvas.width = size;
+	canvas.height = size;
+	const ctx = canvas.getContext( '2d' );
+	const layout = createBrickLayout( size );
+	const rng = seededRandom( 123 );
+
+	const brickRoughness = {};
+
+	for ( let i = 0; i < layout.length; i ++ ) {
+
+		const info = layout[ i ];
+		const px = i % size;
+		const py = Math.floor( i / size );
+
+		if ( info.isMortar ) {
+
+			const v = 220 + rng() * 35;
+			ctx.fillStyle = `rgb(${v|0}, ${v|0}, ${v|0})`;
+
+		} else {
+
+			if ( ! brickRoughness[ info.brickId ] ) {
+
+				brickRoughness[ info.brickId ] = 140 + rng() * 80;
+
+			}
+
+			const base = brickRoughness[ info.brickId ];
+			const noise = ( rng() - 0.5 ) * 30;
+			const v = Math.max( 0, Math.min( 255, base + noise ) );
+			ctx.fillStyle = `rgb(${v|0}, ${v|0}, ${v|0})`;
+
+		}
+
+		ctx.fillRect( px, py, 1, 1 );
+
+	}
+
+	return canvas;
+
+}
+
+function generateMetalness( size ) {
+
+	const canvas = document.createElement( 'canvas' );
+	canvas.width = size;
+	canvas.height = size;
+	const ctx = canvas.getContext( '2d' );
+	const layout = createBrickLayout( size );
+	const rng = seededRandom( 456 );
+
+	for ( let i = 0; i < layout.length; i ++ ) {
+
+		const info = layout[ i ];
+		const px = i % size;
+		const py = Math.floor( i / size );
+
+		if ( info.isMortar ) {
+
+			const v = 40 + rng() * 60;
+			ctx.fillStyle = `rgb(${v|0}, ${v|0}, ${v|0})`;
+
+		} else {
+
+			const v = 3 + rng() * 12;
+			ctx.fillStyle = `rgb(${v|0}, ${v|0}, ${v|0})`;
+
+		}
+
+		ctx.fillRect( px, py, 1, 1 );
+
+	}
+
+	return canvas;
+
+}
+
+function generateAO( size ) {
+
+	const canvas = document.createElement( 'canvas' );
+	canvas.width = size;
+	canvas.height = size;
+	const ctx = canvas.getContext( '2d' );
+	const layout = createBrickLayout( size );
+	const rng = seededRandom( 789 );
+
+	for ( let i = 0; i < layout.length; i ++ ) {
+
+		const info = layout[ i ];
+		const px = i % size;
+		const py = Math.floor( i / size );
+
+		if ( info.isMortar ) {
+
+			const v = 60 + rng() * 30;
+			ctx.fillStyle = `rgb(${v|0}, ${v|0}, ${v|0})`;
+
+		} else {
+
+			const edgeDist = Math.min( info.xInBrick, 1 - info.xInBrick, info.yInBrick, 1 - info.yInBrick );
+			const ao = Math.min( 1, edgeDist * 6 );
+			const v = Math.max( 0, Math.min( 255, ( 120 + 135 * ao + ( rng() - 0.5 ) * 10 ) ) );
+			ctx.fillStyle = `rgb(${v|0}, ${v|0}, ${v|0})`;
+
+		}
+
+		ctx.fillRect( px, py, 1, 1 );
+
+	}
+
+	return canvas;
+
+}
+
+function generateDisplacement( size ) {
+
+	const canvas = document.createElement( 'canvas' );
+	canvas.width = size;
+	canvas.height = size;
+	const ctx = canvas.getContext( '2d' );
+	const layout = createBrickLayout( size );
+	const rng = seededRandom( 321 );
+
+	const brickHeight = {};
+
+	for ( let i = 0; i < layout.length; i ++ ) {
+
+		const info = layout[ i ];
+		const px = i % size;
+		const py = Math.floor( i / size );
+
+		if ( info.isMortar ) {
+
+			const v = 20 + rng() * 15;
+			ctx.fillStyle = `rgb(${v|0}, ${v|0}, ${v|0})`;
+
+		} else {
+
+			if ( ! brickHeight[ info.brickId ] ) {
+
+				brickHeight[ info.brickId ] = 160 + rng() * 60;
+
+			}
+
+			const base = brickHeight[ info.brickId ];
+			const edgeDist = Math.min( info.xInBrick, 1 - info.xInBrick, info.yInBrick, 1 - info.yInBrick );
+			const edgeFalloff = Math.min( 1, edgeDist * 10 );
+			const noise = ( rng() - 0.5 ) * 15;
+			const v = Math.max( 0, Math.min( 255, ( base * edgeFalloff + noise ) ) );
+			ctx.fillStyle = `rgb(${v|0}, ${v|0}, ${v|0})`;
+
+		}
+
+		ctx.fillRect( px, py, 1, 1 );
+
+	}
+
+	return canvas;
+
+}
+
+
+// ═══════════════════════════════════════════════════════════════
+// Scene Setup
+// ═══════════════════════════════════════════════════════════════
+
+const clock = new THREE.Clock();
+
+const renderer = new THREE.WebGLRenderer( { antialias: true } );
+renderer.setPixelRatio( window.devicePixelRatio );
+renderer.setSize( window.innerWidth, window.innerHeight );
+renderer.toneMapping = THREE.ACESFilmicToneMapping;
+renderer.toneMappingExposure = 1.0;
+renderer.shadowMap.enabled = true;
+renderer.shadowMap.type = THREE.PCFShadowMap;
+document.getElementById( 'container' ).appendChild( renderer.domElement );
+
+const scene = new THREE.Scene();
+scene.background = new THREE.Color( 0x080c18 );
+
+const camera = new THREE.PerspectiveCamera( 45, window.innerWidth / window.innerHeight, 0.1, 100 );
+camera.position.set( 0, 0.3, 3.6 );
+
+const controls = new OrbitControls( camera, renderer.domElement );
+controls.enableDamping = true;
+controls.dampingFactor = 0.06;
+controls.target.set( 0, 0, 0 );
+controls.minDistance = 1.5;
+controls.maxDistance = 10;
+controls.update();
+
+// HDR environment
+loadHDREnvironment( renderer, scene, 'https://unpkg.com/three@0.183.0/examples/textures/equirectangular/quarry_01_1k.hdr' );
+
+// ── Lights ──
+
+const ambientLight = new THREE.AmbientLight( 0x404060, 0.4 );
+scene.add( ambientLight );
+
+const keyLight = new THREE.DirectionalLight( 0xfff0e0, 2.5 );
+keyLight.position.set( 4, 6, 5 );
+keyLight.castShadow = true;
+keyLight.shadow.mapSize.set( 1024, 1024 );
+scene.add( keyLight );
+
+const fillLight = new THREE.DirectionalLight( 0x6688cc, 0.8 );
+fillLight.position.set( - 3, 2, - 1 );
+scene.add( fillLight );
+
+const rimLight = new THREE.DirectionalLight( 0xff8855, 1.2 );
+rimLight.position.set( - 1, 4, - 5 );
+scene.add( rimLight );
+
+// Orbiting point light
+const orbitLight = new THREE.PointLight( 0x4a9eff, 3, 12 );
+scene.add( orbitLight );
+
+// ── Ground plane (subtle) ──
+
+const groundGeo = new THREE.PlaneGeometry( 20, 20 );
+const groundMat = new THREE.MeshStandardMaterial( {
+	color: 0x0a0e18,
+	roughness: 0.3,
+	metalness: 0.8
+} );
+const ground = new THREE.Mesh( groundGeo, groundMat );
+ground.rotation.x = - Math.PI / 2;
+ground.position.y = - 1.6;
+ground.receiveShadow = true;
+scene.add( ground );
+
+
+// ═══════════════════════════════════════════════════════════════
+// Generate Procedural Textures
+// ═══════════════════════════════════════════════════════════════
+
+const albedoCanvas = generateAlbedo( TEX_SIZE );
+const normalCanvas = generateNormal( TEX_SIZE );
+const roughnessCanvas = generateRoughness( TEX_SIZE );
+const metalnessCanvas = generateMetalness( TEX_SIZE );
+const aoCanvas = generateAO( TEX_SIZE );
+const displacementCanvas = generateDisplacement( TEX_SIZE );
+
+function canvasToTexture( canvas, isSRGB ) {
+
+	const tex = new THREE.CanvasTexture( canvas );
+	tex.wrapS = THREE.RepeatWrapping;
+	tex.wrapT = THREE.RepeatWrapping;
+	if ( isSRGB ) tex.colorSpace = THREE.SRGBColorSpace;
+	tex.needsUpdate = true;
+	return tex;
+
+}
+
+const textures = {
+	albedo: canvasToTexture( albedoCanvas, true ),
+	normal: canvasToTexture( normalCanvas, false ),
+	roughness: canvasToTexture( roughnessCanvas, false ),
+	metalness: canvasToTexture( metalnessCanvas, false ),
+	ao: canvasToTexture( aoCanvas, false ),
+	displacement: canvasToTexture( displacementCanvas, false )
+};
+
+
+// ═══════════════════════════════════════════════════════════════
+// Main Object (Sphere + Plane)
+// ═══════════════════════════════════════════════════════════════
+
+const mainMaterial = new THREE.MeshPhysicalMaterial( {
+	map: textures.albedo,
+	normalMap: textures.normal,
+	normalScale: new THREE.Vector2( 1.5, 1.5 ),
+	roughnessMap: textures.roughness,
+	roughness: 1.0,
+	metalnessMap: textures.metalness,
+	metalness: 1.0,
+	aoMap: textures.ao,
+	aoMapIntensity: 1.2,
+	displacementMap: textures.displacement,
+	displacementScale: 0.08,
+	clearcoat: 0.0,
+	clearcoatRoughness: 0.3
+} );
+
+// For the split view (albedo only)
+const albedoOnlyMaterial = new THREE.MeshPhysicalMaterial( {
+	map: textures.albedo,
+	roughness: 0.7,
+	metalness: 0.0
+} );
+
+const sphereGeo = new THREE.SphereGeometry( 1.2, 128, 128 );
+const sphere = new THREE.Mesh( sphereGeo, mainMaterial );
+sphere.castShadow = true;
+sphere.receiveShadow = true;
+scene.add( sphere );
+
+
+// ═══════════════════════════════════════════════════════════════
+// Map Toggle System
+// ═══════════════════════════════════════════════════════════════
+
+const mapDefs = [
+	{ key: 'albedo', label: 'Albedo', canvas: albedoCanvas, color: '#4a9eff' },
+	{ key: 'normal', label: 'Normal', canvas: normalCanvas, color: '#a855f7' },
+	{ key: 'roughness', label: 'Roughness', canvas: roughnessCanvas, color: '#22c55e' },
+	{ key: 'metalness', label: 'Metalness', canvas: metalnessCanvas, color: '#f59e0b' },
+	{ key: 'ao', label: 'AO', canvas: aoCanvas, color: '#f43f5e' },
+	{ key: 'displacement', label: 'Height', canvas: displacementCanvas, color: '#06b6d4' }
+];
+
+const mapEnabled = {
+	albedo: true,
+	normal: true,
+	roughness: true,
+	metalness: true,
+	ao: true,
+	displacement: true
+};
+
+const thumbContainer = document.getElementById( 'pbr-thumbs' );
+const thumbElements = {};
+
+mapDefs.forEach( ( def ) => {
+
+	const thumbDiv = document.createElement( 'div' );
+	thumbDiv.className = 'pbr-thumb active';
+	thumbDiv.dataset.key = def.key;
+
+	const indicator = document.createElement( 'div' );
+	indicator.className = 'thumb-indicator';
+	thumbDiv.appendChild( indicator );
+
+	const canvas = document.createElement( 'canvas' );
+	canvas.width = 64;
+	canvas.height = 64;
+	const ctx = canvas.getContext( '2d' );
+	ctx.drawImage( def.canvas, 0, 0, 64, 64 );
+	thumbDiv.appendChild( canvas );
+
+	const span = document.createElement( 'span' );
+	span.textContent = def.label;
+	thumbDiv.appendChild( span );
+
+	thumbContainer.appendChild( thumbDiv );
+	thumbElements[ def.key ] = thumbDiv;
+
+	thumbDiv.addEventListener( 'click', () => {
+
+		if ( buildUpRunning ) return;
+		mapEnabled[ def.key ] = ! mapEnabled[ def.key ];
+		thumbDiv.classList.toggle( 'disabled', ! mapEnabled[ def.key ] );
+		thumbDiv.classList.toggle( 'active', mapEnabled[ def.key ] );
+		applyMaps();
+
+	} );
+
+	thumbDiv.addEventListener( 'mouseenter', () => {
+
+		highlightedMap = def.key;
+
+	} );
+
+	thumbDiv.addEventListener( 'mouseleave', () => {
+
+		highlightedMap = null;
+
+	} );
+
+} );
+
+let highlightedMap = null;
+
+function applyMaps() {
+
+	const mat = mainMaterial;
+
+	mat.map = mapEnabled.albedo ? textures.albedo : null;
+	if ( ! mapEnabled.albedo ) {
+
+		mat.color.set( 0xaaaaaa );
+
+	} else {
+
+		mat.color.set( 0xffffff );
+
+	}
+
+	mat.normalMap = mapEnabled.normal ? textures.normal : null;
+
+	if ( mapEnabled.roughness ) {
+
+		mat.roughnessMap = textures.roughness;
+		mat.roughness = params.roughnessMultiplier;
+
+	} else {
+
+		mat.roughnessMap = null;
+		mat.roughness = 0.5;
+
+	}
+
+	if ( mapEnabled.metalness ) {
+
+		mat.metalnessMap = textures.metalness;
+		mat.metalness = params.metalnessOverride;
+
+	} else {
+
+		mat.metalnessMap = null;
+		mat.metalness = 0.0;
+
+	}
+
+	mat.aoMap = mapEnabled.ao ? textures.ao : null;
+	mat.aoMapIntensity = mapEnabled.ao ? params.aoIntensity : 0;
+
+	if ( mapEnabled.displacement ) {
+
+		mat.displacementMap = textures.displacement;
+		mat.displacementScale = params.displacementScale;
+
+	} else {
+
+		mat.displacementMap = null;
+		mat.displacementScale = 0;
+
+	}
+
+	mat.needsUpdate = true;
+
+}
+
+
+// ═══════════════════════════════════════════════════════════════
+// Build-Up Animation
+// ═══════════════════════════════════════════════════════════════
+
+let buildUpRunning = false;
+const buildOrder = [ 'albedo', 'normal', 'roughness', 'metalness', 'ao', 'displacement' ];
+const buildLabels = [ 'Adding Albedo...', 'Adding Normal Map...', 'Adding Roughness...', 'Adding Metalness...', 'Adding Ambient Occlusion...', 'Adding Displacement...' ];
+
+function runBuildUp() {
+
+	if ( buildUpRunning ) return;
+	buildUpRunning = true;
+
+	// Disable all maps first
+	for ( const key in mapEnabled ) mapEnabled[ key ] = false;
+
+	for ( const key in thumbElements ) {
+
+		thumbElements[ key ].classList.add( 'disabled' );
+		thumbElements[ key ].classList.remove( 'active' );
+
+	}
+
+	applyMaps();
+
+	const progressEl = document.getElementById( 'build-progress' );
+	const fillEl = document.getElementById( 'build-fill' );
+	const labelEl = document.getElementById( 'build-label' );
+	progressEl.style.display = 'flex';
+
+	let step = 0;
+	const stepDelay = 1200;
+
+	function nextStep() {
+
+		if ( step >= buildOrder.length ) {
+
+			fillEl.style.width = '100%';
+			labelEl.textContent = 'Complete!';
+			setTimeout( () => {
+
+				progressEl.style.display = 'none';
+				buildUpRunning = false;
+
+			}, 800 );
+			return;
+
+		}
+
+		const key = buildOrder[ step ];
+		labelEl.textContent = buildLabels[ step ];
+		fillEl.style.width = ( ( step + 1 ) / buildOrder.length * 100 ) + '%';
+
+		mapEnabled[ key ] = true;
+		thumbElements[ key ].classList.remove( 'disabled' );
+		thumbElements[ key ].classList.add( 'active' );
+		applyMaps();
+
+		step ++;
+		setTimeout( nextStep, stepDelay );
+
+	}
+
+	setTimeout( nextStep, 400 );
+
+}
+
+
+// ═══════════════════════════════════════════════════════════════
+// Post-Processing (Bloom)
+// ═══════════════════════════════════════════════════════════════
+
+const composer = new EffectComposer( renderer );
+composer.addPass( new RenderPass( scene, camera ) );
+
+const bloomPass = new UnrealBloomPass(
+	new THREE.Vector2( window.innerWidth, window.innerHeight ),
+	0.3, 0.6, 0.85
+);
+composer.addPass( bloomPass );
+composer.addPass( new OutputPass() );
+
+
+// ═══════════════════════════════════════════════════════════════
+// Split View
+// ═══════════════════════════════════════════════════════════════
+
+let splitViewEnabled = false;
+let splitSphere = null;
+
+function toggleSplitView( enabled ) {
+
+	splitViewEnabled = enabled;
+	const splitLine = document.getElementById( 'split-line' );
+	const tagLeft = document.getElementById( 'split-tag-left' );
+	const tagRight = document.getElementById( 'split-tag-right' );
+
+	splitLine.style.display = enabled ? 'block' : 'none';
+	tagLeft.style.display = enabled ? 'block' : 'none';
+	tagRight.style.display = enabled ? 'block' : 'none';
+
+	if ( enabled && ! splitSphere ) {
+
+		splitSphere = new THREE.Mesh( sphereGeo, albedoOnlyMaterial );
+		splitSphere.castShadow = true;
+		scene.add( splitSphere );
+
+	}
+
+	if ( splitSphere ) {
+
+		splitSphere.visible = enabled;
+
+	}
+
+}
+
+
+// ═══════════════════════════════════════════════════════════════
+// GUI
+// ═══════════════════════════════════════════════════════════════
+
+const params = {
+	roughnessMultiplier: 1.0,
+	normalScale: 1.5,
+	displacementScale: 0.08,
+	metalnessOverride: 1.0,
+	aoIntensity: 1.2,
+	clearcoat: 0.0,
+	exposure: 1.3,
+	autoRotate: true,
+	splitView: false,
+	buildUp: runBuildUp,
+	lightAngle: 0
+};
+
+const gui = new GUI();
+
+const mapsFolder = gui.addFolder( 'Maps' );
+for ( const def of mapDefs ) {
+
+	mapsFolder.add( mapEnabled, def.key ).name( def.label ).onChange( ( v ) => {
+
+		thumbElements[ def.key ].classList.toggle( 'disabled', ! v );
+		thumbElements[ def.key ].classList.toggle( 'active', v );
+		applyMaps();
+
+	} );
+
+}
+
+mapsFolder.open();
+
+const matFolder = gui.addFolder( 'Material' );
+matFolder.add( params, 'roughnessMultiplier', 0, 2, 0.01 ).name( 'Roughness' ).onChange( () => applyMaps() );
+matFolder.add( params, 'normalScale', 0, 4, 0.05 ).name( 'Normal Scale' ).onChange( ( v ) => {
+
+	mainMaterial.normalScale.set( v, v );
+
+} );
+matFolder.add( params, 'displacementScale', 0, 0.3, 0.005 ).name( 'Displacement' ).onChange( () => applyMaps() );
+matFolder.add( params, 'metalnessOverride', 0, 1, 0.01 ).name( 'Metalness' ).onChange( () => applyMaps() );
+matFolder.add( params, 'aoIntensity', 0, 3, 0.05 ).name( 'AO Intensity' ).onChange( () => applyMaps() );
+matFolder.add( params, 'clearcoat', 0, 1, 0.01 ).name( 'Clearcoat' ).onChange( ( v ) => {
+
+	mainMaterial.clearcoat = v;
+
+} );
+matFolder.open();
+
+const sceneFolder = gui.addFolder( 'Scene' );
+sceneFolder.add( params, 'exposure', 0.3, 3, 0.05 ).name( 'Exposure' ).onChange( ( v ) => {
+
+	renderer.toneMappingExposure = v;
+
+} );
+sceneFolder.add( params, 'autoRotate' ).name( 'Auto Rotate' );
+sceneFolder.add( params, 'splitView' ).name( 'Split View' ).onChange( toggleSplitView );
+sceneFolder.add( params, 'buildUp' ).name( 'Build Up' );
+sceneFolder.add( params, 'lightAngle', 0, 360, 1 ).name( 'Light Angle' ).onChange( ( v ) => {
+
+	const rad = v * Math.PI / 180;
+	keyLight.position.set( Math.cos( rad ) * 6, 6, Math.sin( rad ) * 6 );
+
+} );
+sceneFolder.open();
+
+
+// ═══════════════════════════════════════════════════════════════
+// Render Loop
+// ═══════════════════════════════════════════════════════════════
+
+function onResize() {
+
+	const w = window.innerWidth;
+	const h = window.innerHeight;
+	camera.aspect = w / h;
+	camera.updateProjectionMatrix();
+	renderer.setSize( w, h );
+	composer.setSize( w, h );
+
+}
+
+window.addEventListener( 'resize', onResize );
+
+function animate() {
+
+	const dt = clock.getDelta();
+	const elapsed = clock.getElapsedTime();
+
+	controls.update();
+
+	if ( params.autoRotate ) {
+
+		sphere.rotation.y += 0.004;
+		if ( splitSphere ) splitSphere.rotation.y = sphere.rotation.y;
+
+	}
+
+	// Orbit the point light
+	orbitLight.position.set(
+		Math.cos( elapsed * 0.5 ) * 4,
+		2 + Math.sin( elapsed * 0.3 ) * 1.5,
+		Math.sin( elapsed * 0.5 ) * 4
+	);
+
+	// Highlight effect when hovering a thumbnail
+	if ( highlightedMap && mapEnabled[ highlightedMap ] ) {
+
+		const soloView = mainMaterial.userData._soloView;
+
+		if ( ! soloView || soloView !== highlightedMap ) {
+
+			mainMaterial.userData._prevState = { ...mapEnabled };
+			mainMaterial.userData._soloView = highlightedMap;
+
+		}
+
+	} else if ( mainMaterial.userData._soloView ) {
+
+		mainMaterial.userData._soloView = null;
+
+	}
+
+	// Sync split sphere transforms
+	if ( splitSphere && splitViewEnabled ) {
+
+		splitSphere.position.copy( sphere.position );
+		splitSphere.rotation.copy( sphere.rotation );
+		splitSphere.scale.copy( sphere.scale );
+
+	}
+
+	if ( splitViewEnabled ) {
+
+		const w = window.innerWidth;
+		const h = window.innerHeight;
+		const halfW = Math.floor( w / 2 );
+
+		// Left half: albedo only sphere
+		renderer.setScissorTest( true );
+		renderer.setViewport( 0, 0, halfW, h );
+		renderer.setScissor( 0, 0, halfW, h );
+
+		sphere.visible = false;
+		if ( splitSphere ) splitSphere.visible = true;
+		renderer.render( scene, camera );
+
+		// Right half: full PBR with bloom
+		renderer.setViewport( halfW, 0, w - halfW, h );
+		renderer.setScissor( halfW, 0, w - halfW, h );
+
+		sphere.visible = true;
+		if ( splitSphere ) splitSphere.visible = false;
+		renderer.render( scene, camera );
+
+		renderer.setScissorTest( false );
+
+	} else {
+
+		composer.render();
+
+	}
+
+}
+
+renderer.setAnimationLoop( animate );
+</script>
+
+<script src="../shared/demo-nav.js"></script>
+</body>
+</html>
