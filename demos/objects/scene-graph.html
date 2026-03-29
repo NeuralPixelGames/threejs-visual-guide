@@ -350,7 +350,7 @@ import { UnrealBloomPass } from 'three/addons/postprocessing/UnrealBloomPass.js'
 import { OutputPass } from 'three/addons/postprocessing/OutputPass.js';
 
 let renderer, scene, camera, controls, composer;
-let clock;
+let timer;
 let orbitLines = [];
 let labelElements = [];
 let selectedBody = null;
@@ -372,7 +372,7 @@ init();
 
 function init() {
 
-	clock = new THREE.Timer();
+	timer = new THREE.Timer();
 
 	// Renderer
 	renderer = new THREE.WebGLRenderer( { antialias: true } );

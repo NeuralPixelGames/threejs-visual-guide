@@ -175,7 +175,7 @@ import { UnrealBloomPass } from 'three/addons/postprocessing/UnrealBloomPass.js'
 import { OutputPass } from 'three/addons/postprocessing/OutputPass.js';
 import { loadHDREnvironment } from '../shared/scene-builders.js';
 
-let renderer, camera, controls, clock;
+let renderer, camera, controls, timer;
 let sceneLeft, sceneRight;
 let sphereLeft, sphereRight;
 let matLeft, matRight;
@@ -200,7 +200,7 @@ init();
 
 function init() {
 
-	clock = new THREE.Timer();
+	timer = new THREE.Timer();
 
 	renderer = new THREE.WebGLRenderer( { antialias: true } );
 	renderer.setPixelRatio( window.devicePixelRatio );
