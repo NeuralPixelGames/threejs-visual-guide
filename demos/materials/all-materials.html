@@ -225,7 +225,7 @@ function setupPostProcessing() {
 
 function loadEnvironment() {
 
-	new HDRLoader().load( 'https://cdn.jsdelivr.net/npm/three@0.183.0/examples/textures/equirectangular/san_giuseppe_bridge_2k.hdr', function ( texture ) {
+	new HDRLoader().load( 'https://threejs.org/examples/textures/equirectangular/san_giuseppe_bridge_2k.hdr', function ( texture ) {
 
 		texture.mapping = THREE.EquirectangularReflectionMapping;
 		scene.environment = texture;
@@ -380,15 +380,15 @@ function buildMaterials() {
 	`;
 
 	// Matcap texture (real asset)
-	const matcapTexture = textureLoader.load( 'https://cdn.jsdelivr.net/npm/three@0.183.0/examples/textures/matcaps/matcap-porcelain-white.jpg' );
+	const matcapTexture = textureLoader.load( 'https://threejs.org/examples/textures/matcaps/matcap-porcelain-white.jpg' );
 
 	// Toon gradient map (real asset)
-	const toonGradient = textureLoader.load( 'https://cdn.jsdelivr.net/npm/three@0.183.0/examples/textures/gradientMaps/fiveTone.jpg' );
+	const toonGradient = textureLoader.load( 'https://threejs.org/examples/textures/gradientMaps/fiveTone.jpg' );
 	toonGradient.minFilter = THREE.NearestFilter;
 	toonGradient.magFilter = THREE.NearestFilter;
 
 	// Sprite texture (real asset)
-	const spriteTexture = textureLoader.load( 'https://cdn.jsdelivr.net/npm/three@0.183.0/examples/textures/sprites/spark1.png' );
+	const spriteTexture = textureLoader.load( 'https://threejs.org/examples/textures/sprites/spark1.png' );
 
 	// Shadow catcher texture
 	const shadowCanvas = document.createElement( 'canvas' );
