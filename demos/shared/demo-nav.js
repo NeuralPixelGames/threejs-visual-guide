@@ -1,14 +1,14 @@
 ( function () {
 
 	const DEMOS = [
-		{ cat: 'Cameras', href: 'cameras/perspective.html', title: 'Perspective Camera' },
-		{ cat: 'Cameras', href: 'cameras/orthographic.html', title: 'Orthographic Camera' },
-		{ cat: 'Cameras', href: 'cameras/cube.html', title: 'Cube Camera' },
-		{ cat: 'Cameras', href: 'cameras/stereo.html', title: 'Stereo Camera' },
 		{ cat: 'Geometry', href: 'geometry/primitives.html', title: 'Geometry Primitives' },
 		{ cat: 'Materials', href: 'materials/all-materials.html', title: 'All Materials' },
 		{ cat: 'Lights', href: 'lights/all-lights.html', title: 'All Light Types' },
 		{ cat: 'Objects', href: 'objects/scene-graph.html', title: 'Scene Graph' },
+		{ cat: 'Cameras', href: 'cameras/perspective.html', title: 'Perspective Camera' },
+		{ cat: 'Cameras', href: 'cameras/orthographic.html', title: 'Orthographic Camera' },
+		{ cat: 'Cameras', href: 'cameras/cube.html', title: 'Cube Camera' },
+		{ cat: 'Cameras', href: 'cameras/stereo.html', title: 'Stereo Camera' },
 		{ cat: 'Textures', href: 'textures/basics-uv.html', title: 'Texture Basics & UV' },
 		{ cat: 'Textures', href: 'textures/normal-maps.html', title: 'Normal Maps' },
 		{ cat: 'Textures', href: 'textures/pbr-set.html', title: 'PBR Texture Set' },
@@ -70,6 +70,59 @@
 		'<a class="nav-btn nav-next" href="' + resolve( DEMOS[ next ].href ) + '" title="' + DEMOS[ next ].title + ' (Alt+&#8594;)">&#9654;</a>';
 
 	document.body.appendChild( nav );
+
+	// Build section progress bar below nav
+	const progressBar = document.createElement( 'div' );
+	progressBar.id = 'demo-progress';
+
+	// Group demos by category to build segments
+	const cats = [];
+	const catMap = {};
+
+	DEMOS.forEach( ( d, i ) => {
+
+		if ( ! catMap[ d.cat ] ) {
+
+			catMap[ d.cat ] = { cat: d.cat, start: i, count: 0 };
+			cats.push( catMap[ d.cat ] );
+
+		}
+
+		catMap[ d.cat ].count ++;
+
+	} );
+
+	const catColors = [ '#4a9eff', '#a78bfa', '#34d399', '#fbbf24', '#f87171', '#fb923c', '#38bdf8' ];
+
+	cats.forEach( ( c, ci ) => {
+
+		const seg = document.createElement( 'a' );
+		seg.className = 'progress-seg';
+		seg.title = c.cat;
+		seg.href = resolve( DEMOS[ c.start ].href );
+		seg.style.flex = c.count;
+		const color = catColors[ ci % catColors.length ];
+		const isCurrent = demo.cat === c.cat;
+		seg.style.background = isCurrent ? color : 'rgba(255,255,255,0.08)';
+		seg.style.opacity = isCurrent ? '1' : '0.5';
+
+		// Mark the exact current demo within the active segment
+		if ( isCurrent ) {
+
+			const inner = document.createElement( 'span' );
+			inner.className = 'progress-pos';
+			const posInCat = cur - c.start;
+			const pct = c.count === 1 ? 50 : ( posInCat / ( c.count - 1 ) ) * 100;
+			inner.style.left = pct + '%';
+			seg.appendChild( inner );
+
+		}
+
+		progressBar.appendChild( seg );
+
+	} );
+
+	document.body.appendChild( progressBar );
 
 	const panel = document.createElement( 'div' );
 	panel.id = 'demo-panel';
@@ -205,11 +258,19 @@
 			transition: all 0.15s;
 			flex-shrink: 0;
 		}
+		.nav-prev, .nav-next {
+			color: #c8d0e0;
+			font-size: 14px;
+		}
 		.nav-btn:hover {
 			color: #4a9eff;
 			background: rgba(74, 158, 255, 0.1);
 			text-decoration: none;
 			text-shadow: 0 0 8px rgba(74, 158, 255, 0.4);
+		}
+		.nav-prev:hover, .nav-next:hover {
+			color: #6ec6ff;
+			text-shadow: 0 0 12px rgba(74, 158, 255, 0.6);
 		}
 		.nav-guide { font-size: 16px; }
 		.nav-hub { font-size: 16px; }
@@ -244,13 +305,46 @@
 			text-overflow: ellipsis;
 		}
 		.nav-count {
-			font-size: 11px;
-			color: #4a5568;
+			font-size: 12px;
+			color: #8899bb;
 			flex-shrink: 0;
+		}
+		#demo-progress {
+			position: fixed;
+			top: 42px;
+			left: 0;
+			right: 0;
+			height: 3px;
+			display: flex;
+			gap: 2px;
+			z-index: 1000;
+			background: rgba(7, 11, 20, 0.9);
+			padding: 0 1px;
+		}
+		.progress-seg {
+			position: relative;
+			height: 100%;
+			border-radius: 1px;
+			transition: opacity 0.2s, background 0.2s;
+			text-decoration: none;
+		}
+		.progress-seg:hover {
+			opacity: 1 !important;
+			filter: brightness(1.3);
+		}
+		.progress-pos {
+			position: absolute;
+			top: -1px;
+			width: 5px;
+			height: 5px;
+			background: #fff;
+			border-radius: 50%;
+			transform: translateX(-50%);
+			box-shadow: 0 0 6px rgba(255, 255, 255, 0.8);
 		}
 		#demo-panel {
 			position: fixed;
-			top: 42px;
+			top: 45px;
 			left: 50%;
 			transform: translateX(-50%);
 			width: 380px;
@@ -334,9 +428,9 @@
 			background: rgba(74, 158, 255, 0.08);
 			font-weight: 500;
 		}
-		#info { top: 42px !important; }
+		#info { top: 46px !important; }
 		#back-btn { display: none !important; }
-		.lil-gui.root { top: 48px !important; }
+		.lil-gui.root { top: 50px !important; }
 		@media (max-width: 640px) {
 			.nav-cat, .nav-count { display: none; }
 			#demo-panel { width: calc(100% - 16px); }

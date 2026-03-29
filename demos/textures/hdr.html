@@ -27,7 +27,7 @@
 	<div id="container"></div>
 
 	<script type="importmap">
-	{ "imports": { "three": "https://unpkg.com/three@0.183.0/build/three.module.js", "three/addons/": "https://unpkg.com/three@0.183.0/examples/jsm/" } }
+	{ "imports": { "three": "https://cdn.jsdelivr.net/npm/three@0.183.0/build/three.module.js", "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.183.0/examples/jsm/" } }
 	</script>
 	<script type="module">
 		import * as THREE from 'three';
@@ -84,7 +84,7 @@
 
 			// Load HDR environment
 			const rgbeLoader = new RGBELoader();
-			rgbeLoader.load( 'https://unpkg.com/three@0.183.0/examples/textures/equirectangular/pedestrian_overpass_1k.hdr', ( texture ) => {
+			rgbeLoader.load( 'https://cdn.jsdelivr.net/npm/three@0.183.0/examples/textures/equirectangular/pedestrian_overpass_1k.hdr', ( texture ) => {
 
 				texture.mapping = THREE.EquirectangularReflectionMapping;
 

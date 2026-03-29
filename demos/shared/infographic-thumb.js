@@ -73,10 +73,10 @@
 	style.textContent =
 		'#infographic-thumb {' +
 			'position: fixed;' +
-			'bottom: 56px;' +
+			'top: 50px;' +
 			'left: 12px;' +
-			'width: 64px;' +
-			'height: 36px;' +
+			'width: 192px;' +
+			'height: 108px;' +
 			'z-index: 1100;' +
 			'cursor: pointer;' +
 			'border-radius: 6px;' +
@@ -88,11 +88,11 @@
 			'animation: infogFadeIn 0.5s ease-out both 0.8s;' +
 		'}' +
 		'@keyframes infogFadeIn {' +
-			'from { opacity: 0; transform: translateY(8px); }' +
+			'from { opacity: 0; transform: translateY(-8px); }' +
 			'to { opacity: 1; transform: translateY(0); }' +
 		'}' +
 		'#infographic-thumb:hover {' +
-			'width: 200px;' +
+			'width: 320px;' +
 			'height: 112px;' +
 			'border-color: rgba(74, 158, 255, 0.6);' +
 			'box-shadow: 0 4px 24px rgba(74, 158, 255, 0.25), 0 0 12px rgba(74, 158, 255, 0.15);' +

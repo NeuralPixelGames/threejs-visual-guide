@@ -49,7 +49,7 @@
 	<div id="loading-overlay" style="position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(10,14,26,0.95);display:flex;align-items:center;justify-content:center;z-index:1000;color:#4a9eff;font-family:Inter,system-ui,sans-serif;font-size:16px;">Loading model...</div>
 	<div id="container"></div>
 	<script type="importmap">
-	{ "imports": { "three": "https://unpkg.com/three@0.183.0/build/three.module.js", "three/addons/": "https://unpkg.com/three@0.183.0/examples/jsm/" } }
+	{ "imports": { "three": "https://cdn.jsdelivr.net/npm/three@0.183.0/build/three.module.js", "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.183.0/examples/jsm/" } }
 	</script>
 	<script type="module">
 		import * as THREE from 'three';
@@ -270,11 +270,11 @@
 		function loadShaderBall() {
 
 			const dracoLoader = new DRACOLoader();
-			dracoLoader.setDecoderPath( 'https://unpkg.com/three@0.183.0/examples/jsm/libs/draco/gltf/' );
+			dracoLoader.setDecoderPath( 'https://cdn.jsdelivr.net/npm/three@0.183.0/examples/jsm/libs/draco/gltf/' );
 			const gltfLoader = new GLTFLoader();
 			gltfLoader.setDRACOLoader( dracoLoader );
 
-			gltfLoader.load( 'https://unpkg.com/three@0.183.0/examples/models/gltf/ShaderBall.glb', ( gltf ) => {
+			gltfLoader.load( 'https://cdn.jsdelivr.net/npm/three@0.183.0/examples/models/gltf/ShaderBall.glb', ( gltf ) => {
 
 				const model = gltf.scene;
 

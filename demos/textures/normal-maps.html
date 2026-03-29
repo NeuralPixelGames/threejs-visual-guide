@@ -129,8 +129,8 @@
 	<script type="importmap">
 	{
 		"imports": {
-			"three": "https://unpkg.com/three@0.183.0/build/three.module.js",
-			"three/addons/": "https://unpkg.com/three@0.183.0/examples/jsm/"
+			"three": "https://cdn.jsdelivr.net/npm/three@0.183.0/build/three.module.js",
+			"three/addons/": "https://cdn.jsdelivr.net/npm/three@0.183.0/examples/jsm/"
 		}
 	}
 	</script>
@@ -275,8 +275,8 @@ function init() {
 
 	// -- Environment --
 
-	loadHDREnvironment( renderer, sceneLeft, 'https://unpkg.com/three@0.183.0/examples/textures/equirectangular/pedestrian_overpass_1k.hdr', { background: false } );
-	loadHDREnvironment( renderer, sceneRight, 'https://unpkg.com/three@0.183.0/examples/textures/equirectangular/pedestrian_overpass_1k.hdr', { background: false } );
+	loadHDREnvironment( renderer, sceneLeft, 'https://cdn.jsdelivr.net/npm/three@0.183.0/examples/textures/equirectangular/pedestrian_overpass_1k.hdr', { background: false } );
+	loadHDREnvironment( renderer, sceneRight, 'https://cdn.jsdelivr.net/npm/three@0.183.0/examples/textures/equirectangular/pedestrian_overpass_1k.hdr', { background: false } );
 
 	// -- Post-processing for right side (bloom on specular highlights) --
 

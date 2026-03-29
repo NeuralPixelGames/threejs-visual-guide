@@ -52,6 +52,9 @@
 
 		.style-panel {
 			max-width: 260px;
+			top: 54px;
+			left: 12px;
+			bottom: auto;
 		}
 
 		.style-chips {
@@ -72,8 +75,8 @@
 		}
 
 		.speed-note {
-		position: absolute;
-		top: 60px;
+		position: fixed;
+		bottom: 52px;
 		left: 50%;
 		transform: translateX(-50%);
 		z-index: 10;
@@ -121,9 +124,9 @@
 <div class="panel-divider-v split-divider-third-1"></div>
 <div class="panel-divider-v split-divider-third-2"></div>
 
-<div class="fov-label accent-blue" id="label0" style="left: 16.66%;"><span class="fov-value" id="fov-val-0">15&deg;</span><span class="fov-desc">Telephoto</span></div>
-<div class="fov-label accent-green" id="label1" style="left: 50%;"><span class="fov-value" id="fov-val-1">60&deg;</span><span class="fov-desc">Standard</span></div>
-<div class="fov-label accent-orange" id="label2" style="left: 83.33%;"><span class="fov-value" id="fov-val-2">120&deg;</span><span class="fov-desc">Ultra-Wide</span></div>
+<div class="fov-label accent-blue" id="label0" style="left: 20%;"><span class="fov-value" id="fov-val-0">15&deg;</span><span class="fov-desc">Telephoto</span></div>
+<div class="fov-label accent-green" id="label1" style="left: 52%;"><span class="fov-value" id="fov-val-1">60&deg;</span><span class="fov-desc">Standard</span></div>
+<div class="fov-label accent-orange" id="label2" style="left: 84%;"><span class="fov-value" id="fov-val-2">120&deg;</span><span class="fov-desc">Ultra-Wide</span></div>
 
 <svg id="frustum-overlay"></svg>
 
@@ -144,8 +147,8 @@
 <script type="importmap">
 {
 	"imports": {
-		"three": "https://unpkg.com/three@0.183.0/build/three.module.js",
-		"three/addons/": "https://unpkg.com/three@0.183.0/examples/jsm/"
+		"three": "https://cdn.jsdelivr.net/npm/three@0.183.0/build/three.module.js",
+		"three/addons/": "https://cdn.jsdelivr.net/npm/three@0.183.0/examples/jsm/"
 	}
 }
 </script>
@@ -263,7 +266,7 @@ function loadEnvironment( renderer, scene ) {
 	const pmremGenerator = new THREE.PMREMGenerator( renderer );
 	pmremGenerator.compileEquirectangularShader();
 
-	new HDRLoader().load( 'https://unpkg.com/three@0.183.0/examples/textures/equirectangular/venice_sunset_1k.hdr', function ( hdrTexture ) {
+	new HDRLoader().load( 'https://cdn.jsdelivr.net/npm/three@0.183.0/examples/textures/equirectangular/venice_sunset_1k.hdr', function ( hdrTexture ) {
 
 		const envMap = pmremGenerator.fromEquirectangular( hdrTexture ).texture;
 		scene.environment = envMap;

@@ -91,16 +91,17 @@
 			flex-wrap: wrap;
 		}
 		.gui-inline-desc {
-			display: block;
+			display: -webkit-box;
+			-webkit-line-clamp: 2;
+			-webkit-box-orient: vertical;
 			width: 100%;
-			font-size: 9px;
-			line-height: 1.2;
-			color: rgba(160, 170, 200, 0.5);
+			font-size: 10px;
+			line-height: 1.25;
+			color: #8899bb;
 			font-family: 'Inter', system-ui, sans-serif;
 			font-weight: 400;
-			white-space: nowrap;
+			white-space: normal;
 			overflow: hidden;
-			text-overflow: ellipsis;
 			margin-top: -1px;
 			pointer-events: none;
 			order: 10;
@@ -127,6 +128,38 @@
 		'Ortho Zoom':         { desc: 'Orthographic camera zoom. Changes visible area without perspective.', lo: 'Wide', hi: 'Tight' },
 		'Eye Separation':     { desc: 'Distance between stereo camera eyes. Affects 3D depth intensity.', lo: 'Subtle 3D', hi: 'Extreme 3D' },
 		'Persp FOV':          { desc: 'Perspective camera field of view.', lo: 'Telephoto', hi: 'Wide-angle' },
+		'Frustum':            { desc: 'The visible region of 3D space that the camera can see, shaped like a truncated pyramid.' },
+		'Show Frustum':       { desc: 'Display the camera frustum wireframe.' },
+		'Near':               { desc: 'Nearest distance the camera can see. Objects closer are clipped.' },
+		'near':               { desc: 'Near clipping plane distance.' },
+		'Far':                { desc: 'Farthest distance the camera can see. Objects beyond are clipped.' },
+		'far':                { desc: 'Far clipping plane distance.' },
+		'Aspect':             { desc: 'Width-to-height ratio of the camera viewport.' },
+		'aspect':             { desc: 'Camera viewport aspect ratio.' },
+		'Forward/Back Motion': { desc: 'Toggle forward-and-back camera animation through the scene.' },
+		'forwardBack':        { desc: 'Toggle forward/back camera animation.' },
+		'Left':               { desc: 'Left boundary of the orthographic camera view.' },
+		'Right':              { desc: 'Right boundary of the orthographic camera view.' },
+		'Top':                { desc: 'Top boundary of the orthographic camera view.' },
+		'Bottom':             { desc: 'Bottom boundary of the orthographic camera view.' },
+		'Visible':            { desc: 'Toggle object visibility in the scene.' },
+		'visible':            { desc: 'Toggle visibility.' },
+		'Cast Shadow':        { desc: 'Whether this object casts shadows onto other surfaces.' },
+		'castShadow':         { desc: 'Enable shadow casting.' },
+		'Receive Shadow':     { desc: 'Whether this object receives shadows from other objects.' },
+		'receiveShadow':      { desc: 'Enable shadow receiving.' },
+		'Flat Shading':       { desc: 'Use flat normals per face instead of smooth interpolation.' },
+		'flatShading':        { desc: 'Toggle flat shading.' },
+		'Side':               { desc: 'Which face sides to render: front, back, or both.' },
+		'Segments':           { desc: 'Number of subdivisions in the geometry. More = smoother.', lo: 'Low-poly', hi: 'Smooth' },
+		'segments':           { desc: 'Geometry subdivisions.', lo: 'Low-poly', hi: 'Smooth' },
+		'Radius':             { desc: 'Size of the object radius.', lo: 'Small', hi: 'Large' },
+		'radius':             { desc: 'Object radius.', lo: 'Small', hi: 'Large' },
+		'Scale':              { desc: 'Uniform scale multiplier for the object.', lo: 'Tiny', hi: 'Huge' },
+		'scale':              { desc: 'Object scale.', lo: 'Tiny', hi: 'Huge' },
+		'Position X':         { desc: 'Object position along the left-right axis.' },
+		'Position Y':         { desc: 'Object position along the up-down axis.' },
+		'Position Z':         { desc: 'Object position along the front-back axis.' },
 
 		/* Material Properties */
 		'Wireframe':          { desc: 'Show polygon mesh edges instead of filled surfaces.' },
@@ -473,7 +506,7 @@
 		nameEl.appendChild( icon );
 
 		/* Inline description - short text below the param name */
-		const shortDesc = match.tip.short || match.tip.desc.slice( 0, 40 ) + ( match.tip.desc.length > 40 ? '\u2026' : '' );
+		const shortDesc = match.tip.short || match.tip.desc;
 		const inlineDesc = document.createElement( 'span' );
 		inlineDesc.className = 'gui-inline-desc';
 		inlineDesc.textContent = shortDesc;

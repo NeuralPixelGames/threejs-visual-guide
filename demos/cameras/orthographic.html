@@ -32,15 +32,103 @@
 		#camera-label.ortho strong {
 			color: #ff6633;
 		}
+
+		/* Camera type radio buttons */
+		#camera-type-switcher {
+			position: absolute;
+			top: 60px;
+			left: 50%;
+			transform: translateX(-50%);
+			z-index: 20;
+			display: flex;
+			gap: 0;
+			font-family: 'Inter', system-ui, sans-serif;
+			user-select: none;
+		}
+		#camera-type-switcher label {
+			display: flex;
+			align-items: center;
+			gap: 0.5rem;
+			padding: 0.6rem 1.4rem;
+			background: rgba(10, 14, 26, 0.85);
+			backdrop-filter: blur(8px);
+			border: 1px solid rgba(74, 158, 255, 0.25);
+			color: #8899bb;
+			font-size: 0.9rem;
+			font-weight: 500;
+			letter-spacing: 0.03em;
+			cursor: pointer;
+			transition: all 0.25s ease;
+		}
+		#camera-type-switcher label:first-child {
+			border-radius: 8px 0 0 8px;
+			border-right: none;
+		}
+		#camera-type-switcher label:last-child {
+			border-radius: 0 8px 8px 0;
+		}
+		#camera-type-switcher input[type="radio"] {
+			appearance: none;
+			-webkit-appearance: none;
+			width: 14px;
+			height: 14px;
+			border: 2px solid #556688;
+			border-radius: 50%;
+			background: transparent;
+			position: relative;
+			cursor: pointer;
+			transition: all 0.25s ease;
+			flex-shrink: 0;
+		}
+		#camera-type-switcher input[type="radio"]:checked {
+			border-color: #4a9eff;
+			background: transparent;
+		}
+		#camera-type-switcher input[type="radio"]:checked::after {
+			content: '';
+			position: absolute;
+			top: 50%;
+			left: 50%;
+			transform: translate(-50%, -50%);
+			width: 6px;
+			height: 6px;
+			border-radius: 50%;
+			background: #4a9eff;
+		}
+		#camera-type-switcher label:has(input:checked) {
+			color: #fff;
+			background: rgba(74, 158, 255, 0.15);
+			border-color: rgba(74, 158, 255, 0.5);
+		}
+		/* Ortho active state */
+		#camera-type-switcher label.ortho-active {
+			border-color: rgba(255, 102, 51, 0.5);
+			background: rgba(255, 102, 51, 0.12);
+			color: #fff;
+		}
+		#camera-type-switcher label.ortho-active input[type="radio"]:checked {
+			border-color: #ff6633;
+		}
+		#camera-type-switcher label.ortho-active input[type="radio"]:checked::after {
+			background: #ff6633;
+		}
+		#camera-type-switcher label:hover {
+			background: rgba(74, 158, 255, 0.08);
+			color: #c0ccee;
+		}
 	</style>
 </head>
 <body>
 	<a href="../index.html" id="back-btn">&larr; Hub</a>
 	<div id="info"><strong>Orthographic Camera</strong><br>Toggle between perspective and orthographic projections</div>
+	<div id="camera-type-switcher">
+		<label><input type="radio" name="cameraType" value="Perspective" checked>Perspective</label>
+		<label><input type="radio" name="cameraType" value="Orthographic">Orthographic</label>
+	</div>
 	<div id="camera-label"><strong>Perspective</strong> &mdash; Objects shrink with distance</div>
 	<div id="container"></div>
 	<script type="importmap">
-	{ "imports": { "three": "https://unpkg.com/three@0.183.0/build/three.module.js", "three/addons/": "https://unpkg.com/three@0.183.0/examples/jsm/" } }
+	{ "imports": { "three": "https://cdn.jsdelivr.net/npm/three@0.183.0/build/three.module.js", "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.183.0/examples/jsm/" } }
 	</script>
 	<script type="module">
 		import * as THREE from 'three';
@@ -363,6 +451,9 @@
 				activeCamera = orthoCamera;
 				orthoCamera.position.copy( perspCamera.position );
 
+				// Shift camera angle to the right for orthographic view
+				orthoCamera.position.x += 6;
+
 				label.innerHTML = '<strong>Orthographic</strong> &mdash; No perspective distortion';
 				label.classList.add( 'ortho' );
 
@@ -392,9 +483,36 @@
 
 			const gui = new GUI();
 
-			gui.add( params, 'cameraType', [ 'Perspective', 'Orthographic' ] )
-				.name( 'Camera Type' )
-				.onChange( switchCamera );
+			// Wire up the HTML radio buttons for camera type
+			const radioButtons = document.querySelectorAll( '#camera-type-switcher input[name="cameraType"]' );
+			radioButtons.forEach( radio => {
+
+				radio.addEventListener( 'change', ( e ) => {
+
+					params.cameraType = e.target.value;
+					switchCamera( e.target.value );
+					updateRadioStyles();
+
+				} );
+
+			} );
+
+			function updateRadioStyles() {
+
+				const labels = document.querySelectorAll( '#camera-type-switcher label' );
+				labels.forEach( label => {
+
+					const input = label.querySelector( 'input' );
+					label.classList.remove( 'ortho-active' );
+					if ( input.value === 'Orthographic' && input.checked ) {
+
+						label.classList.add( 'ortho-active' );
+
+					}
+
+				} );
+
+			}
 
 			const perspFolder = gui.addFolder( 'Perspective' );
 			perspFolder.add( params, 'fov', 20, 120, 1 ).name( 'FOV' ).onChange( v => {

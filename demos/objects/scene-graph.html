@@ -335,8 +335,8 @@
 <script type="importmap">
 {
 	"imports": {
-		"three": "https://unpkg.com/three@0.183.0/build/three.module.js",
-		"three/addons/": "https://unpkg.com/three@0.183.0/examples/jsm/"
+		"three": "https://cdn.jsdelivr.net/npm/three@0.183.0/build/three.module.js",
+		"three/addons/": "https://cdn.jsdelivr.net/npm/three@0.183.0/examples/jsm/"
 	}
 }
 </script>
@@ -820,11 +820,11 @@ function buildSolarSystem() {
 	orbits.earthOrbit = earthOrbitNode;
 
 	const earthGeo = new THREE.SphereGeometry( 1.0, 48, 24 );
-	const earthDayTex = textureLoader.load( 'https://unpkg.com/three@0.183.0/examples/textures/planets/earth_day_4096.jpg' );
+	const earthDayTex = textureLoader.load( 'https://cdn.jsdelivr.net/npm/three@0.183.0/examples/textures/planets/earth_day_4096.jpg' );
 	earthDayTex.colorSpace = THREE.SRGBColorSpace;
-	const earthNormalTex = textureLoader.load( 'https://unpkg.com/three@0.183.0/examples/textures/planets/earth_normal_2048.jpg' );
+	const earthNormalTex = textureLoader.load( 'https://cdn.jsdelivr.net/npm/three@0.183.0/examples/textures/planets/earth_normal_2048.jpg' );
 	earthNormalTex.colorSpace = THREE.NoColorSpace;
-	const earthSpecTex = textureLoader.load( 'https://unpkg.com/three@0.183.0/examples/textures/planets/earth_specular_2048.jpg' );
+	const earthSpecTex = textureLoader.load( 'https://cdn.jsdelivr.net/npm/three@0.183.0/examples/textures/planets/earth_specular_2048.jpg' );
 	earthSpecTex.colorSpace = THREE.NoColorSpace;
 	const earthMat = new THREE.MeshStandardMaterial( {
 		map: earthDayTex,
@@ -842,7 +842,7 @@ function buildSolarSystem() {
 
 	// Earth cloud layer (slightly larger transparent sphere)
 	const cloudGeo = new THREE.SphereGeometry( 1.02, 48, 24 );
-	const cloudTex = textureLoader.load( 'https://unpkg.com/three@0.183.0/examples/textures/planets/earth_clouds_1024.png' );
+	const cloudTex = textureLoader.load( 'https://cdn.jsdelivr.net/npm/three@0.183.0/examples/textures/planets/earth_clouds_1024.png' );
 	cloudTex.colorSpace = THREE.SRGBColorSpace;
 	const cloudMat = new THREE.MeshStandardMaterial( {
 		map: cloudTex,
@@ -877,7 +877,7 @@ function buildSolarSystem() {
 	moonOrbitNode.add( moonOLine );
 
 	const moonGeo = new THREE.SphereGeometry( 0.28, 24, 12 );
-	const moonTex = textureLoader.load( 'https://unpkg.com/three@0.183.0/examples/textures/planets/moon_1024.jpg' );
+	const moonTex = textureLoader.load( 'https://cdn.jsdelivr.net/npm/three@0.183.0/examples/textures/planets/moon_1024.jpg' );
 	moonTex.colorSpace = THREE.SRGBColorSpace;
 	const moonMat = new THREE.MeshStandardMaterial( {
 		map: moonTex,
