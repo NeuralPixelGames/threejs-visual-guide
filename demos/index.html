@@ -127,6 +127,9 @@ nav a.active { color: var(--cyan); box-shadow: inset 0 -2px 0 var(--cyan); }
 .btn-p:hover { box-shadow: 0 4px 40px rgba(0,212,255,0.8); transform:translateY(-2px); }
 .btn-s { background:transparent; color:var(--text); border:1px solid rgba(255,255,255,0.12); }
 .btn-s:hover { border-color:var(--cyan); color:var(--cyan); }
+.btn-sp { background:rgba(234,74,170,0.14); border:1px solid rgba(234,74,170,0.55); color:#ffd4ef; }
+.btn-sp:hover { background:rgba(234,74,170,0.24); border-color:rgba(234,74,170,0.9); color:#ffe7f6; }
+.btn-s:hover { border-color:var(--cyan); color:var(--cyan); }
 
 /* ─── CONTENT ─── */
 .content {
@@ -355,6 +358,7 @@ footer p { color:var(--muted); font-size:0.78rem; }
 <nav>
   <a href="../index.html" class="nav-logo">&#x2B21; THREE.JS</a>
   <a href="../index.html" class="nav-back">&#8592; Visual Guide</a>
+  <a href="https://github.com/sponsors/web3dev1337" target="_blank" rel="noopener" style="color:#ff69b4;font-weight:600;">☕ Buy Me a Coffee</a>
   <a href="#cameras">Cameras</a>
   <a href="#geometry">Geometry</a>
   <a href="#materials">Materials</a>
@@ -377,17 +381,20 @@ footer p { color:var(--muted); font-size:0.78rem; }
       <div class="hero-stat-label">Live Demos</div>
     </div>
     <div class="hero-stat">
-      <div class="hero-stat-num clr-magenta">7</div>
-      <div class="hero-stat-label">Categories</div>
-    </div>
-    <div class="hero-stat">
-      <div class="hero-stat-num clr-amber">11</div>
+      <div class="hero-stat-num clr-amber">77</div>
       <div class="hero-stat-label">Coming Soon</div>
     </div>
   </div>
   <div class="hero-cta">
     <a href="#cameras" class="btn btn-p">&#9660; Explore Demos</a>
     <a href="../index.html" class="btn btn-s">&#8592; Visual Guide</a>
+    <a href="https://github.com/sponsors/web3dev1337" target="_blank" rel="noopener" class="btn btn-sp">☕ Buy Me a Coffee</a>
+  </div>
+  <div style="margin-top:1.2rem;">
+    <a href="https://x.com/AIOnlyDeveloper" target="_blank" style="display:inline-flex;align-items:center;gap:0.5rem;padding:0.7rem 1.5rem;border-radius:9px;background:#000;border:1px solid #333;color:#fff;font-weight:700;font-size:0.9rem;text-decoration:none;transition:all 0.2s;">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="white"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-4.714-6.231-5.401 6.231H2.747l7.73-8.835L1.254 2.25H8.08l4.259 5.63zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg>
+      Follow for More
+    </a>
   </div>
 </section>
 
@@ -702,7 +709,8 @@ footer p { color:var(--muted); font-size:0.78rem; }
 <!-- ═══ COMING SOON ═══ -->
 <div class="coming-soon-section">
   <div class="coming-soon-header">
-    <h2>More Categories Coming Soon</h2>
+    <h2>77 More Demos Coming Soon</h2>
+    <p style="color:var(--muted);font-size:0.95rem;margin-top:0.5rem;">See the <a href="../index.html" style="color:var(--cyan);">Visual Guide</a> for all 96 illustrated breakdowns while we build the interactive versions.</p>
   </div>
   <div class="coming-soon-grid">
     <div class="coming-soon-pill">&#10024; Post-FX <span class="coming-soon-badge">Soon</span></div>
@@ -723,13 +731,20 @@ footer p { color:var(--muted); font-size:0.78rem; }
 
 <!-- ── FOOTER ── -->
 <footer>
+  <div style="margin-bottom:1.5rem;">
+    <a href="https://x.com/AIOnlyDeveloper" target="_blank" style="display:inline-flex;align-items:center;gap:0.5rem;padding:0.7rem 1.5rem;border-radius:9px;background:#000;border:1px solid #333;color:#fff;font-weight:700;font-size:0.9rem;text-decoration:none;transition:all 0.2s;">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="white"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-4.714-6.231-5.401 6.231H2.747l7.73-8.835L1.254 2.25H8.08l4.259 5.63zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg>
+      Follow for More
+    </a>
+  </div>
   <div class="footer-links">
     <a href="../index.html">Visual Guide</a>
     <a href="https://threejs.org/docs/" target="_blank">Three.js Docs</a>
     <a href="https://github.com/mrdoob/three.js" target="_blank">Three.js GitHub</a>
-    <a href="https://x.com/AIOnlyDeveloper" target="_blank">@AIOnlyDeveloper</a>
+    <a href="https://github.com/NeuralPixelGames/threejs-visual-guide" target="_blank">Our GitHub</a>
+    <a href="https://github.com/sponsors/web3dev1337" target="_blank" style="color:#ff69b4;">☕ Buy Me a Coffee</a>
   </div>
-  <p>Three.js Interactive Guide &mdash; part of the Three.js Visual Encyclopedia</p>
+  <p>Three.js Interactive Guide &mdash; part of the <a href="../index.html" style="color:var(--cyan);">Three.js Visual Encyclopedia</a></p>
 </footer>
 
 <!-- ── THREE.JS HERO ANIMATION ── -->
