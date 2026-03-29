@@ -44,7 +44,7 @@ renderer.setSize( window.innerWidth, window.innerHeight );
 renderer.toneMapping = THREE.ACESFilmicToneMapping;
 renderer.toneMappingExposure = 1.2;
 renderer.shadowMap.enabled = true;
-renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+renderer.shadowMap.type = THREE.PCFShadowMap;
 container.appendChild( renderer.domElement );
 
 const scene = new THREE.Scene();
@@ -434,13 +434,14 @@ function rebuildMaterials() {
 }
 
 // --- Animate ---
-const clock = new THREE.Clock();
+const timer = new THREE.Timer();
 
 function animate() {
 
 	requestAnimationFrame( animate );
 
-	const elapsed = clock.getElapsedTime();
+	timer.update();
+	const elapsed = timer.getElapsed();
 
 	// Rotate meshes
 	meshes.forEach( ( mesh, i ) => {

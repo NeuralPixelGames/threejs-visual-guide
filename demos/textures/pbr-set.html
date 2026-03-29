@@ -683,7 +683,7 @@ function generateDisplacement( size ) {
 // Scene Setup
 // ═══════════════════════════════════════════════════════════════
 
-const clock = new THREE.Clock();
+const timer = new THREE.Timer();
 
 const renderer = new THREE.WebGLRenderer( { antialias: true } );
 renderer.setPixelRatio( window.devicePixelRatio );
@@ -1158,8 +1158,10 @@ window.addEventListener( 'resize', onResize );
 
 function animate() {
 
-	const dt = clock.getDelta();
-	const elapsed = clock.getElapsedTime();
+	timer.update();
+	const dt = timer.getDelta();
+	timer.update();
+	const elapsed = timer.getElapsed();
 
 	controls.update();
 

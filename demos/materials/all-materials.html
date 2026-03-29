@@ -150,7 +150,7 @@ let renderer, scene, camera, controls, composer;
 let materialItems = [];
 let labels = [];
 let dustParticles;
-const clock = new THREE.Clock();
+const timer = new THREE.Timer();
 const textureLoader = new THREE.TextureLoader();
 
 const params = {
@@ -822,7 +822,8 @@ function onResize() {
 function animate() {
 
 	controls.update();
-	const time = clock.getElapsedTime();
+	timer.update();
+	const time = timer.getElapsed();
 
 	// Rotate spheres
 	if ( params.autoRotate ) {

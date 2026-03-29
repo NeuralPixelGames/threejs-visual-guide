@@ -124,7 +124,7 @@ renderer.setSize( window.innerWidth, window.innerHeight );
 renderer.toneMapping = THREE.ACESFilmicToneMapping;
 renderer.toneMappingExposure = 1.0;
 renderer.shadowMap.enabled = true;
-renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+renderer.shadowMap.type = THREE.PCFShadowMap;
 container.appendChild( renderer.domElement );
 
 const scene = new THREE.Scene();
@@ -380,12 +380,13 @@ gui.add( params, 'exposure', 0.1, 5.0, 0.05 ).name( 'Exposure' ).onChange( v => 
 gui.add( params, 'autoRotate' ).name( 'Auto Rotate' );
 
 // --- Animate ---
-const clock = new THREE.Clock();
+const timer = new THREE.Timer();
 
 function animate() {
 
 	requestAnimationFrame( animate );
-	const elapsed = clock.getElapsedTime();
+	timer.update();
+	const elapsed = timer.getElapsed();
 
 	if ( params.autoRotate ) {
 

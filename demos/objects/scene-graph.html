@@ -372,7 +372,7 @@ init();
 
 function init() {
 
-	clock = new THREE.Clock();
+	clock = new THREE.Timer();
 
 	// Renderer
 	renderer = new THREE.WebGLRenderer( { antialias: true } );
@@ -1393,7 +1393,8 @@ function highlightBody3D( bodyKey ) {
 	selectionHighlight = new THREE.Mesh( shellGeo, shellMat );
 	selectionHighlight.name = '__selectionHighlight__';
 	selectionHighlight.userData.baseColor = bodyColor.clone();
-	selectionHighlight.userData.startTime = clock.getElapsedTime();
+	timer.update();
+	selectionHighlight.userData.startTime = timer.getElapsed();
 	mesh.add( selectionHighlight );
 
 	selectedBody = bodyKey;
@@ -1419,7 +1420,8 @@ function updateHighlight3D() {
 
 	if ( ! selectionHighlight ) return;
 
-	const elapsed = clock.getElapsedTime() - selectionHighlight.userData.startTime;
+	timer.update();
+	const elapsed = timer.getElapsed() - selectionHighlight.userData.startTime;
 	const pulse = 1.15 + Math.sin( elapsed * 4.0 ) * 0.1;
 	selectionHighlight.scale.set( pulse, pulse, pulse );
 	selectionHighlight.material.opacity = 0.2 + Math.sin( elapsed * 3.0 ) * 0.1;
@@ -1729,8 +1731,10 @@ function animate() {
 
 	controls.update();
 
-	const dt = clock.getDelta();
-	const time = clock.getElapsedTime() * params.timeScale;
+	timer.update();
+	const dt = timer.getDelta();
+	timer.update();
+	const time = timer.getElapsed() * params.timeScale;
 
 	// Sun self-rotation + texture scroll feel
 	if ( bodies.sun ) bodies.sun.mesh.rotation.y = time * 0.08;

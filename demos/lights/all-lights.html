@@ -349,7 +349,7 @@ import { GUI } from 'three/addons/libs/lil-gui.module.min.js';
 	};
 
 	let renderer, camera, controls;
-	const clock = new THREE.Clock();
+	const timer = new THREE.Timer();
 	const panelScenes = [];
 	const scratchColor = new THREE.Color();
 
@@ -362,7 +362,7 @@ import { GUI } from 'three/addons/libs/lil-gui.module.min.js';
 		renderer.setSize( window.innerWidth, window.innerHeight );
 		renderer.setClearColor( 0x000000, 0 );
 		renderer.shadowMap.enabled = true;
-		renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+		renderer.shadowMap.type = THREE.PCFShadowMap;
 		renderer.toneMapping = THREE.ACESFilmicToneMapping;
 		renderer.toneMappingExposure = params.exposure;
 		renderer.setScissorTest( true );
@@ -789,7 +789,8 @@ import { GUI } from 'three/addons/libs/lil-gui.module.min.js';
 
 	function animate() {
 
-		const elapsed = clock.getElapsedTime();
+		timer.update();
+		const elapsed = timer.getElapsed();
 		controls.update();
 		renderer.clear();
 

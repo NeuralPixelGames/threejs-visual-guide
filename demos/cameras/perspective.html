@@ -159,7 +159,7 @@ import { GUI } from 'three/addons/libs/lil-gui.module.min.js';
 import { HDRLoader } from 'three/addons/loaders/HDRLoader.js';
 
 let renderer, scene, cameras;
-const clock = new THREE.Clock();
+const timer = new THREE.Timer();
 
 const params = {
 	fov1: 15,
@@ -782,7 +782,8 @@ function drawFrustumOverlay() {
 
 function animate() {
 
-	const t = clock.getElapsedTime();
+	timer.update();
+	const t = timer.getElapsed();
 
 	// Animate floating orbs
 	scene.traverse( child => {

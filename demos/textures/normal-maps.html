@@ -200,7 +200,7 @@ init();
 
 function init() {
 
-	clock = new THREE.Clock();
+	clock = new THREE.Timer();
 
 	renderer = new THREE.WebGLRenderer( { antialias: true } );
 	renderer.setPixelRatio( window.devicePixelRatio );
@@ -624,7 +624,8 @@ function onResize() {
 
 function animate() {
 
-	const elapsed = clock.getElapsedTime();
+	timer.update();
+	const elapsed = timer.getElapsed();
 	controls.update();
 
 	// Slow light sweep across surface

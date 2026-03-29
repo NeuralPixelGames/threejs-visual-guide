@@ -526,14 +526,15 @@ function rebuildShadowMaps() {
 
 }
 
-const clock = new THREE.Clock();
+const timer = new THREE.Timer();
 
 function animate() {
 
 	requestAnimationFrame( animate );
 	controls.update();
 
-	const t = clock.getElapsedTime();
+	timer.update();
+	const t = timer.getElapsed();
 
 	for ( let i = 0; i < 4; i ++ ) {
 

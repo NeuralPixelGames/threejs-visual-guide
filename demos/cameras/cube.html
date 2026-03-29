@@ -31,7 +31,7 @@
 		import * as THREE from 'three';
 		import { GUI } from 'three/addons/libs/lil-gui.module.min.js';
 		import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
-		import { RGBELoader } from 'three/addons/loaders/RGBELoader.js';
+		import { HDRLoader } from 'three/addons/loaders/HDRLoader.js';
 
 		let renderer, scene, camera, controls;
 		let cubeCamera, cubeRenderTarget, reflectiveSphere;
@@ -66,7 +66,7 @@
 			renderer.toneMapping = THREE.ACESFilmicToneMapping;
 			renderer.toneMappingExposure = 1.0;
 			renderer.shadowMap.enabled = true;
-			renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+			renderer.shadowMap.type = THREE.PCFShadowMap;
 			renderer.autoClear = false;
 			container.appendChild( renderer.domElement );
 
@@ -95,7 +95,7 @@
 
 		function loadEnvironment() {
 
-			new RGBELoader()
+			new HDRLoader()
 				.setPath( 'https://threejs.org/examples/textures/equirectangular/' )
 				.load( 'venice_sunset_1k.hdr', function ( texture ) {
 
