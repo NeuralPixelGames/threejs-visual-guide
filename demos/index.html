@@ -378,8 +378,11 @@ footer p { color:var(--muted); font-size:0.78rem; }
 
 <!-- ── HERO ── -->
 <section class="hero">
-  <div class="hero-canvas-wrap">
-    <canvas id="hero-canvas"></canvas>
+  <div class="hero-canvas-wrap" style="width:min(960px,100%);height:auto;border-radius:14px;overflow:hidden;border:1px solid rgba(0,212,255,0.15);box-shadow:0 20px 60px rgba(0,0,0,0.4);">
+    <video autoplay muted loop playsinline style="width:100%;display:block;">
+      <source src="interactive-hero.mp4" type="video/mp4">
+      <img src="interactive-hero.jpg" alt="Three.js Interactive Guide" style="width:100%;">
+    </video>
   </div>
   <h1>Three.js Interactive Guide</h1>
   <p class="hero-sub">Hands-on 3D demos for every concept. Click, drag, and tweak parameters in real-time.</p>
