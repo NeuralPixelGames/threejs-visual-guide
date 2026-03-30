@@ -367,11 +367,11 @@ footer p { color:var(--muted); font-size:0.78rem; }
   <a href="../index.html" class="nav-logo">&#x2B21; THREE.JS</a>
   <a href="../index.html" class="nav-back">&#8592; Visual Guide</a>
   <a href="https://github.com/sponsors/web3dev1337" target="_blank" rel="noopener" style="color:#ff69b4;font-weight:600;">☕ Buy Me a Coffee</a>
-  <a href="#cameras">Cameras</a>
   <a href="#geometry">Geometry</a>
   <a href="#materials">Materials</a>
   <a href="#lights">Lights</a>
   <a href="#objects">Objects</a>
+  <a href="#cameras">Cameras</a>
   <a href="#textures">Textures</a>
   <a href="#renderer">Renderer</a>
 </nav>
@@ -394,7 +394,7 @@ footer p { color:var(--muted); font-size:0.78rem; }
     </div>
   </div>
   <div class="hero-cta">
-    <a href="#cameras" class="btn btn-p">&#9660; Explore Demos</a>
+    <a href="#geometry" class="btn btn-p">&#9660; Explore Demos</a>
     <a href="../index.html" class="btn btn-s">&#8592; Visual Guide</a>
     <a href="https://github.com/sponsors/web3dev1337" target="_blank" rel="noopener" class="btn btn-sp">☕ Buy Me a Coffee</a>
   </div>
@@ -408,65 +408,6 @@ footer p { color:var(--muted); font-size:0.78rem; }
 
 <!-- ── CONTENT ── -->
 <div class="content">
-
-<!-- ═══ CAMERAS ═══ -->
-<div class="category-section" id="cameras">
-  <div class="category-header">
-    <div class="category-icon bg-cyan" style="border:1px solid rgba(0,212,255,0.3);">&#127909;</div>
-    <h2 class="clr-cyan">Cameras</h2>
-    <span class="category-count badge-cyan">4 demos</span>
-  </div>
-  <div class="demo-grid">
-    <a href="cameras/perspective.html" class="demo-card card-cyan">
-      <div class="card-preview preview-cyan">
-        <img src="thumbnails/perspective.jpg" alt="perspective" loading="lazy">
-        <span class="card-badge badge-cyan">Camera</span>
-        <span class="card-file">perspective.html</span>
-      </div>
-      <div class="card-body">
-        <div class="card-title">Perspective Camera</div>
-        <div class="card-desc">Adjust FOV, near/far planes, and aspect ratio. See how perspective distortion changes in real-time.</div>
-        <div class="card-arrow arrow-cyan">Open demo &#8594;</div>
-      </div>
-    </a>
-    <a href="cameras/orthographic.html" class="demo-card card-cyan">
-      <div class="card-preview preview-cyan">
-        <img src="thumbnails/orthographic.jpg" alt="orthographic" loading="lazy">
-        <span class="card-badge badge-cyan">Camera</span>
-        <span class="card-file">orthographic.html</span>
-      </div>
-      <div class="card-body">
-        <div class="card-title">Orthographic Camera</div>
-        <div class="card-desc">No perspective foreshortening. Tweak frustum bounds for 2D-style and isometric views.</div>
-        <div class="card-arrow arrow-cyan">Open demo &#8594;</div>
-      </div>
-    </a>
-    <a href="cameras/cube.html" class="demo-card card-cyan">
-      <div class="card-preview preview-cyan">
-        <img src="thumbnails/cube.jpg" alt="cube" loading="lazy">
-        <span class="card-badge badge-cyan">Camera</span>
-        <span class="card-file">cube.html</span>
-      </div>
-      <div class="card-body">
-        <div class="card-title">Cube Camera</div>
-        <div class="card-desc">Six-face rendering for dynamic reflections. Watch environment maps update per frame.</div>
-        <div class="card-arrow arrow-cyan">Open demo &#8594;</div>
-      </div>
-    </a>
-    <a href="cameras/stereo.html" class="demo-card card-cyan">
-      <div class="card-preview preview-cyan">
-        <img src="thumbnails/stereo.jpg" alt="stereo" loading="lazy">
-        <span class="card-badge badge-cyan">Camera</span>
-        <span class="card-file">stereo.html</span>
-      </div>
-      <div class="card-body">
-        <div class="card-title">Stereo Camera</div>
-        <div class="card-desc">Side-by-side rendering for VR and anaglyph 3D. Adjust eye separation in real-time.</div>
-        <div class="card-arrow arrow-cyan">Open demo &#8594;</div>
-      </div>
-    </a>
-  </div>
-</div>
 
 <!-- ═══ GEOMETRY ═══ -->
 <div class="category-section" id="geometry">
@@ -555,6 +496,65 @@ footer p { color:var(--muted); font-size:0.78rem; }
         <div class="card-title">Scene Graph</div>
         <div class="card-desc">Visualize parent-child relationships. See how transforms cascade through the hierarchy.</div>
         <div class="card-arrow arrow-green">Open demo &#8594;</div>
+      </div>
+    </a>
+  </div>
+</div>
+
+<!-- ═══ CAMERAS ═══ -->
+<div class="category-section" id="cameras">
+  <div class="category-header">
+    <div class="category-icon bg-cyan" style="border:1px solid rgba(0,212,255,0.3);">&#127909;</div>
+    <h2 class="clr-cyan">Cameras</h2>
+    <span class="category-count badge-cyan">4 demos</span>
+  </div>
+  <div class="demo-grid">
+    <a href="cameras/perspective.html" class="demo-card card-cyan">
+      <div class="card-preview preview-cyan">
+        <img src="thumbnails/perspective.jpg" alt="perspective" loading="lazy">
+        <span class="card-badge badge-cyan">Camera</span>
+        <span class="card-file">perspective.html</span>
+      </div>
+      <div class="card-body">
+        <div class="card-title">Perspective Camera</div>
+        <div class="card-desc">Adjust FOV, near/far planes, and aspect ratio. See how perspective distortion changes in real-time.</div>
+        <div class="card-arrow arrow-cyan">Open demo &#8594;</div>
+      </div>
+    </a>
+    <a href="cameras/orthographic.html" class="demo-card card-cyan">
+      <div class="card-preview preview-cyan">
+        <img src="thumbnails/orthographic.jpg" alt="orthographic" loading="lazy">
+        <span class="card-badge badge-cyan">Camera</span>
+        <span class="card-file">orthographic.html</span>
+      </div>
+      <div class="card-body">
+        <div class="card-title">Orthographic Camera</div>
+        <div class="card-desc">No perspective foreshortening. Tweak frustum bounds for 2D-style and isometric views.</div>
+        <div class="card-arrow arrow-cyan">Open demo &#8594;</div>
+      </div>
+    </a>
+    <a href="cameras/cube.html" class="demo-card card-cyan">
+      <div class="card-preview preview-cyan">
+        <img src="thumbnails/cube.jpg" alt="cube" loading="lazy">
+        <span class="card-badge badge-cyan">Camera</span>
+        <span class="card-file">cube.html</span>
+      </div>
+      <div class="card-body">
+        <div class="card-title">Cube Camera</div>
+        <div class="card-desc">Six-face rendering for dynamic reflections. Watch environment maps update per frame.</div>
+        <div class="card-arrow arrow-cyan">Open demo &#8594;</div>
+      </div>
+    </a>
+    <a href="cameras/stereo.html" class="demo-card card-cyan">
+      <div class="card-preview preview-cyan">
+        <img src="thumbnails/stereo.jpg" alt="stereo" loading="lazy">
+        <span class="card-badge badge-cyan">Camera</span>
+        <span class="card-file">stereo.html</span>
+      </div>
+      <div class="card-body">
+        <div class="card-title">Stereo Camera</div>
+        <div class="card-desc">Side-by-side rendering for VR and anaglyph 3D. Adjust eye separation in real-time.</div>
+        <div class="card-arrow arrow-cyan">Open demo &#8594;</div>
       </div>
     </a>
   </div>
