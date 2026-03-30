@@ -16,7 +16,39 @@
 </head>
 <body>
 
+<style>
+#light-type-switcher {
+	position: fixed; top: 52px; left: 50%; transform: translateX(-50%); z-index: 20;
+	display: flex; gap: 0; font-family: 'Inter', system-ui, sans-serif; user-select: none;
+}
+#light-type-switcher label {
+	display: flex; align-items: center; gap: 0.4rem;
+	padding: 0.5rem 1.1rem; background: rgba(10,14,26,0.85); backdrop-filter: blur(8px);
+	border: 1px solid rgba(74,158,255,0.25); color: #8899bb; font-size: 0.82rem;
+	font-weight: 500; cursor: pointer; transition: all 0.2s;
+}
+#light-type-switcher label:first-child { border-radius: 8px 0 0 8px; }
+#light-type-switcher label:nth-child(2) { border-left: none; border-right: none; }
+#light-type-switcher label:last-child { border-radius: 0 8px 8px 0; }
+#light-type-switcher input[type="radio"] {
+	appearance: none; -webkit-appearance: none; width: 12px; height: 12px;
+	border: 2px solid #556688; border-radius: 50%; background: transparent; cursor: pointer; transition: all 0.2s;
+}
+#light-type-switcher input:checked { border-color: #4a9eff; }
+#light-type-switcher input:checked::after {
+	content: ''; position: absolute; top: 50%; left: 50%; transform: translate(-50%,-50%);
+	width: 5px; height: 5px; border-radius: 50%; background: #4a9eff;
+}
+#light-type-switcher input { position: relative; }
+#light-type-switcher label:has(input:checked) { color: #fff; background: rgba(74,158,255,0.12); border-color: rgba(74,158,255,0.5); }
+.lil-gui.root { top: 96px !important; }
+</style>
 <a href="../index.html" id="back-btn">&larr; Hub</a>
+<div id="light-type-switcher">
+	<label><input type="radio" name="lightType" value="Directional" checked>Directional</label>
+	<label><input type="radio" name="lightType" value="Point">Point</label>
+	<label><input type="radio" name="lightType" value="Spot">Spot</label>
+</div>
 
 <div class="multi-panel-grid grid-2x2">
 	<div class="panel-label"><span><strong>No Shadows</strong></span></div>
@@ -470,12 +502,17 @@ controls.update();
 // GUI
 const gui = new GUI( { width: 300 } );
 
-gui.add( params, 'lightType', [ 'Directional', 'Point', 'Spot' ] ).name( 'Light Type' ).onChange( v => {
+// Light type radio buttons (replaces dropdown)
+document.querySelectorAll( '#light-type-switcher input' ).forEach( radio => {
 
-	lightChip.textContent = v === 'Directional' ? 'DirectionalLight'
-		: v === 'Point' ? 'PointLight' : 'SpotLight';
+	radio.addEventListener( 'change', () => {
 
-	rebuildAllScenes();
+		params.lightType = radio.value;
+		lightChip.textContent = radio.value === 'Directional' ? 'DirectionalLight'
+			: radio.value === 'Point' ? 'PointLight' : 'SpotLight';
+		rebuildAllScenes();
+
+	} );
 
 } );
 

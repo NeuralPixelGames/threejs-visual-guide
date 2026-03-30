@@ -91,18 +91,17 @@
 			flex-wrap: wrap;
 		}
 		.gui-inline-desc {
-			display: -webkit-box;
-			-webkit-line-clamp: 2;
-			-webkit-box-orient: vertical;
+			display: block;
 			width: 100%;
 			font-size: 10px;
-			line-height: 1.25;
-			color: #8899bb;
+			line-height: 1.3;
+			color: #a8b4cc;
 			font-family: 'Inter', system-ui, sans-serif;
 			font-weight: 400;
 			white-space: normal;
-			overflow: hidden;
-			margin-top: -1px;
+			word-wrap: break-word;
+			overflow-wrap: break-word;
+			margin-top: 1px;
 			pointer-events: none;
 			order: 10;
 		}

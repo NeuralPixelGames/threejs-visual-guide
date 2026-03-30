@@ -36,7 +36,7 @@
 		/* Camera type radio buttons */
 		#camera-type-switcher {
 			position: absolute;
-			top: 60px;
+			top: 52px;
 			left: 50%;
 			transform: translateX(-50%);
 			z-index: 20;
@@ -116,6 +116,7 @@
 			background: rgba(74, 158, 255, 0.08);
 			color: #c0ccee;
 		}
+		.lil-gui.root { top: 100px !important; }
 	</style>
 </head>
 <body>
@@ -177,7 +178,7 @@
 			// Perspective camera
 			const aspect = window.innerWidth / window.innerHeight;
 			perspCamera = new THREE.PerspectiveCamera( params.fov, aspect, params.near, params.far );
-			perspCamera.position.set( 10, 8, 14 );
+			perspCamera.position.set( 10, 10, 14 );
 
 			// Orthographic camera
 			const orthoHalfH = params.orthoSize;
