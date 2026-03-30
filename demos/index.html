@@ -194,8 +194,16 @@ nav a.active { color: var(--cyan); box-shadow: inset 0 -2px 0 var(--cyan); }
   height: 160px;
   position: relative;
   overflow: hidden;
-  opacity: 0.85;
   transition: opacity 0.3s;
+}
+.card-preview img {
+  width: 100%; height: 100%; object-fit: cover;
+  transition: transform 0.3s, filter 0.3s;
+  filter: brightness(0.85);
+}
+.demo-card:hover .card-preview img {
+  transform: scale(1.05);
+  filter: brightness(1);
 }
 .card-preview-bg {
   position: absolute; inset: 0;
@@ -411,7 +419,7 @@ footer p { color:var(--muted); font-size:0.78rem; }
   <div class="demo-grid">
     <a href="cameras/perspective.html" class="demo-card card-cyan">
       <div class="card-preview preview-cyan">
-        <div class="card-preview-bg"><span class="card-preview-icon">&#128247;</span></div>
+        <img src="thumbnails/perspective.jpg" alt="perspective" loading="lazy">
         <span class="card-badge badge-cyan">Camera</span>
         <span class="card-file">perspective.html</span>
       </div>
@@ -423,7 +431,7 @@ footer p { color:var(--muted); font-size:0.78rem; }
     </a>
     <a href="cameras/orthographic.html" class="demo-card card-cyan">
       <div class="card-preview preview-cyan">
-        <div class="card-preview-bg"><span class="card-preview-icon">&#128187;</span></div>
+        <img src="thumbnails/orthographic.jpg" alt="orthographic" loading="lazy">
         <span class="card-badge badge-cyan">Camera</span>
         <span class="card-file">orthographic.html</span>
       </div>
@@ -435,7 +443,7 @@ footer p { color:var(--muted); font-size:0.78rem; }
     </a>
     <a href="cameras/cube.html" class="demo-card card-cyan">
       <div class="card-preview preview-cyan">
-        <div class="card-preview-bg"><span class="card-preview-icon">&#127758;</span></div>
+        <img src="thumbnails/cube.jpg" alt="cube" loading="lazy">
         <span class="card-badge badge-cyan">Camera</span>
         <span class="card-file">cube.html</span>
       </div>
@@ -447,7 +455,7 @@ footer p { color:var(--muted); font-size:0.78rem; }
     </a>
     <a href="cameras/stereo.html" class="demo-card card-cyan">
       <div class="card-preview preview-cyan">
-        <div class="card-preview-bg"><span class="card-preview-icon">&#128083;</span></div>
+        <img src="thumbnails/stereo.jpg" alt="stereo" loading="lazy">
         <span class="card-badge badge-cyan">Camera</span>
         <span class="card-file">stereo.html</span>
       </div>
@@ -470,7 +478,7 @@ footer p { color:var(--muted); font-size:0.78rem; }
   <div class="demo-grid">
     <a href="geometry/primitives.html" class="demo-card card-magenta">
       <div class="card-preview preview-magenta">
-        <div class="card-preview-bg"><span class="card-preview-icon">&#11044;</span></div>
+        <img src="thumbnails/primitives.jpg" alt="primitives" loading="lazy">
         <span class="card-badge badge-magenta">Geometry</span>
         <span class="card-file">primitives.html</span>
       </div>
@@ -493,7 +501,7 @@ footer p { color:var(--muted); font-size:0.78rem; }
   <div class="demo-grid">
     <a href="materials/all-materials.html" class="demo-card card-amber">
       <div class="card-preview preview-amber">
-        <div class="card-preview-bg"><span class="card-preview-icon">&#128142;</span></div>
+        <img src="thumbnails/all-materials.jpg" alt="all-materials" loading="lazy">
         <span class="card-badge badge-amber">Material</span>
         <span class="card-file">all-materials.html</span>
       </div>
@@ -516,7 +524,7 @@ footer p { color:var(--muted); font-size:0.78rem; }
   <div class="demo-grid">
     <a href="lights/all-lights.html" class="demo-card card-amber">
       <div class="card-preview preview-amber">
-        <div class="card-preview-bg"><span class="card-preview-icon">&#9728;</span></div>
+        <img src="thumbnails/all-lights.jpg" alt="all-lights" loading="lazy">
         <span class="card-badge badge-amber">Lights</span>
         <span class="card-file">all-lights.html</span>
       </div>
@@ -539,7 +547,7 @@ footer p { color:var(--muted); font-size:0.78rem; }
   <div class="demo-grid">
     <a href="objects/scene-graph.html" class="demo-card card-green">
       <div class="card-preview preview-green">
-        <div class="card-preview-bg"><span class="card-preview-icon">&#127795;</span></div>
+        <img src="thumbnails/scene-graph.jpg" alt="scene-graph" loading="lazy">
         <span class="card-badge badge-green">Objects</span>
         <span class="card-file">scene-graph.html</span>
       </div>
@@ -562,7 +570,7 @@ footer p { color:var(--muted); font-size:0.78rem; }
   <div class="demo-grid">
     <a href="textures/basics-uv.html" class="demo-card card-purple">
       <div class="card-preview preview-purple">
-        <div class="card-preview-bg"><span class="card-preview-icon">&#127912;</span></div>
+        <img src="thumbnails/basics-uv.jpg" alt="basics-uv" loading="lazy">
         <span class="card-badge badge-purple">Texture</span>
         <span class="card-file">basics-uv.html</span>
       </div>
@@ -574,7 +582,7 @@ footer p { color:var(--muted); font-size:0.78rem; }
     </a>
     <a href="textures/normal-maps.html" class="demo-card card-purple">
       <div class="card-preview preview-purple">
-        <div class="card-preview-bg"><span class="card-preview-icon">&#127755;</span></div>
+        <img src="thumbnails/normal-maps.jpg" alt="normal-maps" loading="lazy">
         <span class="card-badge badge-purple">Texture</span>
         <span class="card-file">normal-maps.html</span>
       </div>
@@ -586,7 +594,7 @@ footer p { color:var(--muted); font-size:0.78rem; }
     </a>
     <a href="textures/pbr-set.html" class="demo-card card-purple">
       <div class="card-preview preview-purple">
-        <div class="card-preview-bg"><span class="card-preview-icon">&#129717;</span></div>
+        <img src="thumbnails/pbr-set.jpg" alt="pbr-set" loading="lazy">
         <span class="card-badge badge-purple">Texture</span>
         <span class="card-file">pbr-set.html</span>
       </div>
@@ -598,7 +606,7 @@ footer p { color:var(--muted); font-size:0.78rem; }
     </a>
     <a href="textures/cubetexture-skybox.html" class="demo-card card-purple">
       <div class="card-preview preview-purple">
-        <div class="card-preview-bg"><span class="card-preview-icon">&#127748;</span></div>
+        <img src="thumbnails/cubetexture-skybox.jpg" alt="cubetexture-skybox" loading="lazy">
         <span class="card-badge badge-purple">Texture</span>
         <span class="card-file">cubetexture-skybox.html</span>
       </div>
@@ -610,7 +618,7 @@ footer p { color:var(--muted); font-size:0.78rem; }
     </a>
     <a href="textures/video.html" class="demo-card card-purple">
       <div class="card-preview preview-purple">
-        <div class="card-preview-bg"><span class="card-preview-icon">&#127916;</span></div>
+        <img src="thumbnails/video.jpg" alt="video" loading="lazy">
         <span class="card-badge badge-purple">Texture</span>
         <span class="card-file">video.html</span>
       </div>
@@ -622,7 +630,7 @@ footer p { color:var(--muted); font-size:0.78rem; }
     </a>
     <a href="textures/data.html" class="demo-card card-purple">
       <div class="card-preview preview-purple">
-        <div class="card-preview-bg"><span class="card-preview-icon">&#128200;</span></div>
+        <img src="thumbnails/data.jpg" alt="data" loading="lazy">
         <span class="card-badge badge-purple">Texture</span>
         <span class="card-file">data.html</span>
       </div>
@@ -634,7 +642,7 @@ footer p { color:var(--muted); font-size:0.78rem; }
     </a>
     <a href="textures/hdr.html" class="demo-card card-purple">
       <div class="card-preview preview-purple">
-        <div class="card-preview-bg"><span class="card-preview-icon">&#9728;</span></div>
+        <img src="thumbnails/hdr.jpg" alt="hdr" loading="lazy">
         <span class="card-badge badge-purple">Texture</span>
         <span class="card-file">hdr.html</span>
       </div>
@@ -646,7 +654,7 @@ footer p { color:var(--muted); font-size:0.78rem; }
     </a>
     <a href="textures/compressed.html" class="demo-card card-purple">
       <div class="card-preview preview-purple">
-        <div class="card-preview-bg"><span class="card-preview-icon">&#128230;</span></div>
+        <img src="thumbnails/compressed.jpg" alt="compressed" loading="lazy">
         <span class="card-badge badge-purple">Texture</span>
         <span class="card-file">compressed.html</span>
       </div>
@@ -669,7 +677,7 @@ footer p { color:var(--muted); font-size:0.78rem; }
   <div class="demo-grid">
     <a href="renderer/shadow-types.html" class="demo-card card-green">
       <div class="card-preview preview-green">
-        <div class="card-preview-bg"><span class="card-preview-icon">&#127761;</span></div>
+        <img src="thumbnails/shadow-types.jpg" alt="shadow-types" loading="lazy">
         <span class="card-badge badge-green">Renderer</span>
         <span class="card-file">shadow-types.html</span>
       </div>
@@ -681,7 +689,7 @@ footer p { color:var(--muted); font-size:0.78rem; }
     </a>
     <a href="renderer/env-mapping.html" class="demo-card card-green">
       <div class="card-preview preview-green">
-        <div class="card-preview-bg"><span class="card-preview-icon">&#127758;</span></div>
+        <img src="thumbnails/env-mapping.jpg" alt="env-mapping" loading="lazy">
         <span class="card-badge badge-green">Renderer</span>
         <span class="card-file">env-mapping.html</span>
       </div>
@@ -693,7 +701,7 @@ footer p { color:var(--muted); font-size:0.78rem; }
     </a>
     <a href="renderer/tone-mapping.html" class="demo-card card-green">
       <div class="card-preview preview-green">
-        <div class="card-preview-bg"><span class="card-preview-icon">&#127752;</span></div>
+        <img src="thumbnails/tone-mapping.jpg" alt="tone-mapping" loading="lazy">
         <span class="card-badge badge-green">Renderer</span>
         <span class="card-file">tone-mapping.html</span>
       </div>
