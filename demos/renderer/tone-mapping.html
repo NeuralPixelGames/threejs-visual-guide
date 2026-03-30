@@ -1,0 +1,430 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<title>Tone Mapping - Three.js Encyclopedia</title>
+	<meta charset="utf-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<link rel="stylesheet" href="../shared/demo-base.css">
+</head>
+<body>
+<a href="../index.html" id="back-btn">&larr; Hub</a>
+<div id="info">
+	<strong>Tone Mapping Comparison</strong><br>
+	Compare how different tone mapping operators render the same HDR scene
+</div>
+<div id="loading-overlay" style="position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(10,14,26,0.95);display:flex;align-items:center;justify-content:center;z-index:1000;color:#4a9eff;font-family:Inter,system-ui,sans-serif;font-size:16px;">Loading model...</div>
+<div id="container"></div>
+
+<style>
+#controls-wrapper {
+	position: fixed;
+	top: 10px;
+	right: 10px;
+	z-index: 10;
+	display: flex;
+	flex-direction: column;
+	gap: 8px;
+	align-items: flex-end;
+}
+#tone-radio-panel {
+	background: rgba(10, 14, 26, 0.88);
+	backdrop-filter: blur(10px);
+	border: 1px solid rgba(74, 158, 255, 0.25);
+	border-radius: 10px;
+	padding: 14px 16px;
+	font-family: 'Inter', system-ui, -apple-system, sans-serif;
+	color: #c0c8dc;
+	min-width: 200px;
+}
+#tone-radio-panel .panel-title {
+	font-size: 12px;
+	font-weight: 600;
+	text-transform: uppercase;
+	letter-spacing: 0.8px;
+	color: #fff;
+	margin-bottom: 10px;
+	padding-bottom: 6px;
+	border-bottom: 1px solid rgba(74, 158, 255, 0.2);
+}
+#tone-radio-panel label {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	padding: 5px 8px;
+	margin: 2px 0;
+	border-radius: 6px;
+	cursor: pointer;
+	font-size: 12px;
+	transition: background 0.15s;
+	color: #a0a8bc;
+}
+#tone-radio-panel label:hover {
+	background: rgba(74, 158, 255, 0.1);
+	color: #e0e5f0;
+}
+#tone-radio-panel label.active {
+	background: rgba(74, 158, 255, 0.15);
+	color: #fff;
+}
+#tone-radio-panel input[type="radio"] {
+	appearance: none;
+	-webkit-appearance: none;
+	width: 14px;
+	height: 14px;
+	border: 2px solid #4a6a8a;
+	border-radius: 50%;
+	background: transparent;
+	cursor: pointer;
+	flex-shrink: 0;
+	position: relative;
+	transition: border-color 0.15s;
+}
+#tone-radio-panel input[type="radio"]:checked {
+	border-color: #4a9eff;
+}
+#tone-radio-panel input[type="radio"]:checked::after {
+	content: '';
+	position: absolute;
+	top: 2px;
+	left: 2px;
+	width: 6px;
+	height: 6px;
+	border-radius: 50%;
+	background: #4a9eff;
+}
+</style>
+
+<div id="controls-wrapper">
+	<div id="tone-radio-panel">
+		<div class="panel-title">Tone Mapping</div>
+	</div>
+	<div id="gui-slot"></div>
+</div>
+
+<script type="importmap">
+{
+	"imports": {
+		"three": "https://cdn.jsdelivr.net/npm/three@0.183.0/build/three.module.js",
+		"three/addons/": "https://cdn.jsdelivr.net/npm/three@0.183.0/examples/jsm/"
+	}
+}
+</script>
+
+<script type="module">
+import * as THREE from 'three';
+import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+import { GUI } from 'three/addons/libs/lil-gui.module.min.js';
+import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
+import { DRACOLoader } from 'three/addons/loaders/DRACOLoader.js';
+
+const container = document.getElementById( 'container' );
+const renderer = new THREE.WebGLRenderer( { antialias: true } );
+renderer.setPixelRatio( window.devicePixelRatio );
+renderer.setSize( window.innerWidth, window.innerHeight );
+renderer.toneMapping = THREE.ACESFilmicToneMapping;
+renderer.toneMappingExposure = 1.0;
+renderer.shadowMap.enabled = true;
+renderer.shadowMap.type = THREE.PCFShadowMap;
+container.appendChild( renderer.domElement );
+
+const scene = new THREE.Scene();
+scene.background = new THREE.Color( 0x0a0e1a );
+
+const camera = new THREE.PerspectiveCamera( 45, window.innerWidth / window.innerHeight, 0.1, 200 );
+camera.position.set( 5, 4, 7 );
+
+const controls = new OrbitControls( camera, renderer.domElement );
+controls.enableDamping = true;
+controls.dampingFactor = 0.08;
+controls.target.set( 0, 1.5, 0 );
+
+// --- Lights (intentionally bright for HDR range) ---
+const ambientLight = new THREE.AmbientLight( 0x303850, 0.3 );
+scene.add( ambientLight );
+
+const sunLight = new THREE.DirectionalLight( 0xfff0dd, 5.0 );
+sunLight.position.set( 10, 20, 8 );
+sunLight.castShadow = true;
+sunLight.shadow.mapSize.set( 2048, 2048 );
+sunLight.shadow.camera.left = - 12;
+sunLight.shadow.camera.right = 12;
+sunLight.shadow.camera.top = 12;
+sunLight.shadow.camera.bottom = - 12;
+sunLight.shadow.bias = - 0.001;
+scene.add( sunLight );
+
+const warmLight = new THREE.PointLight( 0xff6622, 8, 20 );
+warmLight.position.set( - 4, 4, - 2 );
+warmLight.castShadow = true;
+scene.add( warmLight );
+
+const coolLight = new THREE.PointLight( 0x2266ff, 6, 20 );
+coolLight.position.set( 4, 3, 3 );
+coolLight.castShadow = true;
+scene.add( coolLight );
+
+const greenLight = new THREE.PointLight( 0x22ff66, 4, 15 );
+greenLight.position.set( 0, 2, - 5 );
+scene.add( greenLight );
+
+// --- Ground ---
+const groundGeo = new THREE.PlaneGeometry( 60, 60 );
+const groundMat = new THREE.MeshStandardMaterial( {
+	color: 0x1a1a2e,
+	roughness: 0.7,
+	metalness: 0.3
+} );
+const ground = new THREE.Mesh( groundGeo, groundMat );
+ground.rotation.x = - Math.PI / 2;
+ground.receiveShadow = true;
+scene.add( ground );
+
+// --- Scene objects with varied materials for tone mapping comparison ---
+
+// Highly reflective chrome sphere
+const chromeSphere = new THREE.Mesh(
+	new THREE.SphereGeometry( 1.0, 64, 48 ),
+	new THREE.MeshStandardMaterial( { color: 0xffffff, roughness: 0.0, metalness: 1.0 } )
+);
+chromeSphere.position.set( 0, 1.5, 0 );
+chromeSphere.castShadow = true;
+scene.add( chromeSphere );
+
+// Gold torus knot
+const goldKnot = new THREE.Mesh(
+	new THREE.TorusKnotGeometry( 0.8, 0.25, 100, 24 ),
+	new THREE.MeshStandardMaterial( { color: 0xffaa33, roughness: 0.15, metalness: 0.95 } )
+);
+goldKnot.position.set( - 3.5, 2.0, 0 );
+goldKnot.castShadow = true;
+scene.add( goldKnot );
+
+// Matte red sphere
+const redSphere = new THREE.Mesh(
+	new THREE.SphereGeometry( 0.8, 32, 24 ),
+	new THREE.MeshStandardMaterial( { color: 0xff2244, roughness: 0.9, metalness: 0.0 } )
+);
+redSphere.position.set( 3.5, 1.2, 0 );
+redSphere.castShadow = true;
+scene.add( redSphere );
+
+// Emissive glowing cubes
+const emissiveColors = [ 0xff4444, 0x44ff44, 0x4444ff, 0xffff44, 0xff44ff ];
+const cubeGeo = new THREE.BoxGeometry( 0.5, 0.5, 0.5 );
+const emissiveCubes = [];
+for ( let i = 0; i < 5; i ++ ) {
+
+	const angle = ( i / 5 ) * Math.PI * 2;
+	const mat = new THREE.MeshStandardMaterial( {
+		color: emissiveColors[ i ],
+		emissive: emissiveColors[ i ],
+		emissiveIntensity: 3.0,
+		roughness: 0.2,
+		metalness: 0.5
+	} );
+	const cube = new THREE.Mesh( cubeGeo, mat );
+	cube.position.set( Math.cos( angle ) * 5, 0.5, Math.sin( angle ) * 5 );
+	cube.castShadow = true;
+	scene.add( cube );
+	emissiveCubes.push( cube );
+
+}
+
+// Glass-like torus
+const glassTorus = new THREE.Mesh(
+	new THREE.TorusGeometry( 1.0, 0.35, 32, 64 ),
+	new THREE.MeshPhysicalMaterial( {
+		color: 0x88ccff,
+		roughness: 0.05,
+		metalness: 0.0,
+		transmission: 0.9,
+		thickness: 0.5,
+		ior: 1.5
+	} )
+);
+glassTorus.position.set( 0, 1.5, - 3.5 );
+glassTorus.rotation.x = Math.PI / 4;
+glassTorus.castShadow = true;
+scene.add( glassTorus );
+
+// Rough concrete pillars
+const pillarGeo = new THREE.CylinderGeometry( 0.25, 0.3, 4, 12 );
+const pillarMat = new THREE.MeshStandardMaterial( { color: 0x555566, roughness: 1.0, metalness: 0.0 } );
+for ( let i = 0; i < 4; i ++ ) {
+
+	const angle = ( i / 4 ) * Math.PI * 2 + Math.PI / 8;
+	const pillar = new THREE.Mesh( pillarGeo, pillarMat );
+	pillar.position.set( Math.cos( angle ) * 7, 2, Math.sin( angle ) * 7 );
+	pillar.castShadow = true;
+	pillar.receiveShadow = true;
+	scene.add( pillar );
+
+}
+
+// --- Load Bedroom Model ---
+const dracoLoader = new DRACOLoader();
+dracoLoader.setDecoderPath( 'https://cdn.jsdelivr.net/npm/three@0.183.0/examples/jsm/libs/draco/gltf/' );
+const gltfLoader = new GLTFLoader();
+gltfLoader.setDRACOLoader( dracoLoader );
+
+gltfLoader.load( 'https://threejs.org/examples/models/gltf/minimalistic_modern_bedroom.glb', ( gltf ) => {
+
+	const model = gltf.scene;
+
+	const box = new THREE.Box3().setFromObject( model );
+	const size = box.getSize( new THREE.Vector3() );
+	const center = box.getCenter( new THREE.Vector3() );
+	const maxDim = Math.max( size.x, size.y, size.z );
+	const scale = 12 / maxDim;
+	model.scale.setScalar( scale );
+	model.position.set( - center.x * scale - 3, - box.min.y * scale, - center.z * scale - 1 );
+
+	model.traverse( ( child ) => {
+
+		if ( child.isMesh ) {
+
+			child.castShadow = true;
+			child.receiveShadow = true;
+
+		}
+
+	} );
+	scene.add( model );
+
+	const overlay = document.getElementById( 'loading-overlay' );
+	if ( overlay ) overlay.style.display = 'none';
+
+} );
+
+// --- Tone mapping map ---
+const toneMappingOptions = {
+	'NoToneMapping': THREE.NoToneMapping,
+	'LinearToneMapping': THREE.LinearToneMapping,
+	'ReinhardToneMapping': THREE.ReinhardToneMapping,
+	'CineonToneMapping': THREE.CineonToneMapping,
+	'ACESFilmicToneMapping': THREE.ACESFilmicToneMapping,
+	'AgXToneMapping': THREE.AgXToneMapping,
+	'NeutralToneMapping': THREE.NeutralToneMapping
+};
+
+// --- GUI ---
+const params = {
+	toneMapping: 'ACESFilmicToneMapping',
+	exposure: 1.0,
+	autoRotate: true
+};
+
+// --- Custom radio buttons for tone mapping ---
+const radioPanel = document.getElementById( 'tone-radio-panel' );
+const toneMappingKeys = Object.keys( toneMappingOptions );
+
+function setToneMapping( key ) {
+
+	params.toneMapping = key;
+	renderer.toneMapping = toneMappingOptions[ key ];
+
+	scene.traverse( child => {
+
+		if ( child.material ) child.material.needsUpdate = true;
+
+	} );
+
+	// Update active label styling
+	radioPanel.querySelectorAll( 'label' ).forEach( label => {
+
+		label.classList.toggle( 'active', label.dataset.key === key );
+
+	} );
+
+}
+
+toneMappingKeys.forEach( key => {
+
+	const label = document.createElement( 'label' );
+	label.dataset.key = key;
+
+	const radio = document.createElement( 'input' );
+	radio.type = 'radio';
+	radio.name = 'toneMapping';
+	radio.value = key;
+	if ( key === params.toneMapping ) {
+
+		radio.checked = true;
+		label.classList.add( 'active' );
+
+	}
+
+	radio.addEventListener( 'change', () => setToneMapping( key ) );
+
+	const displayName = key.replace( 'ToneMapping', '' );
+	const span = document.createElement( 'span' );
+	span.textContent = displayName;
+
+	label.appendChild( radio );
+	label.appendChild( span );
+	radioPanel.appendChild( label );
+
+} );
+
+// --- lil-gui for remaining controls (exposure, auto-rotate) ---
+const guiSlot = document.getElementById( 'gui-slot' );
+const gui = new GUI( { container: guiSlot } );
+gui.title( 'Settings' );
+
+gui.add( params, 'exposure', 0.1, 5.0, 0.05 ).name( 'Exposure' ).onChange( v => {
+
+	renderer.toneMappingExposure = v;
+
+} );
+
+gui.add( params, 'autoRotate' ).name( 'Auto Rotate' );
+
+// --- Animate ---
+const timer = new THREE.Timer();
+
+function animate() {
+
+	requestAnimationFrame( animate );
+	timer.update();
+	const elapsed = timer.getElapsed();
+
+	if ( params.autoRotate ) {
+
+		goldKnot.rotation.y = elapsed * 0.4;
+		goldKnot.rotation.x = elapsed * 0.2;
+		chromeSphere.rotation.y = elapsed * 0.15;
+		glassTorus.rotation.y = elapsed * 0.25;
+		glassTorus.rotation.z = elapsed * 0.1;
+
+		emissiveCubes.forEach( ( cube, i ) => {
+
+			cube.rotation.x = elapsed * 0.3 + i;
+			cube.rotation.y = elapsed * 0.5 + i;
+			cube.position.y = 0.5 + Math.sin( elapsed * 1.5 + i * 1.2 ) * 0.3;
+
+		} );
+
+		// Animate light intensities for HDR variation
+		warmLight.intensity = 8 + Math.sin( elapsed * 0.7 ) * 3;
+		coolLight.intensity = 6 + Math.cos( elapsed * 0.5 ) * 2;
+
+	}
+
+	controls.update();
+	renderer.render( scene, camera );
+
+}
+
+animate();
+
+window.addEventListener( 'resize', () => {
+
+	camera.aspect = window.innerWidth / window.innerHeight;
+	camera.updateProjectionMatrix();
+	renderer.setSize( window.innerWidth, window.innerHeight );
+
+} );
+</script>
+<script src="../shared/demo-nav.js"></script>
+</body>
+</html>

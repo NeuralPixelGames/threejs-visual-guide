@@ -1,0 +1,297 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<title>Three.js Encyclopedia - Texture Basics & UV</title>
+	<meta charset="utf-8">
+	<meta name="viewport" content="width=device-width, user-scalable=no, minimum-scale=1.0, maximum-scale=1.0">
+	<link rel="stylesheet" href="../shared/demo-base.css">
+</head>
+<body>
+	<a href="../index.html" id="back-btn">← Hub</a>
+	<div id="info"><strong>Texture Basics & UV Mapping</strong><br>Wrap modes, repeat, offset, rotation and filtering</div>
+	<div id="container"></div>
+
+	<script type="importmap">
+	{ "imports": { "three": "https://cdn.jsdelivr.net/npm/three@0.183.0/build/three.module.js", "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.183.0/examples/jsm/" } }
+	</script>
+	<script type="module">
+		import * as THREE from 'three';
+		import { GUI } from 'three/addons/libs/lil-gui.module.min.js';
+		import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+
+		let camera, scene, renderer, controls;
+		let meshes = [];
+		let textures = [];
+
+		const params = {
+			wrapS: 'RepeatWrapping',
+			wrapT: 'RepeatWrapping',
+			repeatX: 2,
+			repeatY: 2,
+			offsetX: 0,
+			offsetY: 0,
+			rotation: 0,
+			magFilter: 'LinearFilter',
+			minFilter: 'LinearMipmapLinearFilter'
+		};
+
+		const wrapModes = {
+			'RepeatWrapping': THREE.RepeatWrapping,
+			'ClampToEdgeWrapping': THREE.ClampToEdgeWrapping,
+			'MirroredRepeatWrapping': THREE.MirroredRepeatWrapping
+		};
+
+		const magFilters = {
+			'LinearFilter': THREE.LinearFilter,
+			'NearestFilter': THREE.NearestFilter
+		};
+
+		const minFilters = {
+			'LinearFilter': THREE.LinearFilter,
+			'NearestFilter': THREE.NearestFilter,
+			'LinearMipmapLinearFilter': THREE.LinearMipmapLinearFilter,
+			'LinearMipmapNearestFilter': THREE.LinearMipmapNearestFilter,
+			'NearestMipmapLinearFilter': THREE.NearestMipmapLinearFilter,
+			'NearestMipmapNearestFilter': THREE.NearestMipmapNearestFilter
+		};
+
+		init();
+
+		function createCheckerTexture() {
+
+			const size = 256;
+			const canvas = document.createElement( 'canvas' );
+			canvas.width = size;
+			canvas.height = size;
+			const ctx = canvas.getContext( '2d' );
+
+			const tileSize = size / 8;
+
+			for ( let y = 0; y < 8; y ++ ) {
+
+				for ( let x = 0; x < 8; x ++ ) {
+
+					if ( ( x + y ) % 2 === 0 ) {
+
+						ctx.fillStyle = '#4a9eff';
+
+					} else {
+
+						ctx.fillStyle = '#1a1a3e';
+
+					}
+
+					ctx.fillRect( x * tileSize, y * tileSize, tileSize, tileSize );
+
+				}
+
+			}
+
+			const texture = new THREE.CanvasTexture( canvas );
+			texture.colorSpace = THREE.SRGBColorSpace;
+			return texture;
+
+		}
+
+		function createGradientTexture() {
+
+			const size = 256;
+			const canvas = document.createElement( 'canvas' );
+			canvas.width = size;
+			canvas.height = size;
+			const ctx = canvas.getContext( '2d' );
+
+			const grad = ctx.createLinearGradient( 0, 0, size, size );
+			grad.addColorStop( 0, '#ff00ff' );
+			grad.addColorStop( 0.5, '#00ffff' );
+			grad.addColorStop( 1, '#ffd700' );
+			ctx.fillStyle = grad;
+			ctx.fillRect( 0, 0, size, size );
+
+			ctx.strokeStyle = '#ffffff33';
+			ctx.lineWidth = 1;
+
+			for ( let i = 0; i < size; i += 32 ) {
+
+				ctx.beginPath();
+				ctx.moveTo( i, 0 );
+				ctx.lineTo( i, size );
+				ctx.stroke();
+				ctx.beginPath();
+				ctx.moveTo( 0, i );
+				ctx.lineTo( size, i );
+				ctx.stroke();
+
+			}
+
+			const texture = new THREE.CanvasTexture( canvas );
+			texture.colorSpace = THREE.SRGBColorSpace;
+			return texture;
+
+		}
+
+		function createUVTexture() {
+
+			const size = 256;
+			const canvas = document.createElement( 'canvas' );
+			canvas.width = size;
+			canvas.height = size;
+			const ctx = canvas.getContext( '2d' );
+
+			for ( let y = 0; y < size; y ++ ) {
+
+				for ( let x = 0; x < size; x ++ ) {
+
+					const r = Math.floor( ( x / size ) * 255 );
+					const g = Math.floor( ( y / size ) * 255 );
+					ctx.fillStyle = `rgb(${r},${g},64)`;
+					ctx.fillRect( x, y, 1, 1 );
+
+				}
+
+			}
+
+			ctx.fillStyle = '#fff';
+			ctx.font = 'bold 24px monospace';
+			ctx.fillText( 'UV', 10, 30 );
+			ctx.fillText( '(0,0)', 5, size - 10 );
+			ctx.fillText( '(1,1)', size - 70, 30 );
+
+			const texture = new THREE.CanvasTexture( canvas );
+			texture.colorSpace = THREE.SRGBColorSpace;
+			return texture;
+
+		}
+
+		function init() {
+
+			scene = new THREE.Scene();
+			scene.background = new THREE.Color( 0x0a0e1a );
+			scene.fog = new THREE.FogExp2( 0x0a0e1a, 0.02 );
+
+			renderer = new THREE.WebGLRenderer( { antialias: true } );
+			renderer.setPixelRatio( window.devicePixelRatio );
+			renderer.setSize( window.innerWidth, window.innerHeight );
+			renderer.setAnimationLoop( animate );
+			renderer.toneMapping = THREE.ACESFilmicToneMapping;
+			renderer.toneMappingExposure = 1.0;
+			document.getElementById( 'container' ).appendChild( renderer.domElement );
+
+			camera = new THREE.PerspectiveCamera( 50, window.innerWidth / window.innerHeight, 0.1, 100 );
+			camera.position.set( 0, 3, 10 );
+
+			controls = new OrbitControls( camera, renderer.domElement );
+			controls.enableDamping = true;
+			controls.dampingFactor = 0.05;
+			controls.target.set( 0, 0, 0 );
+
+			const ambientLight = new THREE.AmbientLight( 0xffffff, 0.4 );
+			scene.add( ambientLight );
+
+			const dirLight = new THREE.DirectionalLight( 0xffffff, 1.5 );
+			dirLight.position.set( 5, 8, 4 );
+			scene.add( dirLight );
+
+			const fillLight = new THREE.DirectionalLight( 0x4488ff, 0.6 );
+			fillLight.position.set( - 4, 3, - 2 );
+			scene.add( fillLight );
+
+			const tex1 = createCheckerTexture();
+			const tex2 = createGradientTexture();
+			const tex3 = createUVTexture();
+
+			textures = [ tex1, tex2, tex3 ];
+
+			const geometries = [
+				new THREE.PlaneGeometry( 3, 3 ),
+				new THREE.BoxGeometry( 2.2, 2.2, 2.2 ),
+				new THREE.SphereGeometry( 1.3, 32, 32 ),
+				new THREE.CylinderGeometry( 1, 1, 2.5, 32 ),
+			];
+
+			const labels = [ 'Plane', 'Box', 'Sphere', 'Cylinder' ];
+			const spacing = 3.5;
+			const startX = - ( ( geometries.length - 1 ) * spacing ) / 2;
+
+			geometries.forEach( ( geo, i ) => {
+
+				const mat = new THREE.MeshStandardMaterial( {
+					map: textures[ i % textures.length ].clone(),
+					roughness: 0.5,
+					metalness: 0.1
+				} );
+
+				const mesh = new THREE.Mesh( geo, mat );
+				mesh.position.set( startX + i * spacing, 0.5, 0 );
+
+				if ( i === 0 ) mesh.rotation.x = - 0.3;
+
+				scene.add( mesh );
+				meshes.push( mesh );
+
+			} );
+
+			const groundGeo = new THREE.PlaneGeometry( 30, 30 );
+			const groundMat = new THREE.MeshStandardMaterial( {
+				color: 0x111522,
+				roughness: 0.2,
+				metalness: 0.8
+			} );
+			const ground = new THREE.Mesh( groundGeo, groundMat );
+			ground.rotation.x = - Math.PI / 2;
+			ground.position.y = - 1.2;
+			scene.add( ground );
+
+			const gui = new GUI();
+
+			gui.add( params, 'wrapS', Object.keys( wrapModes ) ).name( 'Wrap S' ).onChange( updateTextures );
+			gui.add( params, 'wrapT', Object.keys( wrapModes ) ).name( 'Wrap T' ).onChange( updateTextures );
+			gui.add( params, 'repeatX', 0.1, 8, 0.1 ).name( 'Repeat X' ).onChange( updateTextures );
+			gui.add( params, 'repeatY', 0.1, 8, 0.1 ).name( 'Repeat Y' ).onChange( updateTextures );
+			gui.add( params, 'offsetX', - 1, 1, 0.01 ).name( 'Offset X' ).onChange( updateTextures );
+			gui.add( params, 'offsetY', - 1, 1, 0.01 ).name( 'Offset Y' ).onChange( updateTextures );
+			gui.add( params, 'rotation', 0, Math.PI * 2, 0.01 ).name( 'Rotation' ).onChange( updateTextures );
+			gui.add( params, 'magFilter', Object.keys( magFilters ) ).name( 'Mag Filter' ).onChange( updateTextures );
+			gui.add( params, 'minFilter', Object.keys( minFilters ) ).name( 'Min Filter' ).onChange( updateTextures );
+
+			window.addEventListener( 'resize', onWindowResize );
+
+		}
+
+		function updateTextures() {
+
+			meshes.forEach( mesh => {
+
+				const tex = mesh.material.map;
+				tex.wrapS = wrapModes[ params.wrapS ];
+				tex.wrapT = wrapModes[ params.wrapT ];
+				tex.repeat.set( params.repeatX, params.repeatY );
+				tex.offset.set( params.offsetX, params.offsetY );
+				tex.rotation = params.rotation;
+				tex.center.set( 0.5, 0.5 );
+				tex.magFilter = magFilters[ params.magFilter ];
+				tex.minFilter = minFilters[ params.minFilter ];
+				tex.needsUpdate = true;
+
+			} );
+
+		}
+
+		function onWindowResize() {
+
+			camera.aspect = window.innerWidth / window.innerHeight;
+			camera.updateProjectionMatrix();
+			renderer.setSize( window.innerWidth, window.innerHeight );
+
+		}
+
+		function animate() {
+
+			controls.update();
+			renderer.render( scene, camera );
+
+		}
+	</script>
+<script src="../shared/demo-nav.js"></script>
+</body>
+</html>

@@ -1,0 +1,679 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<title>Normal Maps - Three.js Encyclopedia</title>
+	<meta charset="utf-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<link rel="stylesheet" href="../shared/demo-base.css">
+	<style>
+		.style-panel {
+			position: fixed;
+			left: 22px;
+			bottom: 22px;
+			z-index: 50;
+			max-width: 290px;
+			background: linear-gradient(135deg, rgba(8, 10, 30, 0.92) 0%, rgba(14, 10, 36, 0.88) 100%);
+			backdrop-filter: blur(20px);
+			-webkit-backdrop-filter: blur(20px);
+			border: 1px solid rgba(120, 100, 255, 0.2);
+			border-radius: 14px;
+			padding: 18px 22px;
+			color: #e0e5f0;
+			font-family: 'Inter', system-ui, sans-serif;
+			font-size: 13px;
+			box-shadow: 0 8px 40px rgba(0, 0, 0, 0.5), 0 0 60px rgba(120, 100, 255, 0.06);
+			animation: fadeInUp 0.6s ease-out both;
+			animation-delay: 0.4s;
+		}
+
+		.style-kicker {
+			display: inline-block;
+			font-size: 10px;
+			font-weight: 600;
+			text-transform: uppercase;
+			letter-spacing: 0.12em;
+			color: #8b7aff;
+			margin-bottom: 6px;
+		}
+
+		.style-panel h3 {
+			margin: 0 0 8px;
+			font-size: 15px;
+			font-weight: 600;
+			color: #f8fbff;
+			letter-spacing: 0.01em;
+		}
+
+		.style-panel p {
+			margin: 0 0 12px;
+			color: rgba(230, 236, 245, 0.78);
+			line-height: 1.55;
+			font-size: 12px;
+		}
+
+		.style-chips {
+			display: flex;
+			flex-wrap: wrap;
+			gap: 6px;
+		}
+
+		.style-chip {
+			display: inline-block;
+			background: rgba(120, 100, 255, 0.1);
+			border: 1px solid rgba(120, 100, 255, 0.25);
+			border-radius: 100px;
+			padding: 3px 10px;
+			font-size: 10px;
+			color: #a090ff;
+			font-family: 'Inter', system-ui, sans-serif;
+			letter-spacing: 0.03em;
+			white-space: nowrap;
+		}
+
+		.style-chip.cyan {
+			background: rgba(0, 220, 255, 0.08);
+			border-color: rgba(0, 220, 255, 0.25);
+			color: #00dcff;
+		}
+
+		.style-chip.gold {
+			background: rgba(255, 200, 80, 0.08);
+			border-color: rgba(255, 200, 80, 0.25);
+			color: #ffc850;
+		}
+
+		#normal-preview {
+			position: fixed;
+			bottom: 22px;
+			right: 22px;
+			z-index: 50;
+			border: 1px solid rgba(120, 100, 255, 0.3);
+			border-radius: 10px;
+			overflow: hidden;
+			box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5), 0 0 40px rgba(120, 100, 255, 0.06);
+			animation: fadeInUp 0.6s ease-out both;
+			animation-delay: 0.6s;
+		}
+
+		#normal-preview canvas {
+			display: block;
+			width: 120px;
+			height: 120px;
+		}
+
+		#normal-preview-label {
+			background: rgba(8, 10, 30, 0.9);
+			backdrop-filter: blur(12px);
+			color: rgba(230, 236, 245, 0.8);
+			font-family: 'Inter', system-ui, sans-serif;
+			font-size: 10px;
+			text-align: center;
+			padding: 4px 8px;
+			letter-spacing: 0.05em;
+			text-transform: uppercase;
+		}
+
+		@media (max-width: 900px) {
+			.style-panel {
+				left: 10px;
+				right: 10px;
+				bottom: 10px;
+				max-width: none;
+				padding: 14px 16px;
+			}
+			#normal-preview {
+				display: none;
+			}
+		}
+	</style>
+	<script type="importmap">
+	{
+		"imports": {
+			"three": "https://cdn.jsdelivr.net/npm/three@0.183.0/build/three.module.js",
+			"three/addons/": "https://cdn.jsdelivr.net/npm/three@0.183.0/examples/jsm/"
+		}
+	}
+	</script>
+</head>
+<body>
+<a href="../index.html" id="back-btn">&larr; Hub</a>
+
+<div id="info">
+	<strong>Normal Maps</strong><br>
+	Left: color only (flat). Right: color + normal map (fake bumps). The silhouette stays smooth &mdash; only lighting is tricked.
+</div>
+
+<div class="split-divider"></div>
+<div class="split-label split-label-left"><strong>Color Only</strong> &mdash; flat surface</div>
+<div class="split-label split-label-right"><strong>Color + Normal Map</strong> &mdash; faked detail</div>
+
+<section class="style-panel">
+	<div class="style-kicker">Textures</div>
+	<h3>Normal Maps</h3>
+	<p>Normal maps encode per-pixel surface orientation as RGB colors, letting a flat mesh catch light as if it had complex geometry. The silhouette stays perfectly smooth &mdash; only shading is affected.</p>
+	<div class="style-chips">
+		<span class="style-chip">surface detail</span>
+		<span class="style-chip cyan">tangent space</span>
+		<span class="style-chip gold">raking light</span>
+	</div>
+</section>
+
+<div id="normal-preview">
+	<canvas id="normal-preview-canvas" width="256" height="256"></canvas>
+	<div id="normal-preview-label">Normal Map</div>
+</div>
+
+<div id="container"></div>
+
+<script type="module">
+import * as THREE from 'three';
+import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+import { GUI } from 'three/addons/libs/lil-gui.module.min.js';
+import { EffectComposer } from 'three/addons/postprocessing/EffectComposer.js';
+import { RenderPass } from 'three/addons/postprocessing/RenderPass.js';
+import { UnrealBloomPass } from 'three/addons/postprocessing/UnrealBloomPass.js';
+import { OutputPass } from 'three/addons/postprocessing/OutputPass.js';
+import { loadHDREnvironment } from '../shared/scene-builders.js';
+
+let renderer, camera, controls, timer;
+let sceneLeft, sceneRight;
+let sphereLeft, sphereRight;
+let matLeft, matRight;
+let dirLightLeft, dirLightRight;
+let composerRight;
+let quadScene, quadCam, quadMesh;
+let normalTexture;
+
+const params = {
+	normalScale: 1.5,
+	lightAngle: 0.0,
+	roughness: 0.5,
+	metalness: 0.35,
+	autoSweep: true,
+	sweepSpeed: 0.3,
+	bloomStrength: 0.3,
+	bloomThreshold: 0.8,
+	bloomRadius: 0.35
+};
+
+init();
+
+function init() {
+
+	timer = new THREE.Timer();
+
+	renderer = new THREE.WebGLRenderer( { antialias: true } );
+	renderer.setPixelRatio( window.devicePixelRatio );
+	renderer.setSize( window.innerWidth, window.innerHeight );
+	renderer.toneMapping = THREE.ACESFilmicToneMapping;
+	renderer.toneMappingExposure = 1.0;
+	renderer.shadowMap.enabled = true;
+	renderer.shadowMap.type = THREE.PCFShadowMap;
+	document.getElementById( 'container' ).appendChild( renderer.domElement );
+
+	// -- Scenes --
+
+	sceneLeft = new THREE.Scene();
+	sceneLeft.background = new THREE.Color( 0x06080f );
+
+	sceneRight = new THREE.Scene();
+	sceneRight.background = new THREE.Color( 0x06080f );
+
+	// -- Camera --
+
+	camera = new THREE.PerspectiveCamera( 40, ( window.innerWidth / 2 ) / window.innerHeight, 0.1, 100 );
+	camera.position.set( 0, 0.3, 4.2 );
+
+	controls = new OrbitControls( camera, renderer.domElement );
+	controls.enableDamping = true;
+	controls.dampingFactor = 0.06;
+	controls.target.set( 0, 0, 0 );
+	controls.minDistance = 2;
+	controls.maxDistance = 10;
+	controls.update();
+
+	// -- Generate procedural textures --
+
+	const albedoTexture = generateBrickAlbedo();
+	const normalMap = generateBrickNormalMap();
+	normalTexture = normalMap;
+
+	paintPreviewCanvas( normalMap );
+
+	// -- Spheres --
+
+	const sphereGeo = new THREE.SphereGeometry( 1.3, 128, 64 );
+
+	matLeft = new THREE.MeshStandardMaterial( {
+		map: albedoTexture,
+		roughness: params.roughness,
+		metalness: params.metalness
+	} );
+
+	sphereLeft = new THREE.Mesh( sphereGeo, matLeft );
+	sceneLeft.add( sphereLeft );
+
+	const albedoClone = albedoTexture.clone();
+	albedoClone.needsUpdate = true;
+
+	matRight = new THREE.MeshStandardMaterial( {
+		map: albedoClone,
+		normalMap: normalMap,
+		normalScale: new THREE.Vector2( params.normalScale, params.normalScale ),
+		roughness: params.roughness,
+		metalness: params.metalness
+	} );
+
+	sphereRight = new THREE.Mesh( sphereGeo, matRight );
+	sceneRight.add( sphereRight );
+
+	// -- Lighting --
+
+	dirLightLeft = createLighting( sceneLeft );
+	dirLightRight = createLighting( sceneRight );
+	updateLightPositions( params.lightAngle );
+
+	// -- Environment --
+
+	loadHDREnvironment( renderer, sceneLeft, 'https://threejs.org/examples/textures/equirectangular/pedestrian_overpass_1k.hdr', { background: false } );
+	loadHDREnvironment( renderer, sceneRight, 'https://threejs.org/examples/textures/equirectangular/pedestrian_overpass_1k.hdr', { background: false } );
+
+	// -- Post-processing for right side (bloom on specular highlights) --
+
+	setupComposer();
+	setupQuadBlit();
+
+	// -- GUI --
+
+	setupGUI();
+
+	// -- Events --
+
+	window.addEventListener( 'resize', onResize );
+	renderer.setAnimationLoop( animate );
+
+}
+
+
+// ---- Procedural Brick Albedo ----
+
+function generateBrickAlbedo() {
+
+	const size = 512;
+	const canvas = document.createElement( 'canvas' );
+	canvas.width = size;
+	canvas.height = size;
+	const ctx = canvas.getContext( '2d' );
+
+	// Base mortar color
+	ctx.fillStyle = '#3a3530';
+	ctx.fillRect( 0, 0, size, size );
+
+	const brickColors = [ '#7a3b2e', '#8b4533', '#6e3328', '#93503d', '#7f4035', '#6a3020' ];
+	const brickH = 48;
+	const mortarW = 6;
+	const mortarH = 6;
+	const brickW = 110;
+	const rows = Math.ceil( size / ( brickH + mortarH ) ) + 1;
+	const cols = Math.ceil( size / ( brickW + mortarW ) ) + 1;
+
+	for ( let row = 0; row < rows; row ++ ) {
+
+		const offset = ( row % 2 === 1 ) ? ( brickW + mortarW ) / 2 : 0;
+		const y = row * ( brickH + mortarH );
+
+		for ( let col = - 1; col < cols; col ++ ) {
+
+			const x = col * ( brickW + mortarW ) + offset;
+
+			// Random brick color variation
+			const baseColor = brickColors[ Math.floor( Math.random() * brickColors.length ) ];
+			ctx.fillStyle = baseColor;
+			ctx.fillRect( x, y, brickW, brickH );
+
+			// Subtle noise/variation within each brick
+			for ( let n = 0; n < 40; n ++ ) {
+
+				const nx = x + Math.random() * brickW;
+				const ny = y + Math.random() * brickH;
+				const nSize = 2 + Math.random() * 6;
+				const brightness = Math.random() > 0.5 ? 'rgba(255,255,255,' : 'rgba(0,0,0,';
+				ctx.fillStyle = brightness + ( 0.02 + Math.random() * 0.06 ) + ')';
+				ctx.fillRect( nx, ny, nSize, nSize );
+
+			}
+
+		}
+
+	}
+
+	const tex = new THREE.CanvasTexture( canvas );
+	tex.colorSpace = THREE.SRGBColorSpace;
+	tex.wrapS = THREE.RepeatWrapping;
+	tex.wrapT = THREE.RepeatWrapping;
+	tex.repeat.set( 2, 2 );
+	return tex;
+
+}
+
+
+// ---- Procedural Brick Normal Map ----
+
+function generateBrickNormalMap() {
+
+	const size = 512;
+	const canvas = document.createElement( 'canvas' );
+	canvas.width = size;
+	canvas.height = size;
+	const ctx = canvas.getContext( '2d' );
+
+	// Flat normal: (0.5, 0.5, 1.0) in RGB = pointing straight out = #8080ff
+	ctx.fillStyle = '#8080ff';
+	ctx.fillRect( 0, 0, size, size );
+
+	const brickH = 48;
+	const mortarW = 6;
+	const mortarH = 6;
+	const brickW = 110;
+	const rows = Math.ceil( size / ( brickH + mortarH ) ) + 1;
+	const cols = Math.ceil( size / ( brickW + mortarW ) ) + 1;
+
+	// Mortar grooves: normals point inward at edges
+	// Top edge of mortar: normal tilts down (Y < 0.5)
+	// Bottom edge: normal tilts up (Y > 0.5)
+	// Left edge: normal tilts right (X > 0.5)
+	// Right edge: normal tilts left (X < 0.5)
+
+	const edgeWidth = 5;
+
+	for ( let row = 0; row < rows; row ++ ) {
+
+		const offset = ( row % 2 === 1 ) ? ( brickW + mortarW ) / 2 : 0;
+		const y = row * ( brickH + mortarH );
+
+		for ( let col = - 1; col < cols; col ++ ) {
+
+			const x = col * ( brickW + mortarW ) + offset;
+
+			// Mortar groove: recessed normal (pointing slightly inward)
+			// Draw grooves around each brick
+
+			// Top groove (mortar above brick)
+			const gradient_top = ctx.createLinearGradient( x, y - mortarH, x, y + edgeWidth );
+			gradient_top.addColorStop( 0.0, 'rgb(128, 90, 200)' );
+			gradient_top.addColorStop( 0.4, 'rgb(128, 70, 180)' );
+			gradient_top.addColorStop( 1.0, 'rgb(128, 128, 255)' );
+			ctx.fillStyle = gradient_top;
+			ctx.fillRect( x, y - mortarH, brickW, mortarH + edgeWidth );
+
+			// Bottom groove
+			const gradient_bottom = ctx.createLinearGradient( x, y + brickH - edgeWidth, x, y + brickH + mortarH );
+			gradient_bottom.addColorStop( 0.0, 'rgb(128, 128, 255)' );
+			gradient_bottom.addColorStop( 0.6, 'rgb(128, 186, 180)' );
+			gradient_bottom.addColorStop( 1.0, 'rgb(128, 165, 200)' );
+			ctx.fillStyle = gradient_bottom;
+			ctx.fillRect( x, y + brickH - edgeWidth, brickW, mortarH + edgeWidth );
+
+			// Left groove
+			const gradient_left = ctx.createLinearGradient( x - mortarW, y, x + edgeWidth, y );
+			gradient_left.addColorStop( 0.0, 'rgb(90, 128, 200)' );
+			gradient_left.addColorStop( 0.4, 'rgb(70, 128, 180)' );
+			gradient_left.addColorStop( 1.0, 'rgb(128, 128, 255)' );
+			ctx.fillStyle = gradient_left;
+			ctx.fillRect( x - mortarW, y, mortarW + edgeWidth, brickH );
+
+			// Right groove
+			const gradient_right = ctx.createLinearGradient( x + brickW - edgeWidth, y, x + brickW + mortarW, y );
+			gradient_right.addColorStop( 0.0, 'rgb(128, 128, 255)' );
+			gradient_right.addColorStop( 0.6, 'rgb(186, 128, 180)' );
+			gradient_right.addColorStop( 1.0, 'rgb(165, 128, 200)' );
+			ctx.fillStyle = gradient_right;
+			ctx.fillRect( x + brickW - edgeWidth, y, mortarW + edgeWidth, brickH );
+
+			// Brick face: subtle per-brick normal variation (bumpy surface)
+			const imageData = ctx.getImageData( x + edgeWidth, y + edgeWidth, brickW - edgeWidth * 2, brickH - edgeWidth * 2 );
+			const data = imageData.data;
+
+			for ( let i = 0; i < data.length; i += 4 ) {
+
+				// Small random perturbation around flat normal
+				data[ i ] = 128 + ( Math.random() - 0.5 ) * 16;
+				data[ i + 1 ] = 128 + ( Math.random() - 0.5 ) * 16;
+				data[ i + 2 ] = 230 + ( Math.random() - 0.5 ) * 20;
+				data[ i + 3 ] = 255;
+
+			}
+
+			if ( brickW - edgeWidth * 2 > 0 && brickH - edgeWidth * 2 > 0 ) {
+
+				ctx.putImageData( imageData, x + edgeWidth, y + edgeWidth );
+
+			}
+
+		}
+
+	}
+
+	const tex = new THREE.CanvasTexture( canvas );
+	tex.wrapS = THREE.RepeatWrapping;
+	tex.wrapT = THREE.RepeatWrapping;
+	tex.repeat.set( 2, 2 );
+	return tex;
+
+}
+
+
+function paintPreviewCanvas( normalTex ) {
+
+	const previewCanvas = document.getElementById( 'normal-preview-canvas' );
+	const srcCanvas = normalTex.image;
+	const ctx = previewCanvas.getContext( '2d' );
+	previewCanvas.width = srcCanvas.width;
+	previewCanvas.height = srcCanvas.height;
+	ctx.drawImage( srcCanvas, 0, 0 );
+
+}
+
+
+// ---- Lighting ----
+
+function createLighting( scene ) {
+
+	const ambient = new THREE.AmbientLight( 0xffffff, 0.08 );
+	scene.add( ambient );
+
+	// Warm hemisphere for subtle fill
+	const hemi = new THREE.HemisphereLight( 0x8899bb, 0x222233, 0.15 );
+	scene.add( hemi );
+
+	// Main raking directional light
+	const dirLight = new THREE.DirectionalLight( 0xffeedd, 3.0 );
+	dirLight.castShadow = true;
+	dirLight.shadow.mapSize.set( 1024, 1024 );
+	scene.add( dirLight );
+
+	// Subtle rim light from behind
+	const rimLight = new THREE.DirectionalLight( 0x6688cc, 0.6 );
+	rimLight.position.set( 0, 2, -5 );
+	scene.add( rimLight );
+
+	return dirLight;
+
+}
+
+
+function updateLightPositions( angle ) {
+
+	// Raking light: orbits around sphere at low elevation to emphasize normals
+	const radius = 5;
+	const elevation = 0.8;
+	const x = Math.cos( angle ) * radius;
+	const z = Math.sin( angle ) * radius;
+	const y = elevation;
+
+	dirLightLeft.position.set( x, y, z );
+	dirLightRight.position.set( x, y, z );
+
+}
+
+
+// ---- Post-processing ----
+
+function setupComposer() {
+
+	const halfW = Math.floor( window.innerWidth / 2 );
+	const h = window.innerHeight;
+	const res = new THREE.Vector2( halfW, h );
+
+	composerRight = new EffectComposer( renderer );
+	composerRight.renderToScreen = false;
+	composerRight.addPass( new RenderPass( sceneRight, camera ) );
+	composerRight.addPass( new UnrealBloomPass( res, params.bloomStrength, params.bloomRadius, params.bloomThreshold ) );
+	composerRight.addPass( new OutputPass() );
+
+}
+
+
+function setupQuadBlit() {
+
+	quadScene = new THREE.Scene();
+	quadCam = new THREE.OrthographicCamera( - 1, 1, 1, - 1, 0, 1 );
+	quadMesh = new THREE.Mesh(
+		new THREE.PlaneGeometry( 2, 2 ),
+		new THREE.MeshBasicMaterial()
+	);
+	quadScene.add( quadMesh );
+
+}
+
+
+// ---- GUI ----
+
+function setupGUI() {
+
+	const gui = new GUI();
+
+	const matFolder = gui.addFolder( 'Material' );
+	matFolder.add( params, 'normalScale', 0, 3, 0.01 ).name( 'Normal Scale' ).onChange( v => {
+
+		matRight.normalScale.set( v, v );
+
+	} );
+	matFolder.add( params, 'roughness', 0, 1, 0.01 ).name( 'Roughness' ).onChange( v => {
+
+		matLeft.roughness = v;
+		matRight.roughness = v;
+
+	} );
+	matFolder.add( params, 'metalness', 0, 1, 0.01 ).name( 'Metalness' ).onChange( v => {
+
+		matLeft.metalness = v;
+		matRight.metalness = v;
+
+	} );
+	matFolder.open();
+
+	const lightFolder = gui.addFolder( 'Light' );
+	lightFolder.add( params, 'lightAngle', - Math.PI, Math.PI, 0.01 ).name( 'Light Angle' ).onChange( v => {
+
+		params.autoSweep = false;
+		updateLightPositions( v );
+
+	} ).listen();
+	lightFolder.add( params, 'autoSweep' ).name( 'Auto Sweep' );
+	lightFolder.add( params, 'sweepSpeed', 0.05, 1.0, 0.01 ).name( 'Sweep Speed' );
+	lightFolder.open();
+
+	const fxFolder = gui.addFolder( 'Bloom' );
+	fxFolder.add( params, 'bloomStrength', 0, 2, 0.01 ).name( 'Strength' ).onChange( v => {
+
+		composerRight.passes[ 1 ].strength = v;
+
+	} );
+	fxFolder.add( params, 'bloomThreshold', 0, 1, 0.01 ).name( 'Threshold' ).onChange( v => {
+
+		composerRight.passes[ 1 ].threshold = v;
+
+	} );
+	fxFolder.add( params, 'bloomRadius', 0, 2, 0.01 ).name( 'Radius' ).onChange( v => {
+
+		composerRight.passes[ 1 ].radius = v;
+
+	} );
+
+}
+
+
+// ---- Resize ----
+
+function onResize() {
+
+	const w = window.innerWidth;
+	const h = window.innerHeight;
+	const halfW = Math.floor( w / 2 );
+
+	camera.aspect = halfW / h;
+	camera.updateProjectionMatrix();
+	renderer.setSize( w, h );
+	composerRight.setSize( halfW, h );
+
+}
+
+
+// ---- Animation loop ----
+
+function animate() {
+
+	timer.update();
+	const elapsed = timer.getElapsed();
+	controls.update();
+
+	// Slow light sweep across surface
+	if ( params.autoSweep ) {
+
+		params.lightAngle = elapsed * params.sweepSpeed;
+		updateLightPositions( params.lightAngle );
+
+	}
+
+	// Gentle sphere rotation so user sees different angles
+	sphereLeft.rotation.y = elapsed * 0.04;
+	sphereRight.rotation.y = elapsed * 0.04;
+
+	// -- Split-screen rendering --
+
+	const w = window.innerWidth;
+	const h = window.innerHeight;
+	const halfW = Math.floor( w / 2 );
+
+	camera.aspect = halfW / h;
+	camera.updateProjectionMatrix();
+
+	// Left half: plain render (color only, no normal map)
+	renderer.setScissorTest( true );
+	renderer.setViewport( 0, 0, halfW, h );
+	renderer.setScissor( 0, 0, halfW, h );
+	renderer.render( sceneLeft, camera );
+
+	// Right half: bloom composer pass
+	renderer.setScissorTest( false );
+	composerRight.setSize( halfW, h );
+	composerRight.render();
+
+	// Blit bloom result into right half
+	renderer.setScissorTest( true );
+	renderer.setViewport( halfW, 0, w - halfW, h );
+	renderer.setScissor( halfW, 0, w - halfW, h );
+	renderer.setRenderTarget( null );
+
+	quadMesh.material.map = composerRight.readBuffer.texture;
+	renderer.render( quadScene, quadCam );
+
+	renderer.setScissorTest( false );
+
+}
+</script>
+
+<script src="../shared/demo-nav.js"></script>
+</body>
+</html>

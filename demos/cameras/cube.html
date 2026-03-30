@@ -1,0 +1,544 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<title>Three.js Encyclopedia - Cube Camera</title>
+	<meta charset="utf-8">
+	<meta name="viewport" content="width=device-width, user-scalable=no, minimum-scale=1.0, maximum-scale=1.0">
+	<link rel="stylesheet" href="../shared/demo-base.css">
+	<style>
+		#cubemap-label {
+			position: fixed;
+			bottom: 2px;
+			left: 16px;
+			z-index: 11;
+			color: #fff;
+			font-size: 10px;
+			text-shadow: 0 1px 3px rgba(0, 0, 0, 0.9);
+			pointer-events: none;
+			opacity: 0.7;
+		}
+	</style>
+</head>
+<body>
+	<a href="../index.html" id="back-btn">&larr; Hub</a>
+	<div id="info"><strong>Cube Camera</strong><br>Real-time reflective sphere using CubeCamera with 6-face cubemap</div>
+	<div id="container"></div>
+	<div id="cubemap-label">Cubemap Cross</div>
+	<script type="importmap">
+	{ "imports": { "three": "https://cdn.jsdelivr.net/npm/three@0.183.0/build/three.module.js", "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.183.0/examples/jsm/" } }
+	</script>
+	<script type="module">
+		import * as THREE from 'three';
+		import { GUI } from 'three/addons/libs/lil-gui.module.min.js';
+		import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+		import { HDRLoader } from 'three/addons/loaders/HDRLoader.js';
+
+		let renderer, scene, camera, controls;
+		let cubeCamera, cubeRenderTarget, reflectiveSphere;
+		let roomObjects = [];
+
+		// Cubemap cross overlay (rendered via same WebGL context)
+		let crossScene, crossCamera;
+		let crossFaceMeshes = [];
+		const CROSS_FACE_PX = 64;
+		const CROSS_COLS = 4;
+		const CROSS_ROWS = 3;
+
+		const params = {
+			resolution: 256,
+			near: 0.1,
+			far: 100,
+			autoUpdate: true,
+			sphereRoughness: 0.0,
+			sphereMetalness: 1.0,
+			showCross: true
+		};
+
+		init();
+
+		function init() {
+
+			const container = document.getElementById( 'container' );
+
+			renderer = new THREE.WebGLRenderer( { antialias: true } );
+			renderer.setPixelRatio( window.devicePixelRatio );
+			renderer.setSize( window.innerWidth, window.innerHeight );
+			renderer.toneMapping = THREE.ACESFilmicToneMapping;
+			renderer.toneMappingExposure = 1.0;
+			renderer.shadowMap.enabled = true;
+			renderer.shadowMap.type = THREE.PCFShadowMap;
+			renderer.autoClear = false;
+			container.appendChild( renderer.domElement );
+
+			scene = new THREE.Scene();
+
+			camera = new THREE.PerspectiveCamera( 50, window.innerWidth / window.innerHeight, 0.1, 1000 );
+			camera.position.set( 6, 4, 8 );
+
+			controls = new OrbitControls( camera, renderer.domElement );
+			controls.enableDamping = true;
+			controls.dampingFactor = 0.05;
+			controls.target.set( 0, 1, 0 );
+			controls.update();
+
+			setupCubeCamera();
+			buildRoom();
+			buildLighting();
+			loadEnvironment();
+			setupCrossOverlay();
+			buildGUI();
+
+			window.addEventListener( 'resize', onResize );
+			renderer.setAnimationLoop( animate );
+
+		}
+
+		function loadEnvironment() {
+
+			new HDRLoader()
+				.setPath( 'https://threejs.org/examples/textures/equirectangular/' )
+				.load( 'venice_sunset_1k.hdr', function ( texture ) {
+
+					texture.mapping = THREE.EquirectangularReflectionMapping;
+					scene.background = texture;
+					scene.environment = texture;
+
+				} );
+
+		}
+
+		function setupCubeCamera() {
+
+			cubeRenderTarget = new THREE.WebGLCubeRenderTarget( params.resolution, {
+				generateMipmaps: true,
+				minFilter: THREE.LinearMipmapLinearFilter
+			} );
+
+			cubeCamera = new THREE.CubeCamera( params.near, params.far, cubeRenderTarget );
+			cubeCamera.position.set( 0, 1.5, 0 );
+			scene.add( cubeCamera );
+
+			const sphereGeo = new THREE.SphereGeometry( 1.2, 64, 64 );
+			const sphereMat = new THREE.MeshStandardMaterial( {
+				envMap: cubeRenderTarget.texture,
+				roughness: params.sphereRoughness,
+				metalness: params.sphereMetalness,
+				color: 0xffffff
+			} );
+			reflectiveSphere = new THREE.Mesh( sphereGeo, sphereMat );
+			reflectiveSphere.position.set( 0, 1.5, 0 );
+			scene.add( reflectiveSphere );
+
+		}
+
+		function setupCrossOverlay() {
+
+			// Cross layout (4 wide x 3 tall, in unit space):
+			//        [+Y]
+			// [-X]   [+Z]   [+X]   [-Z]
+			//        [-Y]
+			//
+			// Rendered into the bottom-left corner of the screen via scissor/viewport
+
+			crossScene = new THREE.Scene();
+			crossCamera = new THREE.OrthographicCamera( 0, CROSS_COLS, CROSS_ROWS, 0, - 1, 1 );
+
+			// Dark semi-transparent background for the entire cross area
+			const bgGeo = new THREE.PlaneGeometry( CROSS_COLS, CROSS_ROWS );
+			const bgMat = new THREE.MeshBasicMaterial( { color: 0x000000, transparent: true, opacity: 0.6, depthTest: false } );
+			const bgMesh = new THREE.Mesh( bgGeo, bgMat );
+			bgMesh.position.set( CROSS_COLS / 2, CROSS_ROWS / 2, - 0.5 );
+			crossScene.add( bgMesh );
+
+			// CubeCamera face order: +X(0), -X(1), +Y(2), -Y(3), +Z(4), -Z(5)
+			const faceLayout = [
+				{ face: 0, col: 2, row: 1 }, // +X  (right)
+				{ face: 1, col: 0, row: 1 }, // -X  (left)
+				{ face: 2, col: 1, row: 2 }, // +Y  (top)
+				{ face: 3, col: 1, row: 0 }, // -Y  (bottom)
+				{ face: 4, col: 1, row: 1 }, // +Z  (center)
+				{ face: 5, col: 3, row: 1 }, // -Z  (far right)
+			];
+
+			const cubeFaceShader = {
+				vertexShader: /* glsl */`
+					varying vec2 vUv;
+					void main() {
+						vUv = uv;
+						gl_Position = projectionMatrix * modelViewMatrix * vec4( position, 1.0 );
+					}
+				`,
+				fragmentShader: /* glsl */`
+					uniform samplerCube envMap;
+					uniform int faceIndex;
+					varying vec2 vUv;
+
+					void main() {
+						vec2 uv = vUv * 2.0 - 1.0;
+						vec3 dir;
+
+						if ( faceIndex == 0 ) {
+							dir = vec3( 1.0, -uv.y, -uv.x );
+						} else if ( faceIndex == 1 ) {
+							dir = vec3( -1.0, -uv.y, uv.x );
+						} else if ( faceIndex == 2 ) {
+							dir = vec3( uv.x, 1.0, uv.y );
+						} else if ( faceIndex == 3 ) {
+							dir = vec3( uv.x, -1.0, -uv.y );
+						} else if ( faceIndex == 4 ) {
+							dir = vec3( uv.x, -uv.y, 1.0 );
+						} else {
+							dir = vec3( -uv.x, -uv.y, -1.0 );
+						}
+
+						gl_FragColor = textureCube( envMap, normalize( dir ) );
+					}
+				`
+			};
+
+			const planeGeo = new THREE.PlaneGeometry( 1, 1 );
+
+			faceLayout.forEach( ( item ) => {
+
+				const mat = new THREE.ShaderMaterial( {
+					uniforms: {
+						envMap: { value: cubeRenderTarget.texture },
+						faceIndex: { value: item.face }
+					},
+					vertexShader: cubeFaceShader.vertexShader,
+					fragmentShader: cubeFaceShader.fragmentShader,
+					depthTest: false,
+					depthWrite: false
+				} );
+
+				const mesh = new THREE.Mesh( planeGeo, mat );
+				mesh.position.set( item.col + 0.5, item.row + 0.5, 0 );
+				crossScene.add( mesh );
+				crossFaceMeshes.push( mesh );
+
+			} );
+
+			// Face labels as canvas textures
+			const faceNames = [ '+X', '-X', '+Y', '-Y', '+Z', '-Z' ];
+			const labelGeo = new THREE.PlaneGeometry( 1, 1 );
+
+			faceLayout.forEach( ( item, i ) => {
+
+				const canvas = document.createElement( 'canvas' );
+				canvas.width = 64;
+				canvas.height = 64;
+				const ctx = canvas.getContext( '2d' );
+				ctx.fillStyle = 'rgba(0,0,0,0.5)';
+				ctx.fillRect( 0, 48, 64, 16 );
+				ctx.fillStyle = '#ffffff';
+				ctx.font = 'bold 11px monospace';
+				ctx.textAlign = 'center';
+				ctx.fillText( faceNames[ i ], 32, 60 );
+
+				const labelTex = new THREE.CanvasTexture( canvas );
+				labelTex.minFilter = THREE.LinearFilter;
+				const labelMat = new THREE.MeshBasicMaterial( { map: labelTex, transparent: true, depthTest: false } );
+				const labelMesh = new THREE.Mesh( labelGeo, labelMat );
+				labelMesh.position.set( item.col + 0.5, item.row + 0.5, 0.1 );
+				crossScene.add( labelMesh );
+
+			} );
+
+			// Grid lines around each face cell
+			const borderGeo = new THREE.BufferGeometry();
+			const positions = [];
+
+			for ( let r = 0; r <= CROSS_ROWS; r ++ ) {
+
+				positions.push( 0, r, 0.2, CROSS_COLS, r, 0.2 );
+
+			}
+
+			for ( let c = 0; c <= CROSS_COLS; c ++ ) {
+
+				positions.push( c, 0, 0.2, c, CROSS_ROWS, 0.2 );
+
+			}
+
+			borderGeo.setAttribute( 'position', new THREE.Float32BufferAttribute( positions, 3 ) );
+			crossScene.add( new THREE.LineSegments( borderGeo, new THREE.LineBasicMaterial( { color: 0xffffff, transparent: true, opacity: 0.25 } ) ) );
+
+		}
+
+		function buildRoom() {
+
+			// Floor
+			const floorGeo = new THREE.PlaneGeometry( 16, 16 );
+			const floorMat = new THREE.MeshStandardMaterial( {
+				color: 0x222233,
+				roughness: 0.15,
+				metalness: 0.8
+			} );
+			const floor = new THREE.Mesh( floorGeo, floorMat );
+			floor.rotation.x = - Math.PI / 2;
+			floor.receiveShadow = true;
+			scene.add( floor );
+
+			// Checkerboard wireframe overlay
+			const checkGeo = new THREE.PlaneGeometry( 16, 16, 16, 16 );
+			const checkMat = new THREE.MeshStandardMaterial( {
+				color: 0x334466,
+				roughness: 0.2,
+				metalness: 0.7,
+				wireframe: true
+			} );
+			const check = new THREE.Mesh( checkGeo, checkMat );
+			check.rotation.x = - Math.PI / 2;
+			check.position.y = 0.01;
+			scene.add( check );
+
+			// Torus knot - red/pink
+			const knot = new THREE.Mesh(
+				new THREE.TorusKnotGeometry( 0.6, 0.2, 64, 16 ),
+				new THREE.MeshStandardMaterial( { color: 0xff3366, emissive: 0xff3366, emissiveIntensity: 0.4, roughness: 0.2, metalness: 0.8 } )
+			);
+			knot.position.set( - 4, 1.5, - 4 );
+			knot.castShadow = true;
+			scene.add( knot );
+			roomObjects.push( knot );
+
+			// Dodecahedron - green
+			const dodeca = new THREE.Mesh(
+				new THREE.DodecahedronGeometry( 0.8 ),
+				new THREE.MeshStandardMaterial( { color: 0x33ff99, emissive: 0x33ff99, emissiveIntensity: 0.3, roughness: 0.3, metalness: 0.7 } )
+			);
+			dodeca.position.set( 4, 1.2, - 4 );
+			dodeca.castShadow = true;
+			scene.add( dodeca );
+			roomObjects.push( dodeca );
+
+			// Box - blue
+			const box = new THREE.Mesh(
+				new THREE.BoxGeometry( 1.2, 1.2, 1.2 ),
+				new THREE.MeshStandardMaterial( { color: 0x4a9eff, emissive: 0x4a9eff, emissiveIntensity: 0.3, roughness: 0.2, metalness: 0.8 } )
+			);
+			box.position.set( - 4, 0.8, 3 );
+			box.castShadow = true;
+			scene.add( box );
+			roomObjects.push( box );
+
+			// Cone - orange
+			const cone = new THREE.Mesh(
+				new THREE.ConeGeometry( 0.6, 1.6, 8 ),
+				new THREE.MeshStandardMaterial( { color: 0xffaa22, emissive: 0xffaa22, emissiveIntensity: 0.4, roughness: 0.25, metalness: 0.75 } )
+			);
+			cone.position.set( 4, 1, 3 );
+			cone.castShadow = true;
+			scene.add( cone );
+			roomObjects.push( cone );
+
+			// Icosahedron - purple
+			const ico = new THREE.Mesh(
+				new THREE.IcosahedronGeometry( 0.7 ),
+				new THREE.MeshStandardMaterial( { color: 0xaa44ff, emissive: 0xaa44ff, emissiveIntensity: 0.4, roughness: 0.15, metalness: 0.85 } )
+			);
+			ico.position.set( 0, 3.5, - 5 );
+			ico.castShadow = true;
+			scene.add( ico );
+			roomObjects.push( ico );
+
+			// Cylinder - cyan
+			const cyl = new THREE.Mesh(
+				new THREE.CylinderGeometry( 0.4, 0.4, 2, 16 ),
+				new THREE.MeshStandardMaterial( { color: 0x22ccff, emissive: 0x22ccff, emissiveIntensity: 0.3, roughness: 0.2, metalness: 0.8 } )
+			);
+			cyl.position.set( - 2.5, 1, - 1 );
+			cyl.castShadow = true;
+			scene.add( cyl );
+			roomObjects.push( cyl );
+
+			// Torus - pink-orange
+			const torus = new THREE.Mesh(
+				new THREE.TorusGeometry( 0.5, 0.2, 16, 32 ),
+				new THREE.MeshStandardMaterial( { color: 0xff6633, emissive: 0xff6633, emissiveIntensity: 0.4, roughness: 0.2, metalness: 0.8 } )
+			);
+			torus.position.set( 2.5, 2.5, 2 );
+			torus.castShadow = true;
+			scene.add( torus );
+			roomObjects.push( torus );
+
+			// Octahedron - teal
+			const octa = new THREE.Mesh(
+				new THREE.OctahedronGeometry( 0.6 ),
+				new THREE.MeshStandardMaterial( { color: 0x44ffaa, emissive: 0x44ffaa, emissiveIntensity: 0.3, roughness: 0.2, metalness: 0.8 } )
+			);
+			octa.position.set( 3, 0.8, - 1 );
+			octa.castShadow = true;
+			scene.add( octa );
+			roomObjects.push( octa );
+
+			// Emissive light strips floating in the scene
+			const stripGeo = new THREE.BoxGeometry( 0.05, 0.05, 10 );
+
+			const stripColors = [ 0xff3366, 0x4a9eff, 0x33ff99 ];
+			const stripPositions = [
+				{ x: - 5, y: 2.5, z: 0 },
+				{ x: 5, y: 3.5, z: 0 },
+				{ x: 0, y: 5, z: - 4 }
+			];
+
+			stripColors.forEach( ( c, i ) => {
+
+				const mat = new THREE.MeshStandardMaterial( { color: c, emissive: c, emissiveIntensity: 3.0 } );
+				const strip = new THREE.Mesh( stripGeo, mat );
+				strip.position.set( stripPositions[ i ].x, stripPositions[ i ].y, stripPositions[ i ].z );
+				scene.add( strip );
+
+			} );
+
+		}
+
+		function buildLighting() {
+
+			const ambient = new THREE.AmbientLight( 0xffffff, 0.3 );
+			scene.add( ambient );
+
+			const keyLight = new THREE.DirectionalLight( 0xffffff, 1.8 );
+			keyLight.position.set( 3, 8, 5 );
+			keyLight.castShadow = true;
+			keyLight.shadow.mapSize.setScalar( 2048 );
+			keyLight.shadow.camera.near = 0.5;
+			keyLight.shadow.camera.far = 30;
+			keyLight.shadow.camera.left = - 10;
+			keyLight.shadow.camera.right = 10;
+			keyLight.shadow.camera.top = 10;
+			keyLight.shadow.camera.bottom = - 10;
+			keyLight.shadow.bias = - 0.001;
+			scene.add( keyLight );
+
+			const fillLight = new THREE.DirectionalLight( 0x4488ff, 0.6 );
+			fillLight.position.set( - 5, 3, - 3 );
+			scene.add( fillLight );
+
+			const rimLight = new THREE.DirectionalLight( 0xff8844, 0.8 );
+			rimLight.position.set( - 2, 5, - 6 );
+			scene.add( rimLight );
+
+			const pointLight1 = new THREE.PointLight( 0xff3366, 2, 12 );
+			pointLight1.position.set( - 6, 3, - 3 );
+			scene.add( pointLight1 );
+
+			const pointLight2 = new THREE.PointLight( 0x4a9eff, 2, 12 );
+			pointLight2.position.set( 6, 3, 3 );
+			scene.add( pointLight2 );
+
+		}
+
+		function buildGUI() {
+
+			const gui = new GUI();
+
+			gui.add( params, 'resolution', [ 64, 128, 256, 512, 1024 ] ).name( 'Resolution' ).onChange( v => {
+
+				cubeRenderTarget.dispose();
+				cubeRenderTarget = new THREE.WebGLCubeRenderTarget( v, {
+					generateMipmaps: true,
+					minFilter: THREE.LinearMipmapLinearFilter
+				} );
+				cubeCamera.children.length = 0;
+				cubeCamera = new THREE.CubeCamera( params.near, params.far, cubeRenderTarget );
+				cubeCamera.position.copy( reflectiveSphere.position );
+				scene.add( cubeCamera );
+				reflectiveSphere.material.envMap = cubeRenderTarget.texture;
+				reflectiveSphere.material.needsUpdate = true;
+
+				// Update cross overlay uniforms to reference the new cube texture
+				crossFaceMeshes.forEach( mesh => {
+
+					mesh.material.uniforms.envMap.value = cubeRenderTarget.texture;
+
+				} );
+
+			} );
+
+			gui.add( params, 'near', 0.01, 5, 0.01 ).name( 'Near' );
+			gui.add( params, 'far', 10, 200, 1 ).name( 'Far' );
+			gui.add( params, 'autoUpdate' ).name( 'Auto-Update' );
+
+			gui.add( params, 'sphereRoughness', 0, 1, 0.01 ).name( 'Roughness' ).onChange( v => {
+
+				reflectiveSphere.material.roughness = v;
+
+			} );
+
+			gui.add( params, 'sphereMetalness', 0, 1, 0.01 ).name( 'Metalness' ).onChange( v => {
+
+				reflectiveSphere.material.metalness = v;
+
+			} );
+
+			gui.add( params, 'showCross' ).name( 'Show Cross' ).onChange( v => {
+
+				document.getElementById( 'cubemap-label' ).style.display = v ? '' : 'none';
+
+			} );
+
+		}
+
+		function onResize() {
+
+			camera.aspect = window.innerWidth / window.innerHeight;
+			camera.updateProjectionMatrix();
+			renderer.setSize( window.innerWidth, window.innerHeight );
+
+		}
+
+		function animate() {
+
+			const time = performance.now() * 0.001;
+
+			// Animate room objects
+			roomObjects.forEach( ( obj, i ) => {
+
+				obj.rotation.x = time * ( 0.3 + i * 0.05 );
+				obj.rotation.y = time * ( 0.5 + i * 0.08 );
+
+				// Gentle floating
+				obj.position.y += Math.sin( time * 1.5 + i * 1.2 ) * 0.002;
+
+			} );
+
+			controls.update();
+
+			// Update cube camera for reflections
+			if ( params.autoUpdate ) {
+
+				reflectiveSphere.visible = false;
+				cubeCamera.position.copy( reflectiveSphere.position );
+				cubeCamera.update( renderer, scene );
+				reflectiveSphere.visible = true;
+
+			}
+
+			// Render main scene (full viewport)
+			renderer.clear();
+			renderer.setViewport( 0, 0, window.innerWidth, window.innerHeight );
+			renderer.setScissorTest( false );
+			renderer.render( scene, camera );
+
+			// Render cubemap cross overlay in bottom-left
+			if ( params.showCross ) {
+
+				const crossW = CROSS_FACE_PX * CROSS_COLS;
+				const crossH = CROSS_FACE_PX * CROSS_ROWS;
+				const margin = 16;
+
+				renderer.setScissorTest( true );
+				renderer.setScissor( margin, margin, crossW, crossH );
+				renderer.setViewport( margin, margin, crossW, crossH );
+				renderer.render( crossScene, crossCamera );
+				renderer.setScissorTest( false );
+
+			}
+
+		}
+
+	</script>
+<script src="../shared/demo-nav.js"></script>
+</body>
+</html>

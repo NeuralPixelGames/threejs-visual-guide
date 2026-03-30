@@ -1,0 +1,785 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<title>Data Texture - Three.js Encyclopedia</title>
+	<meta charset="utf-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<link rel="stylesheet" href="../shared/demo-base.css">
+	<style>
+		#split-container {
+			display: flex;
+			width: 100%;
+			height: 100%;
+			position: absolute;
+			top: 0;
+			left: 0;
+		}
+		.panel {
+			flex: 1;
+			position: relative;
+			overflow: hidden;
+		}
+		.panel canvas {
+			width: 100% !important;
+			height: 100% !important;
+		}
+		#divider {
+			width: 3px;
+			background: rgba(74, 158, 255, 0.5);
+			cursor: col-resize;
+			z-index: 15;
+			flex-shrink: 0;
+		}
+		.panel-label {
+			position: absolute;
+			bottom: 1rem;
+			left: 50%;
+			transform: translateX(-50%);
+			z-index: 20;
+			background: rgba(10, 14, 26, 0.92);
+			backdrop-filter: blur(8px);
+			border: 1px solid rgba(74, 158, 255, 0.3);
+			border-radius: 0.5rem;
+			padding: 0.6rem 1rem;
+			font-family: 'Inter', system-ui, sans-serif;
+			font-size: 0.75rem;
+			color: #e0e5f0;
+			text-align: center;
+			max-width: 90%;
+			pointer-events: none;
+			line-height: 1.4;
+		}
+		.panel-label strong {
+			color: #4a9eff;
+			display: block;
+			margin-bottom: 0.2rem;
+			font-size: 0.8rem;
+		}
+		#info {
+			left: 50%;
+			transform: translateX(-50%);
+			max-width: 44rem;
+		}
+		#legend {
+			position: absolute;
+			right: 0.8rem;
+			bottom: 5rem;
+			z-index: 20;
+			background: rgba(10, 14, 26, 0.9);
+			backdrop-filter: blur(8px);
+			border: 1px solid rgba(74, 158, 255, 0.3);
+			border-radius: 0.5rem;
+			padding: 0.6rem 0.8rem;
+			font-family: 'Inter', system-ui, sans-serif;
+			font-size: 0.7rem;
+			color: #e0e5f0;
+			pointer-events: none;
+		}
+		#legend .title { color: #4a9eff; font-weight: 600; margin-bottom: 4px; font-size: 0.7rem; }
+		#legend-bar {
+			width: 14px;
+			height: 80px;
+			border-radius: 3px;
+			display: inline-block;
+			vertical-align: middle;
+			margin-right: 6px;
+		}
+		#legend-labels {
+			display: inline-block;
+			vertical-align: middle;
+			font-size: 0.6rem;
+			line-height: 20px;
+		}
+	</style>
+	<script type="importmap">
+	{
+		"imports": {
+			"three": "https://cdn.jsdelivr.net/npm/three@0.183.0/build/three.module.js",
+			"three/addons/": "https://cdn.jsdelivr.net/npm/three@0.183.0/examples/jsm/"
+		}
+	}
+	</script>
+</head>
+<body>
+<a href="../index.html" id="back-btn">&larr; Hub</a>
+
+<div id="info">
+	<strong>DataTexture &mdash; Textures From Code</strong><br>
+	Left: computed once (terrain heightfield). Right: updated every frame (procedural noise animation).
+</div>
+
+<div id="split-container">
+
+	<div class="panel" id="panel-left">
+		<div class="panel-label">
+			<strong>Static: Height-Field Heatmap</strong>
+			DataTexture from computed data &mdash; each pixel = elevation, used for terrain / displacement
+		</div>
+		<div id="legend">
+			<div class="title">Height</div>
+			<canvas id="legend-bar" width="14" height="80"></canvas>
+			<div id="legend-labels">
+				<div>High</div>
+				<div>Mid</div>
+				<div>Low</div>
+			</div>
+		</div>
+	</div>
+
+	<div id="divider"></div>
+
+	<div class="panel" id="panel-right">
+		<div class="panel-label">
+			<strong>Dynamic: Procedural Noise</strong>
+			DataTexture updated every frame &mdash; dynamic textures without image files
+		</div>
+	</div>
+
+</div>
+
+<script type="module">
+import * as THREE from 'three';
+import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+import { GUI } from 'three/addons/libs/lil-gui.module.min.js';
+import { loadHDREnvironment } from '../shared/scene-builders.js';
+
+// =========================================================================
+//  LEFT PANEL -- Static height-field terrain with heatmap DataTexture
+// =========================================================================
+
+const leftPanel = document.getElementById( 'panel-left' );
+
+const rendererL = new THREE.WebGLRenderer( { antialias: true } );
+rendererL.setPixelRatio( window.devicePixelRatio );
+rendererL.toneMapping = THREE.ACESFilmicToneMapping;
+rendererL.toneMappingExposure = 1.0;
+leftPanel.appendChild( rendererL.domElement );
+
+const sceneL = new THREE.Scene();
+sceneL.background = new THREE.Color( 0x0a0e1a );
+
+const cameraL = new THREE.PerspectiveCamera( 50, 1, 0.1, 200 );
+cameraL.position.set( 18, 24, 18 );
+
+const controlsL = new OrbitControls( cameraL, rendererL.domElement );
+controlsL.enableDamping = true;
+controlsL.dampingFactor = 0.05;
+
+sceneL.add( new THREE.AmbientLight( 0xffffff, 0.3 ) );
+
+const dirLightL = new THREE.DirectionalLight( 0xffffff, 1.5 );
+dirLightL.position.set( 10, 20, 10 );
+sceneL.add( dirLightL );
+
+const fillLightL = new THREE.DirectionalLight( 0x4488ff, 0.5 );
+fillLightL.position.set( -5, 10, -5 );
+sceneL.add( fillLightL );
+
+loadHDREnvironment( rendererL, sceneL, 'https://threejs.org/examples/textures/equirectangular/lobe.hdr' );
+
+// -- Height-field noise helpers --
+
+const terrainParams = {
+	frequency: 0.08,
+	amplitude: 4.0,
+	octaves: 4,
+	lacunarity: 2.0,
+	persistence: 0.5,
+	resolution: 128,
+	wireframe: false,
+	autoRotate: false
+};
+
+function pseudoNoise( x, y, seed ) {
+
+	const n = Math.sin( x * 12.9898 + y * 78.233 + seed ) * 43758.5453;
+	return n - Math.floor( n );
+
+}
+
+function smoothNoise( x, y, seed ) {
+
+	const ix = Math.floor( x );
+	const iy = Math.floor( y );
+	const fx = x - ix;
+	const fy = y - iy;
+
+	const sx = fx * fx * ( 3 - 2 * fx );
+	const sy = fy * fy * ( 3 - 2 * fy );
+
+	const n00 = pseudoNoise( ix, iy, seed );
+	const n10 = pseudoNoise( ix + 1, iy, seed );
+	const n01 = pseudoNoise( ix, iy + 1, seed );
+	const n11 = pseudoNoise( ix + 1, iy + 1, seed );
+
+	const nx0 = n00 * ( 1 - sx ) + n10 * sx;
+	const nx1 = n01 * ( 1 - sx ) + n11 * sx;
+
+	return nx0 * ( 1 - sy ) + nx1 * sy;
+
+}
+
+function fbmTerrainNoise( x, y, octaves, lacunarity, persistence ) {
+
+	let value = 0;
+	let amplitude = 1;
+	let freq = 1;
+	let maxVal = 0;
+
+	for ( let i = 0; i < octaves; i ++ ) {
+
+		value += smoothNoise( x * freq, y * freq, i * 17.31 ) * amplitude;
+		maxVal += amplitude;
+		amplitude *= persistence;
+		freq *= lacunarity;
+
+	}
+
+	return value / maxVal;
+
+}
+
+function heatmapColor( t ) {
+
+	t = Math.max( 0, Math.min( 1, t ) );
+	let r, g, b;
+
+	if ( t < 0.25 ) {
+
+		const s = t / 0.25;
+		r = 0;
+		g = Math.floor( s * 128 );
+		b = Math.floor( 200 + s * 55 );
+
+	} else if ( t < 0.5 ) {
+
+		const s = ( t - 0.25 ) / 0.25;
+		r = 0;
+		g = Math.floor( 128 + s * 127 );
+		b = Math.floor( 255 * ( 1 - s ) );
+
+	} else if ( t < 0.75 ) {
+
+		const s = ( t - 0.5 ) / 0.25;
+		r = Math.floor( s * 255 );
+		g = 255;
+		b = 0;
+
+	} else {
+
+		const s = ( t - 0.75 ) / 0.25;
+		r = 255;
+		g = Math.floor( 255 * ( 1 - s ) );
+		b = 0;
+
+	}
+
+	return [ r, g, b ];
+
+}
+
+let terrain = null;
+let terrainMaterial = null;
+
+function generateTerrain() {
+
+	if ( terrain ) {
+
+		sceneL.remove( terrain );
+		terrain.geometry.dispose();
+		terrainMaterial.map.dispose();
+		terrainMaterial.dispose();
+
+	}
+
+	const res = terrainParams.resolution;
+	const size = 20;
+	const geometry = new THREE.PlaneGeometry( size, size, res - 1, res - 1 );
+	geometry.rotateX( - Math.PI / 2 );
+
+	const positions = geometry.attributes.position;
+	const heightData = new Float32Array( res * res );
+
+	let minH = Infinity, maxH = - Infinity;
+
+	for ( let i = 0; i < positions.count; i ++ ) {
+
+		const x = positions.getX( i );
+		const z = positions.getZ( i );
+		const nx = x * terrainParams.frequency;
+		const nz = z * terrainParams.frequency;
+
+		let h = fbmTerrainNoise( nx, nz, terrainParams.octaves, terrainParams.lacunarity, terrainParams.persistence );
+		h += 0.5 * Math.sin( x * 0.3 ) * Math.cos( z * 0.3 );
+		h *= terrainParams.amplitude;
+
+		positions.setY( i, h );
+		heightData[ i ] = h;
+
+		if ( h < minH ) minH = h;
+		if ( h > maxH ) maxH = h;
+
+	}
+
+	geometry.computeVertexNormals();
+
+	const texSize = res;
+	const texData = new Uint8Array( texSize * texSize * 4 );
+
+	for ( let i = 0; i < texSize * texSize; i ++ ) {
+
+		const t = ( heightData[ i ] - minH ) / ( maxH - minH );
+		const [ r, g, b ] = heatmapColor( t );
+		texData[ i * 4 ] = r;
+		texData[ i * 4 + 1 ] = g;
+		texData[ i * 4 + 2 ] = b;
+		texData[ i * 4 + 3 ] = 255;
+
+	}
+
+	const dataTexture = new THREE.DataTexture( texData, texSize, texSize, THREE.RGBAFormat );
+	dataTexture.needsUpdate = true;
+	dataTexture.colorSpace = THREE.SRGBColorSpace;
+
+	terrainMaterial = new THREE.MeshStandardMaterial( {
+		map: dataTexture,
+		roughness: 0.8,
+		metalness: 0.1,
+		wireframe: terrainParams.wireframe,
+		flatShading: false
+	} );
+
+	terrain = new THREE.Mesh( geometry, terrainMaterial );
+	sceneL.add( terrain );
+
+}
+
+generateTerrain();
+
+// Legend gradient bar
+const legendCanvas = document.getElementById( 'legend-bar' );
+const legendCtx = legendCanvas.getContext( '2d' );
+for ( let y = 0; y < 80; y ++ ) {
+
+	const t = 1 - y / 80;
+	const [ r, g, b ] = heatmapColor( t );
+	legendCtx.fillStyle = `rgb(${r},${g},${b})`;
+	legendCtx.fillRect( 0, y, 14, 1 );
+
+}
+
+// =========================================================================
+//  RIGHT PANEL -- Animated procedural noise DataTexture
+// =========================================================================
+
+const rightPanel = document.getElementById( 'panel-right' );
+
+const rendererR = new THREE.WebGLRenderer( { antialias: true } );
+rendererR.setPixelRatio( window.devicePixelRatio );
+rendererR.toneMapping = THREE.ACESFilmicToneMapping;
+rendererR.toneMappingExposure = 1.2;
+rightPanel.appendChild( rendererR.domElement );
+
+const sceneR = new THREE.Scene();
+sceneR.background = new THREE.Color( 0x0a0e1a );
+sceneR.fog = new THREE.FogExp2( 0x0a0e1a, 0.015 );
+
+const cameraR = new THREE.PerspectiveCamera( 50, 1, 0.1, 100 );
+cameraR.position.set( 0, 2.5, 7.5 );
+
+const controlsR = new OrbitControls( cameraR, rendererR.domElement );
+controlsR.enableDamping = true;
+controlsR.dampingFactor = 0.05;
+
+sceneR.add( new THREE.AmbientLight( 0xffffff, 0.5 ) );
+
+const dirLightR = new THREE.DirectionalLight( 0xffffff, 1.5 );
+dirLightR.position.set( 5, 8, 4 );
+sceneR.add( dirLightR );
+
+const fillLightR = new THREE.DirectionalLight( 0x6688ff, 0.5 );
+fillLightR.position.set( -4, 3, -2 );
+sceneR.add( fillLightR );
+
+// -- Perlin noise helpers --
+
+const perm = new Uint8Array( 512 );
+const grad3 = [
+	[ 1, 1, 0 ], [ -1, 1, 0 ], [ 1, -1, 0 ], [ -1, -1, 0 ],
+	[ 1, 0, 1 ], [ -1, 0, 1 ], [ 1, 0, -1 ], [ -1, 0, -1 ],
+	[ 0, 1, 1 ], [ 0, -1, 1 ], [ 0, 1, -1 ], [ 0, -1, -1 ]
+];
+
+( function initPerm() {
+
+	const p = [];
+	for ( let i = 0; i < 256; i ++ ) p[ i ] = i;
+
+	for ( let i = 255; i > 0; i -- ) {
+
+		const j = Math.floor( Math.random() * ( i + 1 ) );
+		[ p[ i ], p[ j ] ] = [ p[ j ], p[ i ] ];
+
+	}
+
+	for ( let i = 0; i < 512; i ++ ) perm[ i ] = p[ i & 255 ];
+
+} )();
+
+function fade( t ) { return t * t * t * ( t * ( t * 6 - 15 ) + 10 ); }
+function lerpN( a, b, t ) { return a + t * ( b - a ); }
+function dot3( g, x, y, z ) { return g[ 0 ] * x + g[ 1 ] * y + g[ 2 ] * z; }
+
+function perlin3D( x, y, z ) {
+
+	const X = Math.floor( x ) & 255;
+	const Y = Math.floor( y ) & 255;
+	const Z = Math.floor( z ) & 255;
+
+	x -= Math.floor( x );
+	y -= Math.floor( y );
+	z -= Math.floor( z );
+
+	const u = fade( x ), v = fade( y ), w = fade( z );
+
+	const A = perm[ X ] + Y, AA = perm[ A ] + Z, AB = perm[ A + 1 ] + Z;
+	const B = perm[ X + 1 ] + Y, BA = perm[ B ] + Z, BB = perm[ B + 1 ] + Z;
+
+	return lerpN(
+		lerpN(
+			lerpN( dot3( grad3[ perm[ AA ] % 12 ], x, y, z ),
+				dot3( grad3[ perm[ BA ] % 12 ], x - 1, y, z ), u ),
+			lerpN( dot3( grad3[ perm[ AB ] % 12 ], x, y - 1, z ),
+				dot3( grad3[ perm[ BB ] % 12 ], x - 1, y - 1, z ), u ), v ),
+		lerpN(
+			lerpN( dot3( grad3[ perm[ AA + 1 ] % 12 ], x, y, z - 1 ),
+				dot3( grad3[ perm[ BA + 1 ] % 12 ], x - 1, y, z - 1 ), u ),
+			lerpN( dot3( grad3[ perm[ AB + 1 ] % 12 ], x, y - 1, z - 1 ),
+				dot3( grad3[ perm[ BB + 1 ] % 12 ], x - 1, y - 1, z - 1 ), u ), v ), w );
+
+}
+
+function fbmPerlin( x, y, z, octaves ) {
+
+	let value = 0, amplitude = 0.5, frequency = 1.0;
+
+	for ( let i = 0; i < octaves; i ++ ) {
+
+		value += amplitude * perlin3D( x * frequency, y * frequency, z * frequency );
+		amplitude *= 0.5;
+		frequency *= 2.0;
+
+	}
+
+	return value;
+
+}
+
+function simplex2D( x, y ) {
+
+	const F2 = 0.5 * ( Math.sqrt( 3.0 ) - 1.0 );
+	const G2 = ( 3.0 - Math.sqrt( 3.0 ) ) / 6.0;
+
+	const s = ( x + y ) * F2;
+	const i = Math.floor( x + s );
+	const j = Math.floor( y + s );
+	const t = ( i + j ) * G2;
+
+	const X0 = i - t, Y0 = j - t;
+	const x0 = x - X0, y0 = y - Y0;
+
+	let i1, j1;
+	if ( x0 > y0 ) { i1 = 1; j1 = 0; } else { i1 = 0; j1 = 1; }
+
+	const x1 = x0 - i1 + G2, y1 = y0 - j1 + G2;
+	const x2 = x0 - 1.0 + 2.0 * G2, y2 = y0 - 1.0 + 2.0 * G2;
+
+	const ii = i & 255, jj = j & 255;
+
+	let n0 = 0, n1 = 0, n2 = 0;
+
+	let t0 = 0.5 - x0 * x0 - y0 * y0;
+	if ( t0 >= 0 ) { t0 *= t0; const gi = perm[ ii + perm[ jj ] ] % 12; n0 = t0 * t0 * ( grad3[ gi ][ 0 ] * x0 + grad3[ gi ][ 1 ] * y0 ); }
+
+	let t1 = 0.5 - x1 * x1 - y1 * y1;
+	if ( t1 >= 0 ) { t1 *= t1; const gi = perm[ ii + i1 + perm[ jj + j1 ] ] % 12; n1 = t1 * t1 * ( grad3[ gi ][ 0 ] * x1 + grad3[ gi ][ 1 ] * y1 ); }
+
+	let t2 = 0.5 - x2 * x2 - y2 * y2;
+	if ( t2 >= 0 ) { t2 *= t2; const gi = perm[ ii + 1 + perm[ jj + 1 ] ] % 12; n2 = t2 * t2 * ( grad3[ gi ][ 0 ] * x2 + grad3[ gi ][ 1 ] * y2 ); }
+
+	return 70.0 * ( n0 + n1 + n2 );
+
+}
+
+const noiseParams = {
+	noiseType: 'Perlin',
+	colorMode: 'Plasma',
+	animate: true,
+	speed: 1.0,
+	scale: 4.0,
+	octaves: 4
+};
+
+const noiseRes = 256;
+
+function generateNoiseData( w, h, t ) {
+
+	const size = w * h;
+	const data = new Uint8Array( 4 * size );
+
+	for ( let i = 0; i < size; i ++ ) {
+
+		const x = ( i % w ) / w;
+		const y = Math.floor( i / w ) / h;
+		let value;
+
+		if ( noiseParams.noiseType === 'Perlin' ) {
+
+			value = fbmPerlin( x * noiseParams.scale, y * noiseParams.scale, t, noiseParams.octaves );
+			value = ( value + 1.0 ) * 0.5;
+
+		} else if ( noiseParams.noiseType === 'Simplex' ) {
+
+			value = simplex2D( x * noiseParams.scale + t, y * noiseParams.scale + t * 0.7 );
+			value = ( value + 1.0 ) * 0.5;
+
+		} else if ( noiseParams.noiseType === 'Worley' ) {
+
+			const cx = x * noiseParams.scale, cy = y * noiseParams.scale;
+			let minDist = 10.0;
+
+			for ( let gx = -1; gx <= 1; gx ++ ) {
+
+				for ( let gy = -1; gy <= 1; gy ++ ) {
+
+					const cellX = Math.floor( cx ) + gx;
+					const cellY = Math.floor( cy ) + gy;
+					const hash = perm[ ( cellX & 255 ) + perm[ ( cellY & 255 ) ] ];
+					const px = cellX + ( hash / 255.0 ) + Math.sin( t + hash ) * 0.3;
+					const py = cellY + ( perm[ hash ] / 255.0 ) + Math.cos( t + hash ) * 0.3;
+					const dist = Math.sqrt( ( cx - px ) * ( cx - px ) + ( cy - py ) * ( cy - py ) );
+					minDist = Math.min( minDist, dist );
+
+				}
+
+			}
+
+			value = minDist;
+
+		} else {
+
+			value = Math.random();
+
+		}
+
+		value = Math.max( 0, Math.min( 1, value ) );
+		const stride = i * 4;
+
+		if ( noiseParams.colorMode === 'Grayscale' ) {
+
+			const v = Math.floor( value * 255 );
+			data[ stride ] = v;
+			data[ stride + 1 ] = v;
+			data[ stride + 2 ] = v;
+
+		} else if ( noiseParams.colorMode === 'Heat' ) {
+
+			data[ stride ] = Math.floor( Math.min( 1, value * 2 ) * 255 );
+			data[ stride + 1 ] = Math.floor( Math.min( 1, Math.max( 0, ( value - 0.25 ) * 2 ) ) * 255 );
+			data[ stride + 2 ] = Math.floor( Math.max( 0, ( value - 0.5 ) * 2 ) * 255 );
+
+		} else if ( noiseParams.colorMode === 'Plasma' ) {
+
+			data[ stride ] = Math.floor( ( Math.sin( value * Math.PI * 2 + 0 ) * 0.5 + 0.5 ) * 255 );
+			data[ stride + 1 ] = Math.floor( ( Math.sin( value * Math.PI * 2 + 2.094 ) * 0.5 + 0.5 ) * 255 );
+			data[ stride + 2 ] = Math.floor( ( Math.sin( value * Math.PI * 2 + 4.189 ) * 0.5 + 0.5 ) * 255 );
+
+		} else if ( noiseParams.colorMode === 'Electric' ) {
+
+			const r = Math.sin( value * 3.0 ) * 0.5 + 0.5;
+			const g = Math.sin( value * 3.0 + 1.0 ) * 0.5 + 0.5;
+			const b = Math.sin( value * 3.0 + 2.0 ) * 0.5 + 0.5;
+			data[ stride ] = Math.floor( r * 255 );
+			data[ stride + 1 ] = Math.floor( g * 200 );
+			data[ stride + 2 ] = Math.floor( b * 255 );
+
+		}
+
+		data[ stride + 3 ] = 255;
+
+	}
+
+	return data;
+
+}
+
+// Build right-panel scene objects
+const noiseData = generateNoiseData( noiseRes, noiseRes, 0 );
+const noiseTex = new THREE.DataTexture( noiseData, noiseRes, noiseRes );
+noiseTex.needsUpdate = true;
+
+const sphereGeo = new THREE.SphereGeometry( 1.8, 64, 64 );
+const sphereMat = new THREE.MeshStandardMaterial( {
+	map: noiseTex,
+	roughness: 0.4,
+	metalness: 0.2,
+	emissive: new THREE.Color( 0x112244 ),
+	emissiveIntensity: 0.3,
+	emissiveMap: noiseTex
+} );
+const sphereMesh = new THREE.Mesh( sphereGeo, sphereMat );
+sphereMesh.position.set( -2, 0.5, 0 );
+sceneR.add( sphereMesh );
+
+const planeGeo = new THREE.PlaneGeometry( 3, 3 );
+const planeMat = new THREE.MeshStandardMaterial( {
+	map: noiseTex,
+	roughness: 0.5,
+	metalness: 0.1,
+	emissive: new THREE.Color( 0x112244 ),
+	emissiveIntensity: 0.2,
+	emissiveMap: noiseTex
+} );
+const planeMesh = new THREE.Mesh( planeGeo, planeMat );
+planeMesh.position.set( 2.2, 0.5, 0 );
+sceneR.add( planeMesh );
+
+const groundGeo = new THREE.PlaneGeometry( 40, 40 );
+const groundMat = new THREE.MeshStandardMaterial( { color: 0x111522, roughness: 0.9, metalness: 0.1 } );
+const groundMesh = new THREE.Mesh( groundGeo, groundMat );
+groundMesh.rotation.x = - Math.PI / 2;
+groundMesh.position.y = -1.5;
+sceneR.add( groundMesh );
+
+const ringGeo = new THREE.TorusGeometry( 3.5, 0.02, 8, 100 );
+const ringMat = new THREE.MeshBasicMaterial( { color: 0x4a9eff, transparent: true, opacity: 0.3 } );
+const ringMesh = new THREE.Mesh( ringGeo, ringMat );
+ringMesh.rotation.x = Math.PI / 2;
+ringMesh.position.y = 0.5;
+sceneR.add( ringMesh );
+
+// =========================================================================
+//  GUI -- one panel per side
+// =========================================================================
+
+const gui = new GUI();
+
+const leftFolder = gui.addFolder( 'Terrain (left)' );
+leftFolder.add( terrainParams, 'frequency', 0.01, 0.3, 0.01 ).name( 'Frequency' ).onChange( generateTerrain );
+leftFolder.add( terrainParams, 'amplitude', 0.5, 10, 0.1 ).name( 'Amplitude' ).onChange( generateTerrain );
+leftFolder.add( terrainParams, 'octaves', 1, 8, 1 ).name( 'Octaves' ).onChange( generateTerrain );
+leftFolder.add( terrainParams, 'lacunarity', 1, 4, 0.1 ).name( 'Lacunarity' ).onChange( generateTerrain );
+leftFolder.add( terrainParams, 'persistence', 0.1, 0.9, 0.05 ).name( 'Persistence' ).onChange( generateTerrain );
+leftFolder.add( terrainParams, 'resolution', { '32': 32, '64': 64, '128': 128, '256': 256 } ).name( 'Resolution' ).onChange( v => {
+
+	terrainParams.resolution = parseInt( v );
+	generateTerrain();
+
+} );
+leftFolder.add( terrainParams, 'wireframe' ).name( 'Wireframe' ).onChange( v => {
+
+	if ( terrainMaterial ) terrainMaterial.wireframe = v;
+
+} );
+leftFolder.add( terrainParams, 'autoRotate' ).name( 'Auto Rotate' );
+
+const rightFolder = gui.addFolder( 'Noise (right)' );
+rightFolder.add( noiseParams, 'noiseType', [ 'Perlin', 'Simplex', 'Worley', 'White' ] ).name( 'Noise Type' );
+rightFolder.add( noiseParams, 'colorMode', [ 'Grayscale', 'Heat', 'Plasma', 'Electric' ] ).name( 'Color Mode' );
+rightFolder.add( noiseParams, 'scale', 1, 16, 0.1 ).name( 'Scale' );
+rightFolder.add( noiseParams, 'octaves', 1, 8, 1 ).name( 'Octaves' );
+rightFolder.add( noiseParams, 'speed', 0.1, 5.0, 0.1 ).name( 'Speed' );
+rightFolder.add( noiseParams, 'animate' ).name( 'Animate' );
+
+// =========================================================================
+//  Resize handling
+// =========================================================================
+
+function resizePanels() {
+
+	const wL = leftPanel.clientWidth;
+	const hL = leftPanel.clientHeight;
+	const wR = rightPanel.clientWidth;
+	const hR = rightPanel.clientHeight;
+
+	rendererL.setSize( wL, hL );
+	cameraL.aspect = wL / hL;
+	cameraL.updateProjectionMatrix();
+
+	rendererR.setSize( wR, hR );
+	cameraR.aspect = wR / hR;
+	cameraR.updateProjectionMatrix();
+
+}
+
+window.addEventListener( 'resize', resizePanels );
+
+// Draggable divider
+const divider = document.getElementById( 'divider' );
+let dragging = false;
+
+divider.addEventListener( 'pointerdown', ( e ) => {
+
+	dragging = true;
+	divider.setPointerCapture( e.pointerId );
+
+} );
+
+window.addEventListener( 'pointermove', ( e ) => {
+
+	if ( ! dragging ) return;
+
+	const totalW = window.innerWidth;
+	const pct = Math.max( 0.2, Math.min( 0.8, e.clientX / totalW ) );
+	leftPanel.style.flex = 'none';
+	leftPanel.style.width = ( pct * 100 ) + '%';
+	rightPanel.style.flex = '1';
+	resizePanels();
+
+} );
+
+window.addEventListener( 'pointerup', () => { dragging = false; } );
+
+// Initial sizing
+resizePanels();
+
+// =========================================================================
+//  Render loop
+// =========================================================================
+
+let noiseTime = 0;
+
+function animate() {
+
+	requestAnimationFrame( animate );
+
+	// Left: terrain
+	if ( terrainParams.autoRotate && terrain ) {
+
+		terrain.rotation.y += 0.003;
+
+	}
+
+	controlsL.update();
+	rendererL.render( sceneL, cameraL );
+
+	// Right: animated noise
+	if ( noiseParams.animate ) noiseTime += 0.016 * noiseParams.speed;
+
+	const nd = generateNoiseData( noiseRes, noiseRes, noiseTime );
+	noiseTex.image.data.set( nd );
+	noiseTex.needsUpdate = true;
+
+	sphereMesh.rotation.y += 0.003;
+
+	controlsR.update();
+	rendererR.render( sceneR, cameraR );
+
+}
+
+animate();
+</script>
+
+<script src="../shared/demo-nav.js"></script>
+</body>
+</html>

@@ -1,0 +1,902 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Three.js Interactive Guide - Hands-on 3D Demos</title>
+<meta name="description" content="Hands-on 3D demos for every Three.js concept. Click, drag, and tweak parameters in real-time.">
+<style>
+:root {
+  --bg:       #050810;
+  --bg2:      #080c18;
+  --bg3:      #0c1020;
+  --cyan:     #00d4ff;
+  --magenta:  #ff00cc;
+  --amber:    #f5a623;
+  --green:    #00ff88;
+  --purple:   #a855f7;
+  --text:     #f2f6ff;
+  --muted:    #ccdaee;
+  --subtle:   #1e2a42;
+  --border:   rgba(0,212,255,0.12);
+  --glow-c:   0 0 30px rgba(0,212,255,0.25);
+  --glow-m:   0 0 30px rgba(255,0,204,0.2);
+  --glow-a:   0 0 30px rgba(245,166,35,0.2);
+}
+* { margin:0; padding:0; box-sizing:border-box; }
+html { scroll-behavior:smooth; }
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+  line-height: 1.7;
+  overflow-x: hidden;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* ─── NAV ─── */
+nav {
+  position: fixed; top:0; left:0; right:0; z-index:200;
+  background: rgba(5,8,16,0.95);
+  backdrop-filter: blur(16px);
+  border-bottom: 1px solid var(--border);
+  height: 52px;
+  display: flex; align-items: center; gap: 0;
+  overflow-x: auto; overflow-y: hidden;
+  scrollbar-width: none;
+}
+nav::-webkit-scrollbar { display:none; }
+.nav-logo {
+  padding: 0 1.5rem; font-weight:800; font-size:0.9rem;
+  color: var(--cyan); white-space:nowrap; letter-spacing:0.05em;
+  border-right: 1px solid var(--border); height:100%;
+  display:flex; align-items:center; flex-shrink:0;
+  text-decoration: none;
+}
+.nav-logo:hover { color: #fff; }
+nav a {
+  padding: 0 0.9rem; height:100%; display:flex; align-items:center;
+  color: var(--muted); text-decoration:none; font-size:0.72rem;
+  letter-spacing:0.06em; text-transform:uppercase; white-space:nowrap;
+  transition: color 0.2s; border-right: 1px solid rgba(255,255,255,0.03);
+}
+nav a:hover { color: var(--cyan); }
+nav a.active { color: var(--cyan); box-shadow: inset 0 -2px 0 var(--cyan); }
+.nav-back {
+  color: var(--amber) !important;
+  font-weight: 600;
+}
+.nav-back:hover { color: #fff !important; }
+
+/* ─── HERO ─── */
+.hero {
+  min-height: 100vh; padding: 80px 2rem 3rem;
+  display: flex; flex-direction:column; align-items:center; justify-content:center;
+  text-align:center; position:relative;
+  background: radial-gradient(ellipse 80% 60% at 50% 0%, rgba(0,212,255,0.07) 0%, transparent 70%);
+}
+.hero-canvas-wrap {
+  width: min(500px, 90vw);
+  height: min(500px, 90vw);
+  position: relative;
+  margin-bottom: 2.5rem;
+  border-radius: 50%;
+  overflow: hidden;
+}
+.hero-canvas-wrap canvas {
+  width: 100% !important;
+  height: 100% !important;
+  display: block;
+}
+.hero h1 {
+  font-size: clamp(2.2rem, 6vw, 4.2rem);
+  font-weight: 900; letter-spacing: -0.03em; line-height: 1.1;
+  background: linear-gradient(135deg, var(--cyan) 0%, #ffffff 45%, var(--magenta) 100%);
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
+  margin-bottom: 1rem;
+}
+.hero-sub {
+  font-size: clamp(0.95rem, 2.5vw, 1.2rem); color: var(--muted);
+  max-width: 640px; margin: 0 auto 2rem; line-height: 1.65;
+}
+.hero-stats {
+  display: flex; flex-wrap: wrap; gap: 1.5rem; justify-content: center;
+  margin-bottom: 2rem;
+}
+.hero-stat {
+  text-align: center;
+}
+.hero-stat-num {
+  font-size: 2rem; font-weight: 900; line-height: 1;
+}
+.hero-stat-label {
+  font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.1em;
+  color: var(--muted); margin-top: 0.25rem;
+}
+.hero-cta {
+  display: flex; gap: 1rem; flex-wrap: wrap; justify-content: center;
+}
+.btn {
+  display:inline-flex; align-items:center; gap:0.5rem;
+  padding: 0.75rem 1.5rem; border-radius:9px;
+  font-weight:700; font-size:0.9rem; text-decoration:none;
+  transition: all 0.2s; cursor:pointer; border:none;
+}
+.btn-p { background:var(--cyan); color:#040812; box-shadow: 0 4px 24px rgba(0,212,255,0.5); }
+.btn-p:hover { box-shadow: 0 4px 40px rgba(0,212,255,0.8); transform:translateY(-2px); }
+.btn-s { background:transparent; color:var(--text); border:1px solid rgba(255,255,255,0.12); }
+.btn-s:hover { border-color:var(--cyan); color:var(--cyan); }
+.btn-sp { background:rgba(234,74,170,0.14); border:1px solid rgba(234,74,170,0.55); color:#ffd4ef; }
+.btn-sp:hover { background:rgba(234,74,170,0.24); border-color:rgba(234,74,170,0.9); color:#ffe7f6; }
+.btn-s:hover { border-color:var(--cyan); color:var(--cyan); }
+
+/* ─── CONTENT ─── */
+.content {
+  max-width: 1400px; margin: 0 auto; padding: 0 2rem 5rem;
+}
+
+/* ─── CATEGORY SECTION ─── */
+.category-section {
+  margin-bottom: 4rem;
+}
+.category-header {
+  display: flex; align-items: center; gap: 1rem; margin-bottom: 1.5rem;
+  padding-bottom: 0.75rem;
+  border-bottom: 1px solid var(--border);
+}
+.category-icon {
+  width: 40px; height: 40px; border-radius: 10px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 1.25rem; flex-shrink: 0;
+}
+.category-header h2 {
+  font-size: clamp(1.3rem, 3vw, 1.8rem); font-weight: 800;
+  letter-spacing: -0.02em;
+}
+.category-count {
+  font-size: 0.75rem; font-weight: 600; letter-spacing: 0.08em;
+  text-transform: uppercase; padding: 0.2rem 0.65rem;
+  border-radius: 99px; flex-shrink: 0;
+}
+
+/* ─── DEMO GRID ─── */
+.demo-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 1.25rem;
+}
+
+/* ─── DEMO CARD ─── */
+.demo-card {
+  background: var(--bg2);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  overflow: hidden;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  cursor: pointer;
+  text-decoration: none;
+  color: inherit;
+  display: block;
+}
+.demo-card:hover {
+  transform: translateY(-4px);
+  border-color: rgba(0,212,255,0.4);
+  box-shadow: var(--glow-c), 0 12px 40px rgba(0,0,0,0.5);
+}
+.demo-card:hover .card-preview {
+  opacity: 1;
+}
+.demo-card:hover .card-title {
+  color: #fff;
+}
+.card-preview {
+  height: 160px;
+  position: relative;
+  overflow: hidden;
+  transition: opacity 0.3s;
+}
+.card-preview img {
+  width: 100%; height: 100%; object-fit: cover;
+  transition: transform 0.3s, filter 0.3s;
+  filter: brightness(0.85);
+}
+.demo-card:hover .card-preview img {
+  transform: scale(1.05);
+  filter: brightness(1);
+}
+.card-preview-bg {
+  position: absolute; inset: 0;
+  display: flex; align-items: center; justify-content: center;
+}
+.card-preview-icon {
+  font-size: 3rem;
+  opacity: 0.5;
+  filter: blur(0);
+  transition: all 0.3s;
+}
+.demo-card:hover .card-preview-icon {
+  transform: scale(1.1);
+  opacity: 0.7;
+}
+.card-badge {
+  position: absolute; top: 0.75rem; left: 0.75rem;
+  padding: 0.2rem 0.6rem; border-radius: 6px;
+  font-size: 0.65rem; font-weight: 700; letter-spacing: 0.06em;
+  text-transform: uppercase;
+  z-index: 2;
+}
+.card-file {
+  position: absolute; bottom: 0.5rem; right: 0.75rem;
+  font-size: 0.65rem; font-weight: 500;
+  font-family: 'SF Mono', 'Fira Code', monospace;
+  opacity: 0.4; z-index: 2; color: #fff;
+}
+.card-body {
+  padding: 1rem 1.25rem 1.25rem;
+}
+.card-title {
+  font-size: 1.05rem; font-weight: 700; margin-bottom: 0.35rem;
+  transition: color 0.2s; letter-spacing: -0.01em;
+}
+.card-desc {
+  font-size: 0.82rem; color: var(--muted); line-height: 1.55;
+}
+.card-arrow {
+  display: inline-flex; align-items: center; gap: 0.3rem;
+  font-size: 0.75rem; font-weight: 600; margin-top: 0.5rem;
+  opacity: 0; transform: translateX(-5px);
+  transition: all 0.3s;
+}
+.demo-card:hover .card-arrow {
+  opacity: 1;
+  transform: translateX(0);
+}
+
+/* ─── COMING SOON SECTION ─── */
+.coming-soon-section {
+  margin-bottom: 4rem;
+}
+.coming-soon-header {
+  display: flex; align-items: center; gap: 1rem; margin-bottom: 1.5rem;
+  padding-bottom: 0.75rem;
+  border-bottom: 1px solid rgba(255,255,255,0.04);
+}
+.coming-soon-header h2 {
+  font-size: clamp(1.2rem, 3vw, 1.5rem); font-weight: 700;
+  color: var(--muted); letter-spacing: -0.01em;
+}
+.coming-soon-grid {
+  display: flex; flex-wrap: wrap; gap: 0.75rem;
+}
+.coming-soon-pill {
+  display: inline-flex; align-items: center; gap: 0.5rem;
+  padding: 0.5rem 1rem; border-radius: 10px;
+  background: rgba(255,255,255,0.025);
+  border: 1px solid rgba(255,255,255,0.06);
+  color: rgba(255,255,255,0.3);
+  font-size: 0.82rem; font-weight: 500;
+  transition: all 0.2s;
+}
+.coming-soon-pill:hover {
+  border-color: rgba(255,255,255,0.12);
+  color: rgba(255,255,255,0.45);
+}
+.coming-soon-badge {
+  font-size: 0.6rem; font-weight: 700; letter-spacing: 0.06em;
+  text-transform: uppercase; padding: 0.15rem 0.45rem;
+  border-radius: 4px; background: rgba(255,255,255,0.06);
+  color: rgba(255,255,255,0.35);
+}
+
+/* ─── FOOTER ─── */
+footer {
+  background: var(--bg2); border-top:1px solid var(--border);
+  padding: 3rem 2rem 2rem; text-align:center;
+}
+.footer-links { display:flex; gap:2rem; justify-content:center; flex-wrap:wrap; margin-bottom:1rem; }
+.footer-links a { color:var(--cyan); text-decoration:none; font-size:0.85rem; }
+.footer-links a:hover { text-decoration:underline; }
+footer p { color:var(--muted); font-size:0.78rem; }
+
+/* ─── COLOR THEMES ─── */
+.clr-cyan    { color: var(--cyan); }
+.clr-magenta { color: var(--magenta); }
+.clr-amber   { color: var(--amber); }
+.clr-green   { color: var(--green); }
+.clr-purple  { color: var(--purple); }
+
+.bg-cyan    { background: rgba(0,212,255,0.08); border-color: rgba(0,212,255,0.25); }
+.bg-magenta { background: rgba(255,0,204,0.08); border-color: rgba(255,0,204,0.25); }
+.bg-amber   { background: rgba(245,166,35,0.08); border-color: rgba(245,166,35,0.25); }
+.bg-green   { background: rgba(0,255,136,0.08); border-color: rgba(0,255,136,0.25); }
+.bg-purple  { background: rgba(168,85,247,0.08); border-color: rgba(168,85,247,0.25); }
+
+.badge-cyan    { background: rgba(0,212,255,0.12); color: var(--cyan); }
+.badge-magenta { background: rgba(255,0,204,0.12); color: var(--magenta); }
+.badge-amber   { background: rgba(245,166,35,0.12); color: var(--amber); }
+.badge-green   { background: rgba(0,255,136,0.12); color: var(--green); }
+.badge-purple  { background: rgba(168,85,247,0.12); color: var(--purple); }
+
+.preview-cyan    { background: linear-gradient(135deg, rgba(0,212,255,0.1), rgba(0,212,255,0.02)); }
+.preview-magenta { background: linear-gradient(135deg, rgba(255,0,204,0.1), rgba(255,0,204,0.02)); }
+.preview-amber   { background: linear-gradient(135deg, rgba(245,166,35,0.1), rgba(245,166,35,0.02)); }
+.preview-green   { background: linear-gradient(135deg, rgba(0,255,136,0.1), rgba(0,255,136,0.02)); }
+.preview-purple  { background: linear-gradient(135deg, rgba(168,85,247,0.1), rgba(168,85,247,0.02)); }
+
+.arrow-cyan    { color: var(--cyan); }
+.arrow-magenta { color: var(--magenta); }
+.arrow-amber   { color: var(--amber); }
+.arrow-green   { color: var(--green); }
+.arrow-purple  { color: var(--purple); }
+
+/* Hover glow per color */
+.demo-card.card-cyan:hover    { border-color: rgba(0,212,255,0.4); box-shadow: 0 0 30px rgba(0,212,255,0.15), 0 12px 40px rgba(0,0,0,0.5); }
+.demo-card.card-magenta:hover { border-color: rgba(255,0,204,0.4); box-shadow: 0 0 30px rgba(255,0,204,0.15), 0 12px 40px rgba(0,0,0,0.5); }
+.demo-card.card-amber:hover   { border-color: rgba(245,166,35,0.4); box-shadow: 0 0 30px rgba(245,166,35,0.15), 0 12px 40px rgba(0,0,0,0.5); }
+.demo-card.card-green:hover   { border-color: rgba(0,255,136,0.4); box-shadow: 0 0 30px rgba(0,255,136,0.15), 0 12px 40px rgba(0,0,0,0.5); }
+.demo-card.card-purple:hover  { border-color: rgba(168,85,247,0.4); box-shadow: 0 0 30px rgba(168,85,247,0.15), 0 12px 40px rgba(0,0,0,0.5); }
+
+/* ─── SCROLLBAR ─── */
+::-webkit-scrollbar { width:5px; }
+::-webkit-scrollbar-track { background:var(--bg); }
+::-webkit-scrollbar-thumb { background:rgba(0,212,255,0.2); border-radius:3px; }
+
+/* ─── RESPONSIVE ─── */
+@media (max-width: 900px) {
+  .content { padding: 0 1rem 4rem; }
+  .demo-grid { grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 1rem; }
+}
+@media (max-width: 600px) {
+  nav { height: 48px; }
+  .nav-logo { padding: 0 1rem; font-size: 0.8rem; }
+  nav a { padding: 0 0.6rem; font-size: 0.68rem; }
+  .hero { padding: 70px 1rem 2rem; }
+  .hero h1 { font-size: clamp(1.8rem, 8vw, 3rem); }
+  .hero-canvas-wrap { width: min(300px, 80vw); height: min(300px, 80vw); }
+  .demo-grid { grid-template-columns: 1fr; }
+  .card-preview { height: 130px; }
+  .btn { padding: 0.6rem 1.2rem; font-size: 0.85rem; }
+}
+</style>
+</head>
+<body>
+
+<!-- ── NAV ── -->
+<nav>
+  <a href="../index.html" class="nav-logo">&#x2B21; THREE.JS</a>
+  <a href="../index.html" class="nav-back">&#8592; Visual Guide</a>
+  <a href="https://github.com/sponsors/web3dev1337" target="_blank" rel="noopener" style="color:#ff69b4;font-weight:600;">☕ Buy Me a Coffee</a>
+  <a href="#geometry">Geometry</a>
+  <a href="#materials">Materials</a>
+  <a href="#lights">Lights</a>
+  <a href="#objects">Objects</a>
+  <a href="#cameras">Cameras</a>
+  <a href="#textures">Textures</a>
+  <a href="#renderer">Renderer</a>
+</nav>
+
+<!-- ── HERO ── -->
+<section class="hero">
+  <div class="hero-canvas-wrap" style="width:min(960px,100%);height:auto;border-radius:14px;overflow:hidden;border:1px solid rgba(0,212,255,0.15);box-shadow:0 20px 60px rgba(0,0,0,0.4);">
+    <video autoplay muted loop playsinline style="width:100%;display:block;">
+      <source src="interactive-hero-v2.mp4" type="video/mp4">
+      <img src="interactive-hero-v2.jpg" alt="Three.js Interactive Guide" style="width:100%;">
+    </video>
+  </div>
+  <h1>Three.js Interactive Guide</h1>
+  <p class="hero-sub">Hands-on 3D demos for every concept. Click, drag, and tweak parameters in real-time.</p>
+  <div class="hero-stats">
+    <div class="hero-stat">
+      <div class="hero-stat-num clr-cyan">19</div>
+      <div class="hero-stat-label">Live Demos</div>
+    </div>
+    <div class="hero-stat">
+      <div class="hero-stat-num clr-amber">77</div>
+      <div class="hero-stat-label">Coming Soon</div>
+    </div>
+  </div>
+  <div class="hero-cta">
+    <a href="#geometry" class="btn btn-p">&#9660; Explore Demos</a>
+    <a href="../index.html" class="btn btn-s">&#8592; Visual Guide</a>
+    <a href="https://github.com/sponsors/web3dev1337" target="_blank" rel="noopener" class="btn btn-sp">☕ Buy Me a Coffee</a>
+  </div>
+  <div style="margin-top:1.2rem;">
+    <a href="https://x.com/AIOnlyDeveloper" target="_blank" style="display:inline-flex;align-items:center;gap:0.5rem;padding:0.7rem 1.5rem;border-radius:9px;background:rgba(29,155,240,0.15);border:1px solid rgba(29,155,240,0.5);color:#1d9bf0;font-weight:700;font-size:0.9rem;text-decoration:none;transition:all 0.2s;">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="#1d9bf0"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-4.714-6.231-5.401 6.231H2.747l7.73-8.835L1.254 2.25H8.08l4.259 5.63zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg>
+      Follow for More
+    </a>
+  </div>
+</section>
+
+<!-- ── CONTENT ── -->
+<div class="content">
+
+<!-- ═══ GEOMETRY ═══ -->
+<div class="category-section" id="geometry">
+  <div class="category-header">
+    <div class="category-icon bg-magenta" style="border:1px solid rgba(255,0,204,0.3);">&#9651;</div>
+    <h2 class="clr-magenta">Geometry</h2>
+    <span class="category-count badge-magenta">1 demo</span>
+  </div>
+  <div class="demo-grid">
+    <a href="geometry/primitives.html" class="demo-card card-magenta">
+      <div class="card-preview preview-magenta">
+        <img src="thumbnails/primitives.jpg" alt="primitives" loading="lazy">
+        <span class="card-badge badge-magenta">Geometry</span>
+        <span class="card-file">primitives.html</span>
+      </div>
+      <div class="card-body">
+        <div class="card-title">Geometry Primitives</div>
+        <div class="card-desc">All built-in shapes: box, sphere, torus, cylinder, cone, and more. Tweak segments and parameters.</div>
+        <div class="card-arrow arrow-magenta">Open demo &#8594;</div>
+      </div>
+    </a>
+  </div>
+</div>
+
+<!-- ═══ MATERIALS ═══ -->
+<div class="category-section" id="materials">
+  <div class="category-header">
+    <div class="category-icon bg-amber" style="border:1px solid rgba(245,166,35,0.3);">&#10024;</div>
+    <h2 class="clr-amber">Materials</h2>
+    <span class="category-count badge-amber">1 demo</span>
+  </div>
+  <div class="demo-grid">
+    <a href="materials/all-materials.html" class="demo-card card-amber">
+      <div class="card-preview preview-amber">
+        <img src="thumbnails/all-materials.jpg" alt="all-materials" loading="lazy">
+        <span class="card-badge badge-amber">Material</span>
+        <span class="card-file">all-materials.html</span>
+      </div>
+      <div class="card-body">
+        <div class="card-title">All Materials</div>
+        <div class="card-desc">Side-by-side comparison of every material type: Basic, Lambert, Phong, Standard, Physical, Toon, and more.</div>
+        <div class="card-arrow arrow-amber">Open demo &#8594;</div>
+      </div>
+    </a>
+  </div>
+</div>
+
+<!-- ═══ LIGHTS ═══ -->
+<div class="category-section" id="lights">
+  <div class="category-header">
+    <div class="category-icon bg-amber" style="border:1px solid rgba(245,166,35,0.3);">&#128161;</div>
+    <h2 class="clr-amber">Lights</h2>
+    <span class="category-count badge-amber">1 demo</span>
+  </div>
+  <div class="demo-grid">
+    <a href="lights/all-lights.html" class="demo-card card-amber">
+      <div class="card-preview preview-amber">
+        <img src="thumbnails/all-lights.jpg" alt="all-lights" loading="lazy">
+        <span class="card-badge badge-amber">Lights</span>
+        <span class="card-file">all-lights.html</span>
+      </div>
+      <div class="card-body">
+        <div class="card-title">All Light Types</div>
+        <div class="card-desc">Ambient, directional, point, spot, hemisphere, and area lights. Toggle each and adjust intensity, color, range.</div>
+        <div class="card-arrow arrow-amber">Open demo &#8594;</div>
+      </div>
+    </a>
+  </div>
+</div>
+
+<!-- ═══ OBJECTS ═══ -->
+<div class="category-section" id="objects">
+  <div class="category-header">
+    <div class="category-icon bg-green" style="border:1px solid rgba(0,255,136,0.3);">&#128230;</div>
+    <h2 class="clr-green">Objects</h2>
+    <span class="category-count badge-green">1 demo</span>
+  </div>
+  <div class="demo-grid">
+    <a href="objects/scene-graph.html" class="demo-card card-green">
+      <div class="card-preview preview-green">
+        <img src="thumbnails/scene-graph.jpg" alt="scene-graph" loading="lazy">
+        <span class="card-badge badge-green">Objects</span>
+        <span class="card-file">scene-graph.html</span>
+      </div>
+      <div class="card-body">
+        <div class="card-title">Scene Graph</div>
+        <div class="card-desc">Visualize parent-child relationships. See how transforms cascade through the hierarchy.</div>
+        <div class="card-arrow arrow-green">Open demo &#8594;</div>
+      </div>
+    </a>
+  </div>
+</div>
+
+<!-- ═══ CAMERAS ═══ -->
+<div class="category-section" id="cameras">
+  <div class="category-header">
+    <div class="category-icon bg-cyan" style="border:1px solid rgba(0,212,255,0.3);">&#127909;</div>
+    <h2 class="clr-cyan">Cameras</h2>
+    <span class="category-count badge-cyan">4 demos</span>
+  </div>
+  <div class="demo-grid">
+    <a href="cameras/perspective.html" class="demo-card card-cyan">
+      <div class="card-preview preview-cyan">
+        <img src="thumbnails/perspective.jpg" alt="perspective" loading="lazy">
+        <span class="card-badge badge-cyan">Camera</span>
+        <span class="card-file">perspective.html</span>
+      </div>
+      <div class="card-body">
+        <div class="card-title">Perspective Camera</div>
+        <div class="card-desc">Adjust FOV, near/far planes, and aspect ratio. See how perspective distortion changes in real-time.</div>
+        <div class="card-arrow arrow-cyan">Open demo &#8594;</div>
+      </div>
+    </a>
+    <a href="cameras/orthographic.html" class="demo-card card-cyan">
+      <div class="card-preview preview-cyan">
+        <img src="thumbnails/orthographic.jpg" alt="orthographic" loading="lazy">
+        <span class="card-badge badge-cyan">Camera</span>
+        <span class="card-file">orthographic.html</span>
+      </div>
+      <div class="card-body">
+        <div class="card-title">Orthographic Camera</div>
+        <div class="card-desc">No perspective foreshortening. Tweak frustum bounds for 2D-style and isometric views.</div>
+        <div class="card-arrow arrow-cyan">Open demo &#8594;</div>
+      </div>
+    </a>
+    <a href="cameras/cube.html" class="demo-card card-cyan">
+      <div class="card-preview preview-cyan">
+        <img src="thumbnails/cube.jpg" alt="cube" loading="lazy">
+        <span class="card-badge badge-cyan">Camera</span>
+        <span class="card-file">cube.html</span>
+      </div>
+      <div class="card-body">
+        <div class="card-title">Cube Camera</div>
+        <div class="card-desc">Six-face rendering for dynamic reflections. Watch environment maps update per frame.</div>
+        <div class="card-arrow arrow-cyan">Open demo &#8594;</div>
+      </div>
+    </a>
+    <a href="cameras/stereo.html" class="demo-card card-cyan">
+      <div class="card-preview preview-cyan">
+        <img src="thumbnails/stereo.jpg" alt="stereo" loading="lazy">
+        <span class="card-badge badge-cyan">Camera</span>
+        <span class="card-file">stereo.html</span>
+      </div>
+      <div class="card-body">
+        <div class="card-title">Stereo Camera</div>
+        <div class="card-desc">Side-by-side rendering for VR and anaglyph 3D. Adjust eye separation in real-time.</div>
+        <div class="card-arrow arrow-cyan">Open demo &#8594;</div>
+      </div>
+    </a>
+  </div>
+</div>
+
+<!-- ═══ TEXTURES ═══ -->
+<div class="category-section" id="textures">
+  <div class="category-header">
+    <div class="category-icon bg-purple" style="border:1px solid rgba(168,85,247,0.3);">&#128444;</div>
+    <h2 class="clr-purple">Textures</h2>
+    <span class="category-count badge-purple">8 demos</span>
+  </div>
+  <div class="demo-grid">
+    <a href="textures/basics-uv.html" class="demo-card card-purple">
+      <div class="card-preview preview-purple">
+        <img src="thumbnails/basics-uv.jpg" alt="basics-uv" loading="lazy">
+        <span class="card-badge badge-purple">Texture</span>
+        <span class="card-file">basics-uv.html</span>
+      </div>
+      <div class="card-body">
+        <div class="card-title">Texture Basics &amp; UV</div>
+        <div class="card-desc">UV mapping fundamentals. See how 2D images wrap onto 3D surfaces with offset, repeat, and rotation.</div>
+        <div class="card-arrow arrow-purple">Open demo &#8594;</div>
+      </div>
+    </a>
+    <a href="textures/normal-maps.html" class="demo-card card-purple">
+      <div class="card-preview preview-purple">
+        <img src="thumbnails/normal-maps.jpg" alt="normal-maps" loading="lazy">
+        <span class="card-badge badge-purple">Texture</span>
+        <span class="card-file">normal-maps.html</span>
+      </div>
+      <div class="card-body">
+        <div class="card-title">Normal Maps</div>
+        <div class="card-desc">Fake surface detail without extra geometry. Adjust normal scale and watch lighting react to bumps.</div>
+        <div class="card-arrow arrow-purple">Open demo &#8594;</div>
+      </div>
+    </a>
+    <a href="textures/pbr-set.html" class="demo-card card-purple">
+      <div class="card-preview preview-purple">
+        <img src="thumbnails/pbr-set.jpg" alt="pbr-set" loading="lazy">
+        <span class="card-badge badge-purple">Texture</span>
+        <span class="card-file">pbr-set.html</span>
+      </div>
+      <div class="card-body">
+        <div class="card-title">PBR Texture Set</div>
+        <div class="card-desc">Albedo, roughness, metalness, normal, AO - all PBR maps working together for photorealistic rendering.</div>
+        <div class="card-arrow arrow-purple">Open demo &#8594;</div>
+      </div>
+    </a>
+    <a href="textures/cubetexture-skybox.html" class="demo-card card-purple">
+      <div class="card-preview preview-purple">
+        <img src="thumbnails/cubetexture-skybox.jpg" alt="cubetexture-skybox" loading="lazy">
+        <span class="card-badge badge-purple">Texture</span>
+        <span class="card-file">cubetexture-skybox.html</span>
+      </div>
+      <div class="card-body">
+        <div class="card-title">CubeTexture Skybox</div>
+        <div class="card-desc">360-degree environment backgrounds using six cube faces. Orbit to explore the skybox panorama.</div>
+        <div class="card-arrow arrow-purple">Open demo &#8594;</div>
+      </div>
+    </a>
+    <a href="textures/video.html" class="demo-card card-purple">
+      <div class="card-preview preview-purple">
+        <img src="thumbnails/video.jpg" alt="video" loading="lazy">
+        <span class="card-badge badge-purple">Texture</span>
+        <span class="card-file">video.html</span>
+      </div>
+      <div class="card-body">
+        <div class="card-title">Video Texture</div>
+        <div class="card-desc">Map live video feeds onto 3D surfaces. Play, pause, and see frames update per tick.</div>
+        <div class="card-arrow arrow-purple">Open demo &#8594;</div>
+      </div>
+    </a>
+    <a href="textures/data.html" class="demo-card card-purple">
+      <div class="card-preview preview-purple">
+        <img src="thumbnails/data.jpg" alt="data" loading="lazy">
+        <span class="card-badge badge-purple">Texture</span>
+        <span class="card-file">data.html</span>
+      </div>
+      <div class="card-body">
+        <div class="card-title">Data Texture</div>
+        <div class="card-desc">Generate textures from raw pixel data. Write RGBA bytes directly for procedural patterns and effects.</div>
+        <div class="card-arrow arrow-purple">Open demo &#8594;</div>
+      </div>
+    </a>
+    <a href="textures/hdr.html" class="demo-card card-purple">
+      <div class="card-preview preview-purple">
+        <img src="thumbnails/hdr.jpg" alt="hdr" loading="lazy">
+        <span class="card-badge badge-purple">Texture</span>
+        <span class="card-file">hdr.html</span>
+      </div>
+      <div class="card-body">
+        <div class="card-title">HDR Environment</div>
+        <div class="card-desc">High dynamic range lighting with .hdr image-based illumination. Realistic reflections and ambient light.</div>
+        <div class="card-arrow arrow-purple">Open demo &#8594;</div>
+      </div>
+    </a>
+    <a href="textures/compressed.html" class="demo-card card-purple">
+      <div class="card-preview preview-purple">
+        <img src="thumbnails/compressed.jpg" alt="compressed" loading="lazy">
+        <span class="card-badge badge-purple">Texture</span>
+        <span class="card-file">compressed.html</span>
+      </div>
+      <div class="card-body">
+        <div class="card-title">Compressed Textures</div>
+        <div class="card-desc">GPU-native formats like KTX2, ASTC, and S3TC. Compare file size, VRAM usage, and quality trade-offs.</div>
+        <div class="card-arrow arrow-purple">Open demo &#8594;</div>
+      </div>
+    </a>
+  </div>
+</div>
+
+<!-- ═══ RENDERER ═══ -->
+<div class="category-section" id="renderer">
+  <div class="category-header">
+    <div class="category-icon bg-green" style="border:1px solid rgba(0,255,136,0.3);">&#127916;</div>
+    <h2 class="clr-green">Renderer</h2>
+    <span class="category-count badge-green">3 demos</span>
+  </div>
+  <div class="demo-grid">
+    <a href="renderer/shadow-types.html" class="demo-card card-green">
+      <div class="card-preview preview-green">
+        <img src="thumbnails/shadow-types.jpg" alt="shadow-types" loading="lazy">
+        <span class="card-badge badge-green">Renderer</span>
+        <span class="card-file">shadow-types.html</span>
+      </div>
+      <div class="card-body">
+        <div class="card-title">Shadow Types</div>
+        <div class="card-desc">Compare Basic, PCF, PCFSoft, and VSM shadow maps. Adjust bias, resolution, and blur radius.</div>
+        <div class="card-arrow arrow-green">Open demo &#8594;</div>
+      </div>
+    </a>
+    <a href="renderer/env-mapping.html" class="demo-card card-green">
+      <div class="card-preview preview-green">
+        <img src="thumbnails/env-mapping.jpg" alt="env-mapping" loading="lazy">
+        <span class="card-badge badge-green">Renderer</span>
+        <span class="card-file">env-mapping.html</span>
+      </div>
+      <div class="card-body">
+        <div class="card-title">Environment Mapping</div>
+        <div class="card-desc">Reflection and refraction using environment maps. Switch between cube and equirectangular sources.</div>
+        <div class="card-arrow arrow-green">Open demo &#8594;</div>
+      </div>
+    </a>
+    <a href="renderer/tone-mapping.html" class="demo-card card-green">
+      <div class="card-preview preview-green">
+        <img src="thumbnails/tone-mapping.jpg" alt="tone-mapping" loading="lazy">
+        <span class="card-badge badge-green">Renderer</span>
+        <span class="card-file">tone-mapping.html</span>
+      </div>
+      <div class="card-body">
+        <div class="card-title">Tone Mapping</div>
+        <div class="card-desc">Map HDR values to screen. Compare Linear, Reinhard, Cineon, ACES, and AgX tone mappers side by side.</div>
+        <div class="card-arrow arrow-green">Open demo &#8594;</div>
+      </div>
+    </a>
+  </div>
+</div>
+
+<!-- ═══ COMING SOON ═══ -->
+<div class="coming-soon-section">
+  <div class="coming-soon-header">
+    <h2>77 More Demos Coming Soon</h2>
+    <p style="color:var(--muted);font-size:0.95rem;margin-top:0.5rem;">See the <a href="../index.html" style="color:var(--cyan);">Visual Guide</a> for all 96 illustrated breakdowns while we build the interactive versions.</p>
+  </div>
+  <div class="coming-soon-grid">
+    <div class="coming-soon-pill">&#10024; Post-FX <span class="coming-soon-badge">Soon</span></div>
+    <div class="coming-soon-pill">&#128433; Controls <span class="coming-soon-badge">Soon</span></div>
+    <div class="coming-soon-pill">&#127760; Node / TSL <span class="coming-soon-badge">Soon</span></div>
+    <div class="coming-soon-pill">&#127916; Animation <span class="coming-soon-badge">Soon</span></div>
+    <div class="coming-soon-pill">&#128266; Audio <span class="coming-soon-badge">Soon</span></div>
+    <div class="coming-soon-pill">&#128302; Special <span class="coming-soon-badge">Soon</span></div>
+    <div class="coming-soon-pill">&#128230; Loaders <span class="coming-soon-badge">Soon</span></div>
+    <div class="coming-soon-pill">&#9881; Physics <span class="coming-soon-badge">Soon</span></div>
+    <div class="coming-soon-pill">&#128295; Helpers <span class="coming-soon-badge">Soon</span></div>
+    <div class="coming-soon-pill">&#128736; Curves <span class="coming-soon-badge">Soon</span></div>
+    <div class="coming-soon-pill">&#128290; Math <span class="coming-soon-badge">Soon</span></div>
+  </div>
+</div>
+
+</div><!-- /content -->
+
+<!-- ── FOOTER ── -->
+<footer>
+  <div style="margin-bottom:1.5rem;">
+    <a href="https://x.com/AIOnlyDeveloper" target="_blank" style="display:inline-flex;align-items:center;gap:0.5rem;padding:0.7rem 1.5rem;border-radius:9px;background:rgba(29,155,240,0.15);border:1px solid rgba(29,155,240,0.5);color:#1d9bf0;font-weight:700;font-size:0.9rem;text-decoration:none;transition:all 0.2s;">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="#1d9bf0"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-4.714-6.231-5.401 6.231H2.747l7.73-8.835L1.254 2.25H8.08l4.259 5.63zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg>
+      Follow for More
+    </a>
+  </div>
+  <div class="footer-links">
+    <a href="../index.html">Visual Guide</a>
+    <a href="https://threejs.org/docs/" target="_blank">Three.js Docs</a>
+    <a href="https://github.com/mrdoob/three.js" target="_blank">Three.js GitHub</a>
+    <a href="https://github.com/NeuralPixelGames/threejs-visual-guide" target="_blank">Our GitHub</a>
+    <a href="https://github.com/sponsors/web3dev1337" target="_blank" style="color:#ff69b4;">☕ Buy Me a Coffee</a>
+  </div>
+  <p>Three.js Interactive Guide &mdash; part of the <a href="../index.html" style="color:var(--cyan);">Three.js Visual Encyclopedia</a></p>
+</footer>
+
+<!-- ── THREE.JS HERO ANIMATION ── -->
+<script type="importmap">
+{
+  "imports": {
+    "three": "https://cdn.jsdelivr.net/npm/three@0.183.0/build/three.module.js",
+    "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.183.0/examples/jsm/"
+  }
+}
+</script>
+<script type="module">
+import * as THREE from 'three';
+
+const canvas = document.getElementById('hero-canvas');
+const renderer = new THREE.WebGLRenderer({ canvas, alpha: true, antialias: true });
+renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+
+const scene = new THREE.Scene();
+const camera = new THREE.PerspectiveCamera(45, 1, 0.1, 100);
+camera.position.z = 4;
+
+// Icosahedron wireframe
+const icoGeo = new THREE.IcosahedronGeometry(1.3, 1);
+const icoWire = new THREE.LineSegments(
+  new THREE.WireframeGeometry(icoGeo),
+  new THREE.LineBasicMaterial({ color: 0x00d4ff, transparent: true, opacity: 0.35 })
+);
+scene.add(icoWire);
+
+// Solid icosahedron with glow material
+const icoSolid = new THREE.Mesh(
+  new THREE.IcosahedronGeometry(1.28, 1),
+  new THREE.MeshBasicMaterial({ color: 0x00d4ff, transparent: true, opacity: 0.04 })
+);
+scene.add(icoSolid);
+
+// Inner glow sphere
+const glowGeo = new THREE.SphereGeometry(0.85, 32, 32);
+const glowMat = new THREE.MeshBasicMaterial({
+  color: 0x00d4ff, transparent: true, opacity: 0.08,
+  side: THREE.BackSide
+});
+scene.add(new THREE.Mesh(glowGeo, glowMat));
+
+// Orbiting particles
+const particleCount = 200;
+const particleGeo = new THREE.BufferGeometry();
+const positions = new Float32Array(particleCount * 3);
+const colors = new Float32Array(particleCount * 3);
+const accentColors = [
+  new THREE.Color(0x00d4ff),
+  new THREE.Color(0xff00cc),
+  new THREE.Color(0xf5a623),
+  new THREE.Color(0x00ff88),
+  new THREE.Color(0xa855f7)
+];
+
+for (let i = 0; i < particleCount; i++) {
+  const r = 1.8 + Math.random() * 1.5;
+  const theta = Math.random() * Math.PI * 2;
+  const phi = Math.acos(2 * Math.random() - 1);
+  positions[i * 3]     = r * Math.sin(phi) * Math.cos(theta);
+  positions[i * 3 + 1] = r * Math.sin(phi) * Math.sin(theta);
+  positions[i * 3 + 2] = r * Math.cos(phi);
+
+  const c = accentColors[Math.floor(Math.random() * accentColors.length)];
+  colors[i * 3]     = c.r;
+  colors[i * 3 + 1] = c.g;
+  colors[i * 3 + 2] = c.b;
+}
+particleGeo.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+particleGeo.setAttribute('color', new THREE.BufferAttribute(colors, 3));
+
+const particleMat = new THREE.PointsMaterial({
+  size: 0.025,
+  vertexColors: true,
+  transparent: true,
+  opacity: 0.7,
+  sizeAttenuation: true
+});
+const particles = new THREE.Points(particleGeo, particleMat);
+scene.add(particles);
+
+// Mouse interaction
+let mouseX = 0, mouseY = 0;
+document.addEventListener('mousemove', (e) => {
+  mouseX = (e.clientX / window.innerWidth - 0.5) * 2;
+  mouseY = (e.clientY / window.innerHeight - 0.5) * 2;
+});
+
+function resize() {
+  const wrap = canvas.parentElement;
+  const w = wrap.clientWidth;
+  const h = wrap.clientHeight;
+  renderer.setSize(w, h);
+  camera.aspect = w / h;
+  camera.updateProjectionMatrix();
+}
+resize();
+window.addEventListener('resize', resize);
+
+function animate(t) {
+  requestAnimationFrame(animate);
+  const s = t * 0.001;
+
+  icoWire.rotation.x = s * 0.15 + mouseY * 0.3;
+  icoWire.rotation.y = s * 0.2 + mouseX * 0.3;
+  icoSolid.rotation.copy(icoWire.rotation);
+
+  particles.rotation.y = s * 0.05;
+  particles.rotation.x = s * 0.03;
+
+  // Pulsing glow
+  const pulse = 0.06 + Math.sin(s * 1.5) * 0.03;
+  icoSolid.material.opacity = pulse;
+  glowMat.opacity = pulse * 1.2;
+
+  // Wireframe opacity pulse
+  icoWire.material.opacity = 0.3 + Math.sin(s * 0.8) * 0.1;
+
+  renderer.render(scene, camera);
+}
+animate(0);
+
+// Active nav highlighting on scroll
+const sections = document.querySelectorAll('.category-section');
+const navLinks = document.querySelectorAll('nav a[href^="#"]');
+const observer = new IntersectionObserver((entries) => {
+  entries.forEach(entry => {
+    if (entry.isIntersecting) {
+      navLinks.forEach(l => l.classList.remove('active'));
+      const id = entry.target.id;
+      const link = document.querySelector(`nav a[href="#${id}"]`);
+      if (link) link.classList.add('active');
+    }
+  });
+}, { rootMargin: '-40% 0px -40% 0px' });
+
+sections.forEach(s => observer.observe(s));
+</script>
+
+</body>
+</html>

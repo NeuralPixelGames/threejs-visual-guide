@@ -1,0 +1,845 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<title>Perspective Camera -- Three.js Encyclopedia v2</title>
+	<meta charset="utf-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<link rel="stylesheet" href="../shared/demo-base.css">
+	<style>
+		.fov-label {
+			position: absolute;
+			bottom: 24px;
+			z-index: 10;
+			background: rgba(10, 14, 26, 0.92);
+			backdrop-filter: blur(12px);
+			-webkit-backdrop-filter: blur(12px);
+			border: 1px solid rgba(74, 158, 255, 0.35);
+			border-radius: 10px;
+			padding: 10px 18px;
+			color: #e0e5f0;
+			font-family: 'Inter', system-ui, sans-serif;
+			font-size: 15px;
+			font-weight: 700;
+			pointer-events: none;
+			text-align: center;
+			box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.04);
+			animation: fadeInUp 0.5s ease-out both;
+			animation-delay: 0.5s;
+			transform: translateX(-50%);
+		}
+		.fov-label .fov-value {
+			display: block;
+			font-size: 22px;
+			font-weight: 800;
+			letter-spacing: -0.02em;
+			margin-bottom: 2px;
+		}
+		.fov-label .fov-desc {
+			display: block;
+			font-size: 11px;
+			color: #8892b0;
+			font-weight: 400;
+			text-transform: uppercase;
+			letter-spacing: 0.08em;
+		}
+		.fov-label.accent-blue .fov-value { color: #4a9eff; }
+		.fov-label.accent-green .fov-value { color: #22c55e; }
+		.fov-label.accent-orange .fov-value { color: #ff9f43; }
+
+		.fov-label.accent-blue { border-color: rgba(74, 158, 255, 0.4); }
+		.fov-label.accent-green { border-color: rgba(34, 197, 94, 0.4); }
+		.fov-label.accent-orange { border-color: rgba(255, 159, 67, 0.4); }
+
+		.style-panel {
+			max-width: 260px;
+			top: 54px;
+			left: 12px;
+			bottom: auto;
+		}
+
+		.style-chips {
+			display: flex;
+			flex-wrap: wrap;
+			gap: 6px;
+			margin-top: 10px;
+		}
+
+		#frustum-overlay {
+			position: absolute;
+			top: 0;
+			left: 0;
+			width: 100%;
+			height: 100%;
+			z-index: 9;
+			pointer-events: none;
+		}
+
+		.speed-note {
+		position: fixed;
+		top: 210px;
+		left: 12px;
+		z-index: 10;
+		background: rgba(10, 14, 26, 0.92);
+		backdrop-filter: blur(12px);
+		-webkit-backdrop-filter: blur(12px);
+		border: 1px solid rgba(255, 210, 100, 0.35);
+		border-radius: 10px;
+		padding: 10px 16px;
+		color: #ffd685;
+		font-family: 'Inter', system-ui, sans-serif;
+		font-size: 12px;
+		font-weight: 500;
+		line-height: 1.4;
+		max-width: 260px;
+		text-align: left;
+		pointer-events: none;
+		box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.04);
+		animation: fadeInUp 0.5s ease-out both;
+		animation-delay: 0.8s;
+	}
+	.speed-note strong {
+		color: #fff;
+		font-weight: 700;
+	}
+
+	@media (max-width: 640px) {
+			.fov-label {
+				padding: 6px 12px;
+				font-size: 12px;
+				bottom: 14px;
+			}
+			.fov-label .fov-value { font-size: 16px; }
+			.fov-label .fov-desc { font-size: 9px; }
+			.style-panel { display: none; }
+		.speed-note { font-size: 10px; max-width: 90vw; padding: 8px 14px; top: 48px; }
+		}
+	</style>
+</head>
+<body>
+
+<a href="../index.html" id="back-btn">&larr; Hub</a>
+<div id="info"><strong>Perspective Camera</strong> -- 3-way FOV comparison: telephoto vs standard vs ultra-wide with forward/back motion to show speed perception</div>
+
+<div class="panel-divider-v split-divider-third-1"></div>
+<div class="panel-divider-v split-divider-third-2"></div>
+
+<div class="fov-label accent-blue" id="label0" style="left: 20%;"><span class="fov-value" id="fov-val-0">15&deg;</span><span class="fov-desc">Telephoto</span></div>
+<div class="fov-label accent-green" id="label1" style="left: 52%;"><span class="fov-value" id="fov-val-1">60&deg;</span><span class="fov-desc">Standard</span></div>
+<div class="fov-label accent-orange" id="label2" style="left: 84%;"><span class="fov-value" id="fov-val-2">120&deg;</span><span class="fov-desc">Ultra-Wide</span></div>
+
+<svg id="frustum-overlay"></svg>
+
+<div class="speed-note"><strong>FOV &amp; Speed Perception:</strong> Wider FOV makes movement look faster &mdash; edges move faster across the screen. FPS games and racers use higher FOV to induce a faster feeling of movement.</div>
+
+<div class="style-panel">
+	<div class="style-kicker">Three.js Encyclopedia</div>
+	<h3>Perspective Camera</h3>
+	<p>Same scene, same position -- only field of view changes. Watch how depth compression flattens or exaggerates spatial relationships.</p>
+	<div class="style-chips">
+		<span class="style-chip">field of view</span>
+		<span class="style-chip purple">frustum</span>
+		<span class="style-chip pink">depth compression</span>
+		<span class="style-chip">speed perception</span>
+	</div>
+</div>
+
+<script type="importmap">
+{
+	"imports": {
+		"three": "https://cdn.jsdelivr.net/npm/three@0.183.0/build/three.module.js",
+		"three/addons/": "https://cdn.jsdelivr.net/npm/three@0.183.0/examples/jsm/"
+	}
+}
+</script>
+
+<script type="module">
+import * as THREE from 'three';
+import { GUI } from 'three/addons/libs/lil-gui.module.min.js';
+import { HDRLoader } from 'three/addons/loaders/HDRLoader.js';
+
+let renderer, scene, cameras;
+const timer = new THREE.Timer();
+
+const params = {
+	fov1: 15,
+	fov2: 60,
+	fov3: 120,
+	exposure: 0.9,
+	showFrustums: true,
+	autoOrbit: true,
+	forwardBack: true
+};
+
+function getFovDesc( fov ) {
+
+	if ( fov <= 25 ) return 'Telephoto';
+	if ( fov <= 40 ) return 'Narrow';
+	if ( fov <= 55 ) return 'Normal';
+	if ( fov <= 70 ) return 'Standard';
+	if ( fov <= 85 ) return 'Wide';
+	if ( fov <= 100 ) return 'Wide Angle';
+	return 'Ultra-Wide';
+
+}
+
+init();
+
+function init() {
+
+	renderer = new THREE.WebGLRenderer( { antialias: true } );
+	renderer.setPixelRatio( window.devicePixelRatio );
+	renderer.setSize( window.innerWidth, window.innerHeight );
+	renderer.setScissorTest( true );
+	renderer.shadowMap.enabled = true;
+	renderer.shadowMap.type = THREE.PCFShadowMap;
+	renderer.toneMapping = THREE.ACESFilmicToneMapping;
+	renderer.toneMappingExposure = params.exposure;
+	document.body.appendChild( renderer.domElement );
+
+	scene = new THREE.Scene();
+	scene.fog = new THREE.FogExp2( 0x050810, 0.022 );
+
+	buildNightCorridor( scene );
+	loadEnvironment( renderer, scene );
+
+	cameras = [
+		new THREE.PerspectiveCamera( params.fov1, 1, 0.1, 200 ),
+		new THREE.PerspectiveCamera( params.fov2, 1, 0.1, 200 ),
+		new THREE.PerspectiveCamera( params.fov3, 1, 0.1, 200 )
+	];
+
+	const camPos = new THREE.Vector3( 0, 3.5, 20 );
+	cameras.forEach( c => {
+
+		c.position.copy( camPos );
+		c.lookAt( 0, 2.5, -30 );
+
+	} );
+
+	const gui = new GUI();
+	gui.add( params, 'fov1', 10, 120, 1 ).name( 'Left FOV' ).onChange( v => {
+
+		cameras[ 0 ].fov = v;
+		cameras[ 0 ].updateProjectionMatrix();
+		updateLabel( 0, v );
+
+	} );
+	gui.add( params, 'fov2', 10, 120, 1 ).name( 'Center FOV' ).onChange( v => {
+
+		cameras[ 1 ].fov = v;
+		cameras[ 1 ].updateProjectionMatrix();
+		updateLabel( 1, v );
+
+	} );
+	gui.add( params, 'fov3', 10, 120, 1 ).name( 'Right FOV' ).onChange( v => {
+
+		cameras[ 2 ].fov = v;
+		cameras[ 2 ].updateProjectionMatrix();
+		updateLabel( 2, v );
+
+	} );
+	gui.add( params, 'exposure', 0.2, 2.0, 0.05 ).name( 'Exposure' ).onChange( v => {
+
+		renderer.toneMappingExposure = v;
+
+	} );
+	gui.add( params, 'showFrustums' ).name( 'Frustum Overlay' );
+	gui.add( params, 'autoOrbit' ).name( 'Auto Orbit' );
+	gui.add( params, 'forwardBack' ).name( 'Forward/Back Motion' );
+
+	window.addEventListener( 'resize', onResize );
+	renderer.setAnimationLoop( animate );
+
+}
+
+function updateLabel( index, fov ) {
+
+	document.getElementById( 'fov-val-' + index ).innerHTML = fov + '&deg;';
+	const label = document.getElementById( 'label' + index );
+	label.querySelector( '.fov-desc' ).textContent = getFovDesc( fov );
+
+}
+
+function loadEnvironment( renderer, scene ) {
+
+	const pmremGenerator = new THREE.PMREMGenerator( renderer );
+	pmremGenerator.compileEquirectangularShader();
+
+	new HDRLoader().load( 'https://threejs.org/examples/textures/equirectangular/venice_sunset_1k.hdr', function ( hdrTexture ) {
+
+		const envMap = pmremGenerator.fromEquirectangular( hdrTexture ).texture;
+		scene.environment = envMap;
+		hdrTexture.dispose();
+		pmremGenerator.dispose();
+
+	} );
+
+}
+
+function buildNightCorridor( scene ) {
+
+	const corridorLength = 80;
+	const corridorWidth = 12;
+	const pillarCount = 14;
+	const pillarSpacing = corridorLength / pillarCount;
+
+	// ── Checkered floor ──
+	const tileSize = 2;
+	const tilesX = Math.ceil( corridorWidth / tileSize ) + 2;
+	const tilesZ = Math.ceil( corridorLength / tileSize ) + 4;
+
+	const floorGroup = new THREE.Group();
+
+	const darkTileMat = new THREE.MeshPhysicalMaterial( {
+		color: 0x0a0a12,
+		roughness: 0.25,
+		metalness: 0.1,
+		reflectivity: 0.8,
+		clearcoat: 0.6,
+		clearcoatRoughness: 0.15
+	} );
+
+	const lightTileMat = new THREE.MeshPhysicalMaterial( {
+		color: 0x1a1a2e,
+		roughness: 0.2,
+		metalness: 0.15,
+		reflectivity: 0.9,
+		clearcoat: 0.8,
+		clearcoatRoughness: 0.1
+	} );
+
+	const tileGeo = new THREE.BoxGeometry( tileSize - 0.04, 0.08, tileSize - 0.04 );
+
+	for ( let ix = 0; ix < tilesX; ix ++ ) {
+
+		for ( let iz = 0; iz < tilesZ; iz ++ ) {
+
+			const isDark = ( ix + iz ) % 2 === 0;
+			const tile = new THREE.Mesh( tileGeo, isDark ? darkTileMat : lightTileMat );
+			tile.position.set(
+				( ix - tilesX / 2 ) * tileSize + tileSize / 2,
+				0,
+				- corridorLength / 2 + iz * tileSize
+			);
+			tile.receiveShadow = true;
+			floorGroup.add( tile );
+
+		}
+
+	}
+
+	scene.add( floorGroup );
+
+	// ── Ceiling ──
+	const ceilingMat = new THREE.MeshPhysicalMaterial( {
+		color: 0x080810,
+		roughness: 0.7,
+		metalness: 0.2
+	} );
+	const ceiling = new THREE.Mesh(
+		new THREE.PlaneGeometry( corridorWidth + 4, corridorLength + 10 ),
+		ceilingMat
+	);
+	ceiling.rotation.x = Math.PI / 2;
+	ceiling.position.set( 0, 9, - corridorLength / 2 + corridorLength / 2 );
+	scene.add( ceiling );
+
+	// ── Side walls ──
+	const wallMat = new THREE.MeshPhysicalMaterial( {
+		color: 0x0c0c18,
+		roughness: 0.6,
+		metalness: 0.3,
+		clearcoat: 0.2,
+		clearcoatRoughness: 0.4
+	} );
+
+	for ( let side = - 1; side <= 1; side += 2 ) {
+
+		const wall = new THREE.Mesh(
+			new THREE.PlaneGeometry( corridorLength + 10, 9 ),
+			wallMat
+		);
+		wall.position.set( side * ( corridorWidth / 2 + 2 ), 4.5, 0 );
+		wall.rotation.y = - side * Math.PI / 2;
+		wall.receiveShadow = true;
+		scene.add( wall );
+
+	}
+
+	// ── End wall ──
+	const endWall = new THREE.Mesh(
+		new THREE.PlaneGeometry( corridorWidth + 4, 9 ),
+		wallMat
+	);
+	endWall.position.set( 0, 4.5, - corridorLength / 2 - 2 );
+	scene.add( endWall );
+
+	// ── Pillars with emissive trim ──
+	const pillarMat = new THREE.MeshPhysicalMaterial( {
+		color: 0x181828,
+		roughness: 0.35,
+		metalness: 0.7,
+		clearcoat: 0.4,
+		clearcoatRoughness: 0.2
+	} );
+
+	const pillarBaseMat = new THREE.MeshPhysicalMaterial( {
+		color: 0x222238,
+		roughness: 0.3,
+		metalness: 0.8
+	} );
+
+	const pillarGeo = new THREE.CylinderGeometry( 0.25, 0.3, 8.5, 12 );
+	const baseGeo = new THREE.CylinderGeometry( 0.5, 0.55, 0.5, 12 );
+	const capitalGeo = new THREE.CylinderGeometry( 0.45, 0.25, 0.4, 12 );
+
+	const emissiveColors = [ 0x4a9eff, 0x7b68ee, 0x4a9eff, 0x6366f1 ];
+
+	for ( let i = 0; i < pillarCount; i ++ ) {
+
+		const z = - corridorLength / 2 + 4 + i * pillarSpacing;
+
+		for ( let side = - 1; side <= 1; side += 2 ) {
+
+			const x = side * ( corridorWidth / 2 - 0.5 );
+
+			const pillar = new THREE.Mesh( pillarGeo, pillarMat );
+			pillar.position.set( x, 4.25, z );
+			pillar.castShadow = true;
+			pillar.receiveShadow = true;
+			scene.add( pillar );
+
+			const base = new THREE.Mesh( baseGeo, pillarBaseMat );
+			base.position.set( x, 0.25, z );
+			scene.add( base );
+
+			const capital = new THREE.Mesh( capitalGeo, pillarBaseMat );
+			capital.position.set( x, 8.5, z );
+			scene.add( capital );
+
+			// Emissive ring at base
+			const emCol = emissiveColors[ i % emissiveColors.length ];
+			const ringMat = new THREE.MeshPhysicalMaterial( {
+				color: emCol,
+				emissive: emCol,
+				emissiveIntensity: 1.0,
+				roughness: 0.2,
+				metalness: 0.9
+			} );
+			const ring = new THREE.Mesh(
+				new THREE.TorusGeometry( 0.35, 0.04, 8, 24 ),
+				ringMat
+			);
+			ring.rotation.x = Math.PI / 2;
+			ring.position.set( x, 0.55, z );
+			scene.add( ring );
+
+		}
+
+	}
+
+	// ── Street lamps / corridor lamps ──
+	const lampPostMat = new THREE.MeshPhysicalMaterial( {
+		color: 0x333344,
+		roughness: 0.25,
+		metalness: 0.9
+	} );
+
+	const lampGlowColors = [ 0xffeedd, 0xffe4b5, 0xffd9a0 ];
+
+	for ( let i = 0; i < pillarCount; i += 2 ) {
+
+		const z = - corridorLength / 2 + 4 + i * pillarSpacing;
+
+		for ( let side = - 1; side <= 1; side += 2 ) {
+
+			const x = side * ( corridorWidth / 2 - 2.5 );
+
+			// Lamp post
+			const post = new THREE.Mesh(
+				new THREE.CylinderGeometry( 0.04, 0.06, 5, 8 ),
+				lampPostMat
+			);
+			post.position.set( x, 2.5, z );
+			post.castShadow = true;
+			scene.add( post );
+
+			// Lamp arm
+			const arm = new THREE.Mesh(
+				new THREE.BoxGeometry( 1.2, 0.06, 0.06 ),
+				lampPostMat
+			);
+			arm.position.set( x - side * 0.6, 5.1, z );
+			scene.add( arm );
+
+			// Lamp housing
+			const lampHouseMat = new THREE.MeshPhysicalMaterial( {
+				color: 0x222233,
+				roughness: 0.3,
+				metalness: 0.8
+			} );
+			const housing = new THREE.Mesh(
+				new THREE.CylinderGeometry( 0.2, 0.25, 0.15, 8 ),
+				lampHouseMat
+			);
+			housing.position.set( x - side * 1.2, 5.05, z );
+			scene.add( housing );
+
+			// Lamp bulb
+			const glowColor = lampGlowColors[ i % lampGlowColors.length ];
+			const bulbMat = new THREE.MeshPhysicalMaterial( {
+				color: glowColor,
+				emissive: glowColor,
+				emissiveIntensity: 1.5,
+				roughness: 0.1,
+				transmission: 0.3,
+				thickness: 0.5
+			} );
+			const bulb = new THREE.Mesh(
+				new THREE.SphereGeometry( 0.12, 12, 6 ),
+				bulbMat
+			);
+			bulb.position.set( x - side * 1.2, 4.9, z );
+			scene.add( bulb );
+
+			// Point light
+			const lampLight = new THREE.PointLight( glowColor, 4, 18, 2 );
+			lampLight.position.set( x - side * 1.2, 4.85, z );
+			lampLight.castShadow = i < 6;
+			if ( lampLight.castShadow ) {
+
+				lampLight.shadow.mapSize.setScalar( 512 );
+				lampLight.shadow.bias = - 0.002;
+
+			}
+			scene.add( lampLight );
+
+		}
+
+	}
+
+	// ── Objects at various distances (depth cue markers) ──
+
+	// Near sphere cluster
+	const sphereMatA = new THREE.MeshPhysicalMaterial( {
+		color: 0xff4466,
+		roughness: 0.15,
+		metalness: 0.8,
+		clearcoat: 1.0,
+		clearcoatRoughness: 0.05
+	} );
+	const sphere1 = new THREE.Mesh( new THREE.SphereGeometry( 0.5, 32, 16 ), sphereMatA );
+	sphere1.position.set( -2, 0.6, 12 );
+	sphere1.castShadow = true;
+	scene.add( sphere1 );
+
+	const sphere2 = new THREE.Mesh( new THREE.SphereGeometry( 0.35, 32, 16 ), sphereMatA );
+	sphere2.position.set( 2.5, 0.4, 10 );
+	sphere2.castShadow = true;
+	scene.add( sphere2 );
+
+	// Mid-distance boxes
+	const boxMatB = new THREE.MeshPhysicalMaterial( {
+		color: 0x44aaff,
+		roughness: 0.2,
+		metalness: 0.6,
+		clearcoat: 0.8,
+		clearcoatRoughness: 0.1
+	} );
+
+	for ( let i = 0; i < 4; i ++ ) {
+
+		const box = new THREE.Mesh(
+			new THREE.BoxGeometry( 0.7, 0.7 + i * 0.3, 0.7 ),
+			boxMatB
+		);
+		box.position.set( - 3 + i * 2, ( 0.7 + i * 0.3 ) / 2, - 5 - i * 3 );
+		box.rotation.y = i * 0.4;
+		box.castShadow = true;
+		box.receiveShadow = true;
+		scene.add( box );
+
+	}
+
+	// Far torus knots (depth markers)
+	const torusMatC = new THREE.MeshPhysicalMaterial( {
+		color: 0x9f44ff,
+		roughness: 0.1,
+		metalness: 0.9,
+		clearcoat: 1.0,
+		clearcoatRoughness: 0.05,
+		iridescence: 0.5,
+		iridescenceIOR: 1.5
+	} );
+
+	for ( let i = 0; i < 3; i ++ ) {
+
+		const tk = new THREE.Mesh(
+			new THREE.TorusKnotGeometry( 0.4, 0.12, 64, 16 ),
+			torusMatC
+		);
+		tk.position.set( ( i - 1 ) * 3, 1.5, - 20 - i * 8 );
+		tk.castShadow = true;
+		scene.add( tk );
+
+	}
+
+	// ── Floor distance markers (colored strips) ──
+	const markerDistances = [ 5, 0, -5, -10, -15, -20, -25, -30 ];
+	const markerMat = new THREE.MeshPhysicalMaterial( {
+		color: 0x4a9eff,
+		emissive: 0x4a9eff,
+		emissiveIntensity: 0.4,
+		roughness: 0.5,
+		metalness: 0.3
+	} );
+
+	markerDistances.forEach( z => {
+
+		const strip = new THREE.Mesh(
+			new THREE.BoxGeometry( corridorWidth - 2, 0.02, 0.08 ),
+			markerMat
+		);
+		strip.position.set( 0, 0.05, z );
+		scene.add( strip );
+
+	} );
+
+	// ── Ambient + directional light ──
+	scene.add( new THREE.AmbientLight( 0x0a0a1a, 0.6 ) );
+
+	const moonLight = new THREE.DirectionalLight( 0x6677aa, 0.8 );
+	moonLight.position.set( 5, 20, 10 );
+	moonLight.castShadow = true;
+	moonLight.shadow.mapSize.setScalar( 2048 );
+	moonLight.shadow.camera.left = - 20;
+	moonLight.shadow.camera.right = 20;
+	moonLight.shadow.camera.top = 20;
+	moonLight.shadow.camera.bottom = - 20;
+	moonLight.shadow.camera.far = 50;
+	moonLight.shadow.bias = - 0.001;
+	scene.add( moonLight );
+
+	// Accent lights at far end
+	const accentA = new THREE.PointLight( 0x4a9eff, 6, 30, 2 );
+	accentA.position.set( 0, 4, - corridorLength / 2 + 2 );
+	scene.add( accentA );
+
+	const accentB = new THREE.PointLight( 0x9f44ff, 3, 20, 2 );
+	accentB.position.set( 3, 2, - corridorLength / 2 + 8 );
+	scene.add( accentB );
+
+	// ── Floating emissive orbs for atmosphere ──
+	const orbColors = [ 0x4a9eff, 0x7b68ee, 0xff6b9d, 0x22c55e ];
+
+	for ( let i = 0; i < 8; i ++ ) {
+
+		const orbColor = orbColors[ i % orbColors.length ];
+		const orbMat = new THREE.MeshPhysicalMaterial( {
+			color: orbColor,
+			emissive: orbColor,
+			emissiveIntensity: 1.2,
+			roughness: 0.0,
+			metalness: 0.0,
+			transmission: 0.6,
+			thickness: 1.0,
+			transparent: true,
+			opacity: 0.8
+		} );
+		const orb = new THREE.Mesh(
+			new THREE.SphereGeometry( 0.08 + Math.random() * 0.06, 16, 8 ),
+			orbMat
+		);
+		orb.position.set(
+			( Math.random() - 0.5 ) * 8,
+			2 + Math.random() * 5,
+			- Math.random() * corridorLength * 0.7
+		);
+		orb.userData.baseY = orb.position.y;
+		orb.userData.phase = Math.random() * Math.PI * 2;
+		orb.userData.speed = 0.5 + Math.random() * 0.8;
+		scene.add( orb );
+
+	}
+
+}
+
+function onResize() {
+
+	renderer.setSize( window.innerWidth, window.innerHeight );
+
+}
+
+function drawFrustumOverlay() {
+
+	const svg = document.getElementById( 'frustum-overlay' );
+	svg.innerHTML = '';
+
+	if ( ! params.showFrustums ) return;
+
+	const w = window.innerWidth;
+	const h = window.innerHeight;
+	const thirdW = Math.floor( w / 3 );
+
+	svg.setAttribute( 'viewBox', '0 0 ' + w + ' ' + h );
+	svg.setAttribute( 'width', w );
+	svg.setAttribute( 'height', h );
+
+	const colors = [ '#4a9eff', '#22c55e', '#ff9f43' ];
+	const fovs = [ params.fov1, params.fov2, params.fov3 ];
+
+	for ( let i = 0; i < 3; i ++ ) {
+
+		const panelX = i * thirdW;
+		const panelCX = panelX + thirdW / 2;
+		const panelBottom = h - 70;
+
+		const fovRad = ( fovs[ i ] * Math.PI ) / 180;
+		const halfAngle = fovRad / 2;
+
+		const frustumHeight = Math.min( h * 0.35, 160 );
+		const frustumTop = panelBottom - frustumHeight;
+		const halfWidth = Math.tan( halfAngle ) * frustumHeight;
+
+		const clamped = Math.min( halfWidth, thirdW / 2 - 10 );
+
+		const apex = panelCX + ',' + panelBottom;
+		const topLeft = ( panelCX - clamped ) + ',' + frustumTop;
+		const topRight = ( panelCX + clamped ) + ',' + frustumTop;
+
+		// Filled frustum
+		const poly = document.createElementNS( 'http://www.w3.org/2000/svg', 'polygon' );
+		poly.setAttribute( 'points', apex + ' ' + topLeft + ' ' + topRight );
+		poly.setAttribute( 'fill', colors[ i ] );
+		poly.setAttribute( 'fill-opacity', '0.06' );
+		poly.setAttribute( 'stroke', colors[ i ] );
+		poly.setAttribute( 'stroke-width', '1.5' );
+		poly.setAttribute( 'stroke-opacity', '0.5' );
+		svg.appendChild( poly );
+
+		// Near plane line
+		const nearY = panelBottom - frustumHeight * 0.15;
+		const nearHalf = Math.tan( halfAngle ) * frustumHeight * 0.15;
+		const nearClamped = Math.min( nearHalf, thirdW / 2 - 10 );
+
+		const nearLine = document.createElementNS( 'http://www.w3.org/2000/svg', 'line' );
+		nearLine.setAttribute( 'x1', panelCX - nearClamped );
+		nearLine.setAttribute( 'y1', nearY );
+		nearLine.setAttribute( 'x2', panelCX + nearClamped );
+		nearLine.setAttribute( 'y2', nearY );
+		nearLine.setAttribute( 'stroke', colors[ i ] );
+		nearLine.setAttribute( 'stroke-width', '1' );
+		nearLine.setAttribute( 'stroke-opacity', '0.35' );
+		nearLine.setAttribute( 'stroke-dasharray', '4,3' );
+		svg.appendChild( nearLine );
+
+		// Far plane line
+		const farLine = document.createElementNS( 'http://www.w3.org/2000/svg', 'line' );
+		farLine.setAttribute( 'x1', panelCX - clamped );
+		farLine.setAttribute( 'y1', frustumTop );
+		farLine.setAttribute( 'x2', panelCX + clamped );
+		farLine.setAttribute( 'y2', frustumTop );
+		farLine.setAttribute( 'stroke', colors[ i ] );
+		farLine.setAttribute( 'stroke-width', '1' );
+		farLine.setAttribute( 'stroke-opacity', '0.35' );
+		farLine.setAttribute( 'stroke-dasharray', '4,3' );
+		svg.appendChild( farLine );
+
+		// Angle arc
+		const arcRadius = 30;
+		const arcStartAngle = Math.PI / 2 - halfAngle;
+		const arcEndAngle = Math.PI / 2 + halfAngle;
+
+		const arcStartX = panelCX + arcRadius * Math.cos( - arcStartAngle + Math.PI );
+		const arcStartY = panelBottom - arcRadius * Math.sin( arcStartAngle );
+		const arcEndX = panelCX + arcRadius * Math.cos( - arcEndAngle + Math.PI );
+		const arcEndY = panelBottom - arcRadius * Math.sin( arcEndAngle );
+
+		const largeArc = fovs[ i ] > 180 ? 1 : 0;
+
+		const arcPath = document.createElementNS( 'http://www.w3.org/2000/svg', 'path' );
+		const d = 'M ' + arcStartX + ' ' + arcStartY + ' A ' + arcRadius + ' ' + arcRadius + ' 0 ' + largeArc + ' 1 ' + arcEndX + ' ' + arcEndY;
+		arcPath.setAttribute( 'd', d );
+		arcPath.setAttribute( 'fill', 'none' );
+		arcPath.setAttribute( 'stroke', colors[ i ] );
+		arcPath.setAttribute( 'stroke-width', '1.5' );
+		arcPath.setAttribute( 'stroke-opacity', '0.6' );
+		svg.appendChild( arcPath );
+
+		// Apex dot
+		const dot = document.createElementNS( 'http://www.w3.org/2000/svg', 'circle' );
+		dot.setAttribute( 'cx', panelCX );
+		dot.setAttribute( 'cy', panelBottom );
+		dot.setAttribute( 'r', 3 );
+		dot.setAttribute( 'fill', colors[ i ] );
+		dot.setAttribute( 'fill-opacity', '0.8' );
+		svg.appendChild( dot );
+
+	}
+
+}
+
+function animate() {
+
+	timer.update();
+	const t = timer.getElapsed();
+
+	// Animate floating orbs
+	scene.traverse( child => {
+
+		if ( child.userData.baseY !== undefined ) {
+
+			child.position.y = child.userData.baseY + Math.sin( t * child.userData.speed + child.userData.phase ) * 0.4;
+
+		}
+
+	} );
+
+	// Camera motion
+	if ( params.autoOrbit || params.forwardBack ) {
+
+		const swayX = params.autoOrbit ? Math.sin( t * 0.15 ) * 3 : 0;
+
+		// Forward/back oscillation: camera moves from z=25 to z=-5 and back
+		// using a smooth sine wave. The range covers a large portion of the
+		// corridor so the speed difference between FOVs is dramatic.
+		const forwardZ = params.forwardBack
+			? 10 + Math.sin( t * 0.3 ) * 15
+			: 20 + ( params.autoOrbit ? Math.sin( t * 0.1 ) * 4 : 0 );
+
+		const lookZ = - 30 + ( params.autoOrbit ? Math.sin( t * 0.08 ) * 5 : 0 );
+
+		cameras.forEach( c => {
+
+			c.position.set( swayX, 3.5, forwardZ );
+			c.lookAt( 0, 2.5, lookZ );
+
+		} );
+
+	}
+
+	const w = window.innerWidth;
+	const h = window.innerHeight;
+	const thirdW = Math.floor( w / 3 );
+
+	for ( let i = 0; i < 3; i ++ ) {
+
+		const x = i * thirdW;
+		const panelW = i === 2 ? w - 2 * thirdW : thirdW;
+
+		cameras[ i ].aspect = panelW / h;
+		cameras[ i ].updateProjectionMatrix();
+
+		renderer.setViewport( x, 0, panelW, h );
+		renderer.setScissor( x, 0, panelW, h );
+		renderer.render( scene, cameras[ i ] );
+
+	}
+
+	drawFrustumOverlay();
+
+}
+</script>
+<script src="../shared/demo-nav.js"></script>
+</body>
+</html>

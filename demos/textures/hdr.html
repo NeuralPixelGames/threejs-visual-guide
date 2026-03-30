@@ -1,0 +1,286 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<title>Three.js Encyclopedia - HDR Environment</title>
+	<meta charset="utf-8">
+	<meta name="viewport" content="width=device-width, user-scalable=no, minimum-scale=1.0, maximum-scale=1.0">
+	<link rel="stylesheet" href="../shared/demo-base.css">
+	<style>
+		#info {
+			background: rgba(0, 0, 0, 0.75);
+			padding: 10px 20px;
+			border-radius: 8px;
+			width: auto;
+			display: inline-block;
+			left: 50%;
+			transform: translateX(-50%);
+			top: 8px;
+		}
+		#back-btn {
+			text-shadow: 0 0 6px #000, 0 0 3px #000;
+		}
+	</style>
+</head>
+<body>
+	<a href="../index.html" id="back-btn">← Hub</a>
+	<div id="info"><strong>HDR Environment Map</strong><br>High dynamic range lighting with metallic spheres and tone mapping controls</div>
+	<div id="container"></div>
+
+	<script type="importmap">
+	{ "imports": { "three": "https://cdn.jsdelivr.net/npm/three@0.183.0/build/three.module.js", "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.183.0/examples/jsm/" } }
+	</script>
+	<script type="module">
+		import * as THREE from 'three';
+		import { GUI } from 'three/addons/libs/lil-gui.module.min.js';
+		import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+		import { HDRLoader } from 'three/addons/loaders/HDRLoader.js';
+
+		let camera, scene, renderer, controls;
+		let mainSphere;
+		let sphereRow = [];
+
+		const toneMappings = {
+			'ACESFilmic': THREE.ACESFilmicToneMapping,
+			'Cineon': THREE.CineonToneMapping,
+			'Reinhard': THREE.ReinhardToneMapping,
+			'Linear': THREE.LinearToneMapping,
+			'AgX': THREE.AgXToneMapping,
+			'Neutral': THREE.NeutralToneMapping,
+			'None': THREE.NoToneMapping
+		};
+
+		const params = {
+			exposure: 1.0,
+			toneMapping: 'ACESFilmic',
+			backgroundBlurriness: 0.0,
+			backgroundIntensity: 1.0,
+			envMapIntensity: 1.0,
+			mainRoughness: 0.0,
+			mainMetalness: 1.0,
+			mainColor: '#ffffff'
+		};
+
+		init();
+
+		function init() {
+
+			scene = new THREE.Scene();
+
+			renderer = new THREE.WebGLRenderer( { antialias: true } );
+			renderer.setPixelRatio( window.devicePixelRatio );
+			renderer.setSize( window.innerWidth, window.innerHeight );
+			renderer.setAnimationLoop( animate );
+			renderer.toneMapping = THREE.ACESFilmicToneMapping;
+			renderer.toneMappingExposure = params.exposure;
+			document.getElementById( 'container' ).appendChild( renderer.domElement );
+
+			camera = new THREE.PerspectiveCamera( 50, window.innerWidth / window.innerHeight, 0.1, 100 );
+			camera.position.set( 0, 1.5, 8 );
+
+			controls = new OrbitControls( camera, renderer.domElement );
+			controls.enableDamping = true;
+			controls.dampingFactor = 0.05;
+			controls.target.set( 0, 0.5, 0 );
+
+			// Load HDR environment
+			const rgbeLoader = new HDRLoader();
+			rgbeLoader.load( 'https://threejs.org/examples/textures/equirectangular/pedestrian_overpass_1k.hdr', ( texture ) => {
+
+				texture.mapping = THREE.EquirectangularReflectionMapping;
+
+				scene.background = texture;
+				scene.environment = texture;
+				scene.backgroundBlurriness = params.backgroundBlurriness;
+				scene.backgroundIntensity = params.backgroundIntensity;
+
+			} );
+
+			// Main large sphere
+			const mainGeo = new THREE.SphereGeometry( 1.5, 64, 64 );
+			const mainMat = new THREE.MeshStandardMaterial( {
+				color: 0xffffff,
+				metalness: 1.0,
+				roughness: 0.0,
+				envMapIntensity: params.envMapIntensity
+			} );
+			mainSphere = new THREE.Mesh( mainGeo, mainMat );
+			mainSphere.position.set( 0, 1.5, 0 );
+			scene.add( mainSphere );
+
+			// Row of spheres with varying roughness
+			const count = 7;
+			const spacing = 1.6;
+			const startX = - ( count - 1 ) * spacing / 2;
+
+			for ( let i = 0; i < count; i ++ ) {
+
+				const roughness = i / ( count - 1 );
+				const geo = new THREE.SphereGeometry( 0.5, 48, 48 );
+				const mat = new THREE.MeshStandardMaterial( {
+					color: 0xffffff,
+					metalness: 1.0,
+					roughness: roughness,
+					envMapIntensity: params.envMapIntensity
+				} );
+				const s = new THREE.Mesh( geo, mat );
+				s.position.set( startX + i * spacing, - 0.8, 1.5 );
+				scene.add( s );
+				sphereRow.push( s );
+
+			}
+
+			// Row of colored metallic spheres
+			const colors = [ 0xff2222, 0xff8800, 0xffff00, 0x22ff22, 0x2288ff, 0x8822ff, 0xff22ff ];
+
+			for ( let i = 0; i < count; i ++ ) {
+
+				const geo = new THREE.SphereGeometry( 0.35, 32, 32 );
+				const mat = new THREE.MeshStandardMaterial( {
+					color: colors[ i ],
+					metalness: 1.0,
+					roughness: 0.1,
+					envMapIntensity: params.envMapIntensity
+				} );
+				const s = new THREE.Mesh( geo, mat );
+				s.position.set( startX + i * spacing, - 0.8, 3.2 );
+				scene.add( s );
+				sphereRow.push( s );
+
+			}
+
+			// Torus knot (polished chrome)
+			const knotGeo = new THREE.TorusKnotGeometry( 0.8, 0.25, 128, 32 );
+			const knotMat = new THREE.MeshStandardMaterial( {
+				color: 0xffffff,
+				metalness: 1.0,
+				roughness: 0.0,
+				envMapIntensity: params.envMapIntensity
+			} );
+			const knot = new THREE.Mesh( knotGeo, knotMat );
+			knot.position.set( - 3.5, 1.5, - 1 );
+			scene.add( knot );
+			sphereRow.push( knot );
+
+			// Glass-like sphere
+			const glassGeo = new THREE.SphereGeometry( 0.8, 48, 48 );
+			const glassMat = new THREE.MeshPhysicalMaterial( {
+				color: 0xffffff,
+				metalness: 0.0,
+				roughness: 0.0,
+				transmission: 0.95,
+				thickness: 1.5,
+				ior: 1.5,
+				envMapIntensity: params.envMapIntensity
+			} );
+			const glass = new THREE.Mesh( glassGeo, glassMat );
+			glass.position.set( 3.5, 1.0, - 1 );
+			scene.add( glass );
+
+			// Ground plane
+			const groundGeo = new THREE.PlaneGeometry( 20, 20 );
+			const groundMat = new THREE.MeshStandardMaterial( {
+				color: 0x333333,
+				roughness: 0.1,
+				metalness: 0.5,
+				envMapIntensity: params.envMapIntensity
+			} );
+			const ground = new THREE.Mesh( groundGeo, groundMat );
+			ground.rotation.x = - Math.PI / 2;
+			ground.position.y = - 1.3;
+			scene.add( ground );
+			sphereRow.push( ground );
+
+			// GUI
+			const gui = new GUI();
+
+			const toneFolder = gui.addFolder( 'Tone Mapping' );
+			toneFolder.add( params, 'exposure', 0.1, 5, 0.05 ).name( 'Exposure' ).onChange( v => {
+
+				renderer.toneMappingExposure = v;
+
+			} );
+			toneFolder.add( params, 'toneMapping', Object.keys( toneMappings ) ).name( 'Algorithm' ).onChange( v => {
+
+				renderer.toneMapping = toneMappings[ v ];
+
+			} );
+			toneFolder.open();
+
+			const envFolder = gui.addFolder( 'Environment' );
+			envFolder.add( params, 'backgroundBlurriness', 0, 1, 0.01 ).name( 'BG Blur' ).onChange( v => {
+
+				scene.backgroundBlurriness = v;
+
+			} );
+			envFolder.add( params, 'backgroundIntensity', 0, 3, 0.05 ).name( 'BG Intensity' ).onChange( v => {
+
+				scene.backgroundIntensity = v;
+
+			} );
+			envFolder.add( params, 'envMapIntensity', 0, 3, 0.05 ).name( 'Env Intensity' ).onChange( v => {
+
+				scene.traverse( child => {
+
+					if ( child.isMesh && child.material.envMapIntensity !== undefined ) {
+
+						child.material.envMapIntensity = v;
+
+					}
+
+				} );
+
+			} );
+			envFolder.open();
+
+			const mainFolder = gui.addFolder( 'Main Sphere' );
+			mainFolder.add( params, 'mainRoughness', 0, 1, 0.01 ).name( 'Roughness' ).onChange( v => {
+
+				mainSphere.material.roughness = v;
+
+			} );
+			mainFolder.add( params, 'mainMetalness', 0, 1, 0.01 ).name( 'Metalness' ).onChange( v => {
+
+				mainSphere.material.metalness = v;
+
+			} );
+			mainFolder.addColor( params, 'mainColor' ).name( 'Color' ).onChange( v => {
+
+				mainSphere.material.color.set( v );
+
+			} );
+
+			window.addEventListener( 'resize', onWindowResize );
+
+		}
+
+		function onWindowResize() {
+
+			camera.aspect = window.innerWidth / window.innerHeight;
+			camera.updateProjectionMatrix();
+			renderer.setSize( window.innerWidth, window.innerHeight );
+
+		}
+
+		function animate() {
+
+			controls.update();
+
+			const t = performance.now() * 0.001;
+			mainSphere.rotation.y = t * 0.1;
+
+			// Animate the torus knot if present
+			const knot = sphereRow[ 14 ];
+			if ( knot && knot.geometry.type === 'TorusKnotGeometry' ) {
+
+				knot.rotation.x = t * 0.3;
+				knot.rotation.y = t * 0.5;
+
+			}
+
+			renderer.render( scene, camera );
+
+		}
+	</script>
+<script src="../shared/demo-nav.js"></script>
+</body>
+</html>

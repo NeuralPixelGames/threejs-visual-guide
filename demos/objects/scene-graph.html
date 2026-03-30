@@ -1,0 +1,1854 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<title>Scene Graph -- Three.js Encyclopedia v2</title>
+	<meta charset="utf-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<link rel="stylesheet" href="../shared/demo-base.css">
+	<style>
+		/* ── Tree panel ──────────────────────────────────── */
+		#tree-panel {
+			position: fixed;
+			top: 50px;
+			right: 10px;
+			z-index: 10;
+			background: rgba(6, 8, 18, 0.92);
+			backdrop-filter: blur(14px);
+			-webkit-backdrop-filter: blur(14px);
+			border: 1px solid rgba(74, 158, 255, 0.22);
+			border-radius: 12px;
+			padding: 14px 18px;
+			font-family: 'Inter', system-ui, sans-serif;
+			font-size: 12px;
+			color: #c8cee0;
+			min-width: 210px;
+			max-width: 260px;
+			max-height: calc(100vh - 120px);
+			overflow-y: auto;
+			scrollbar-width: thin;
+			scrollbar-color: #1e2740 transparent;
+			box-shadow: 0 8px 36px rgba(0, 0, 0, 0.45), inset 0 1px 0 rgba(255, 255, 255, 0.03);
+			animation: fadeInUp 0.6s ease-out both;
+			animation-delay: 0.5s;
+		}
+		#tree-panel h3 {
+			margin: 0 0 10px 0;
+			font-size: 13px;
+			color: #4a9eff;
+			font-weight: 600;
+			border-bottom: 1px solid rgba(74, 158, 255, 0.15);
+			padding-bottom: 8px;
+			letter-spacing: 0.03em;
+		}
+		.tree-node {
+			padding: 2px 0;
+			cursor: pointer;
+			display: flex;
+			align-items: center;
+			gap: 6px;
+			border-radius: 4px;
+			transition: background 0.15s;
+		}
+		.tree-node:hover {
+			background: rgba(74, 158, 255, 0.08);
+		}
+		.tree-node .dot {
+			width: 8px;
+			height: 8px;
+			border-radius: 50%;
+			flex-shrink: 0;
+			box-shadow: 0 0 4px currentColor;
+		}
+		.tree-node .name {
+			flex: 1;
+			font-size: 11px;
+		}
+		.tree-children {
+			padding-left: 16px;
+			border-left: 1px solid rgba(74, 158, 255, 0.1);
+			margin-left: 3px;
+		}
+		.tree-node.active {
+			background: rgba(74, 158, 255, 0.12);
+		}
+		.tree-node.active .name {
+			color: #4a9eff;
+			font-weight: 600;
+		}
+		.tree-node.highlight .name {
+			color: #fbbf24;
+			font-weight: 600;
+		}
+		.tree-node.highlight {
+			background: rgba(251, 191, 36, 0.1);
+		}
+		.tree-node.selected {
+			background: rgba(251, 191, 36, 0.2);
+			box-shadow: inset 2px 0 0 #fbbf24;
+		}
+		.tree-node.selected .name {
+			color: #fff;
+			font-weight: 700;
+		}
+		.tree-node.selected .dot {
+			box-shadow: 0 0 8px currentColor, 0 0 14px currentColor;
+		}
+
+		/* ── Controls panel ──────────────────────────────── */
+		#controls-panel {
+			position: fixed;
+			top: 50px;
+			left: 10px;
+			z-index: 10;
+			background: rgba(6, 8, 18, 0.92);
+			backdrop-filter: blur(14px);
+			-webkit-backdrop-filter: blur(14px);
+			border: 1px solid rgba(74, 158, 255, 0.22);
+			border-radius: 12px;
+			padding: 14px 18px;
+			font-family: 'Inter', system-ui, sans-serif;
+			font-size: 12px;
+			color: #c8cee0;
+			min-width: 200px;
+			box-shadow: 0 8px 36px rgba(0, 0, 0, 0.45), inset 0 1px 0 rgba(255, 255, 255, 0.03);
+			animation: fadeInUp 0.6s ease-out both;
+			animation-delay: 0.3s;
+		}
+		#controls-panel label {
+			display: flex;
+			align-items: center;
+			gap: 8px;
+			margin-bottom: 8px;
+			cursor: pointer;
+			font-size: 12px;
+		}
+		#controls-panel input[type="range"] {
+			width: 120px;
+			accent-color: #4a9eff;
+		}
+		#controls-panel input[type="checkbox"] {
+			accent-color: #4a9eff;
+		}
+		.ctrl-group {
+			margin-bottom: 10px;
+		}
+		.ctrl-group-title {
+			font-size: 10px;
+			text-transform: uppercase;
+			letter-spacing: 0.1em;
+			color: #4a9eff;
+			margin-bottom: 6px;
+			font-weight: 600;
+		}
+		.speed-display {
+			display: inline-block;
+			min-width: 36px;
+			text-align: right;
+			color: #4a9eff;
+			font-weight: 600;
+			font-variant-numeric: tabular-nums;
+		}
+
+		/* ── Hierarchy path tooltip ──────────────────────── */
+		#hierarchy-path {
+			position: fixed;
+			bottom: 80px;
+			left: 50%;
+			transform: translateX(-50%);
+			z-index: 20;
+			background: rgba(6, 8, 18, 0.95);
+			backdrop-filter: blur(16px);
+			-webkit-backdrop-filter: blur(16px);
+			border: 1px solid rgba(251, 191, 36, 0.35);
+			border-radius: 10px;
+			padding: 12px 20px;
+			font-family: 'JetBrains Mono', 'Fira Code', monospace;
+			font-size: 13px;
+			color: #fbbf24;
+			white-space: nowrap;
+			pointer-events: none;
+			opacity: 0;
+			transition: opacity 0.3s ease;
+			box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5), 0 0 30px rgba(251, 191, 36, 0.06);
+			text-shadow: 0 0 8px rgba(251, 191, 36, 0.3);
+		}
+		#hierarchy-path.visible {
+			opacity: 1;
+		}
+
+		/* ── Style panel ─────────────────────────────────── */
+		.style-panel {
+			position: fixed;
+			bottom: 20px;
+			left: 20px;
+			z-index: 50;
+			max-width: 280px;
+			background: linear-gradient(135deg, rgba(6, 8, 18, 0.92) 0%, rgba(10, 14, 28, 0.88) 100%);
+			backdrop-filter: blur(20px);
+			-webkit-backdrop-filter: blur(20px);
+			border: 1px solid rgba(251, 191, 36, 0.2);
+			border-radius: 14px;
+			padding: 18px 22px;
+			color: #e0e5f0;
+			font-family: 'Inter', system-ui, sans-serif;
+			font-size: 13px;
+			box-shadow: 0 8px 40px rgba(0, 0, 0, 0.5), 0 0 60px rgba(251, 191, 36, 0.04);
+			animation: fadeInUp 0.6s ease-out both;
+			animation-delay: 0.4s;
+		}
+		.style-kicker {
+			display: inline-block;
+			font-size: 10px;
+			font-weight: 600;
+			text-transform: uppercase;
+			letter-spacing: 0.12em;
+			color: #fbbf24;
+			margin-bottom: 6px;
+		}
+		.style-panel h3 {
+			margin: 0 0 8px;
+			font-size: 15px;
+			font-weight: 600;
+			color: #f8fbff;
+		}
+		.style-panel p {
+			margin: 0 0 12px;
+			color: rgba(230, 236, 245, 0.78);
+			line-height: 1.55;
+			font-size: 12px;
+		}
+		.style-chips {
+			display: flex;
+			flex-wrap: wrap;
+			gap: 6px;
+		}
+		.style-chip {
+			display: inline-block;
+			background: rgba(251, 191, 36, 0.1);
+			border: 1px solid rgba(251, 191, 36, 0.25);
+			border-radius: 100px;
+			padding: 3px 10px;
+			font-size: 10px;
+			color: #fbbf24;
+			letter-spacing: 0.03em;
+			white-space: nowrap;
+		}
+		.style-chip.blue {
+			background: rgba(74, 158, 255, 0.1);
+			border-color: rgba(74, 158, 255, 0.25);
+			color: #4a9eff;
+		}
+		.style-chip.purple {
+			background: rgba(168, 85, 247, 0.1);
+			border-color: rgba(168, 85, 247, 0.25);
+			color: #a855f7;
+		}
+
+		/* ── Planet label CSS ────────────────────────────── */
+		.planet-label {
+			position: absolute;
+			color: #e0e5f0;
+			font-family: 'Inter', system-ui, sans-serif;
+			font-size: 11px;
+			font-weight: 500;
+			pointer-events: none;
+			text-shadow: 0 0 6px rgba(0, 0, 0, 0.9), 0 0 12px rgba(0, 0, 0, 0.6);
+			white-space: nowrap;
+			transform: translate(-50%, -100%);
+			letter-spacing: 0.04em;
+			opacity: 0.85;
+		}
+		.planet-label::after {
+			content: '';
+			display: block;
+			width: 1px;
+			height: 8px;
+			background: rgba(255, 255, 255, 0.25);
+			margin: 2px auto 0;
+		}
+
+		@media (max-width: 900px) {
+			#tree-panel {
+				max-width: 180px;
+				padding: 10px 12px;
+				font-size: 11px;
+			}
+			#controls-panel {
+				display: none;
+			}
+			.style-panel {
+				left: 10px;
+				bottom: 10px;
+				max-width: 220px;
+				padding: 12px 14px;
+			}
+		}
+	</style>
+</head>
+<body>
+
+<a href="../index.html" id="back-btn">&larr; Hub</a>
+<div id="info"><strong>Scene Graph</strong> -- Solar system demonstrating parent-child hierarchy -- click a planet to trace its path</div>
+
+<div id="tree-panel">
+	<h3>Scene Hierarchy</h3>
+	<div id="tree-root"></div>
+</div>
+
+<div id="controls-panel">
+	<div class="ctrl-group">
+		<div class="ctrl-group-title">Simulation</div>
+		<label>
+			Speed
+			<input type="range" id="speed-slider" min="0.1" max="100" step="0.1" value="1">
+			<span class="speed-display" id="speed-val">1.0x</span>
+		</label>
+	</div>
+	<div class="ctrl-group">
+		<div class="ctrl-group-title">Display</div>
+		<label>
+			<input type="checkbox" id="toggle-orbits" checked>
+			Orbital Paths
+		</label>
+		<label>
+			<input type="checkbox" id="toggle-labels" checked>
+			Planet Labels
+		</label>
+	</div>
+</div>
+
+<div id="hierarchy-path"></div>
+
+<section class="style-panel">
+	<div class="style-kicker">Objects</div>
+	<h3>Solar System</h3>
+	<p>Every orbit relationship demonstrates a parent-child node in the scene graph. Moons inherit their planet's transform, planets inherit the sun's position at root.</p>
+	<div class="style-chips">
+		<span class="style-chip">scene hierarchy</span>
+		<span class="style-chip blue">parent-child</span>
+		<span class="style-chip purple">orbital mechanics</span>
+	</div>
+</section>
+
+<div id="label-container" style="position:absolute;top:0;left:0;width:100%;height:100%;pointer-events:none;z-index:5;overflow:hidden;"></div>
+
+<script type="importmap">
+{
+	"imports": {
+		"three": "https://cdn.jsdelivr.net/npm/three@0.183.0/build/three.module.js",
+		"three/addons/": "https://cdn.jsdelivr.net/npm/three@0.183.0/examples/jsm/"
+	}
+}
+</script>
+
+<script type="module">
+import * as THREE from 'three';
+import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+import { EffectComposer } from 'three/addons/postprocessing/EffectComposer.js';
+import { RenderPass } from 'three/addons/postprocessing/RenderPass.js';
+import { UnrealBloomPass } from 'three/addons/postprocessing/UnrealBloomPass.js';
+import { OutputPass } from 'three/addons/postprocessing/OutputPass.js';
+
+let renderer, scene, camera, controls, composer;
+let timer;
+let orbitLines = [];
+let labelElements = [];
+let selectedBody = null;
+let selectedTimeout = null;
+let selectionHighlight = null;
+let hierarchyLines = [];
+
+const bodies = {};
+const orbits = {};
+const textureLoader = new THREE.TextureLoader();
+
+const params = {
+	timeScale: 1.0,
+	showOrbits: true,
+	showLabels: true
+};
+
+init();
+
+function init() {
+
+	timer = new THREE.Timer();
+
+	// Renderer
+	renderer = new THREE.WebGLRenderer( { antialias: true } );
+	renderer.setPixelRatio( Math.min( window.devicePixelRatio, 2 ) );
+	renderer.setSize( window.innerWidth, window.innerHeight );
+	renderer.toneMapping = THREE.ACESFilmicToneMapping;
+	renderer.toneMappingExposure = 0.9;
+	document.body.appendChild( renderer.domElement );
+
+	// Scene
+	scene = new THREE.Scene();
+	scene.background = new THREE.Color( 0x020308 );
+	scene.fog = new THREE.FogExp2( 0x020308, 0.006 );
+
+	// Camera
+	camera = new THREE.PerspectiveCamera( 50, window.innerWidth / window.innerHeight, 0.1, 500 );
+	camera.position.set( 12, 28, 45 );
+
+	// Controls
+	controls = new OrbitControls( camera, renderer.domElement );
+	controls.enableDamping = true;
+	controls.dampingFactor = 0.06;
+	controls.target.set( 0, 0, 0 );
+	controls.minDistance = 8;
+	controls.maxDistance = 120;
+	controls.maxPolarAngle = Math.PI * 0.85;
+	controls.update();
+
+	// Post-processing: bloom for the sun
+	const renderPass = new RenderPass( scene, camera );
+	const bloomPass = new UnrealBloomPass(
+		new THREE.Vector2( window.innerWidth, window.innerHeight ),
+		0.8, 0.3, 0.6
+	);
+	const outputPass = new OutputPass();
+
+	composer = new EffectComposer( renderer );
+	composer.addPass( renderPass );
+	composer.addPass( bloomPass );
+	composer.addPass( outputPass );
+
+	// Build
+	buildStarfield();
+	buildSolarSystem();
+	buildTree();
+	setupInteraction();
+	setupControls();
+
+	window.addEventListener( 'resize', onResize );
+	renderer.setAnimationLoop( animate );
+
+}
+
+// ── Starfield ───────────────────────────────────────
+
+function buildStarfield() {
+
+	const count = 6000;
+	const positions = new Float32Array( count * 3 );
+	const colors = new Float32Array( count * 3 );
+	const sizes = new Float32Array( count );
+
+	for ( let i = 0; i < count; i++ ) {
+
+		// Distribute on a sphere shell
+		const theta = Math.random() * Math.PI * 2;
+		const phi = Math.acos( 2 * Math.random() - 1 );
+		const r = 150 + Math.random() * 100;
+
+		positions[ i * 3 ] = r * Math.sin( phi ) * Math.cos( theta );
+		positions[ i * 3 + 1 ] = r * Math.sin( phi ) * Math.sin( theta );
+		positions[ i * 3 + 2 ] = r * Math.cos( phi );
+
+		// Slight color variation: warm white to cool blue
+		const warmth = Math.random();
+		colors[ i * 3 ] = 0.8 + warmth * 0.2;
+		colors[ i * 3 + 1 ] = 0.85 + warmth * 0.15;
+		colors[ i * 3 + 2 ] = 0.95 + Math.random() * 0.05;
+
+		sizes[ i ] = 0.08 + Math.random() * 0.25;
+
+	}
+
+	const starGeo = new THREE.BufferGeometry();
+	starGeo.setAttribute( 'position', new THREE.BufferAttribute( positions, 3 ) );
+	starGeo.setAttribute( 'color', new THREE.BufferAttribute( colors, 3 ) );
+	starGeo.setAttribute( 'size', new THREE.BufferAttribute( sizes, 1 ) );
+
+	const starMat = new THREE.PointsMaterial( {
+		size: 0.2,
+		sizeAttenuation: true,
+		vertexColors: true,
+		transparent: true,
+		opacity: 0.85
+	} );
+
+	scene.add( new THREE.Points( starGeo, starMat ) );
+
+}
+
+// ── Canvas texture helpers ──────────────────────────
+
+function createSunTexture() {
+
+	const canvas = document.createElement( 'canvas' );
+	canvas.width = 512;
+	canvas.height = 256;
+	const ctx = canvas.getContext( '2d' );
+
+	// Base gradient
+	const grad = ctx.createLinearGradient( 0, 0, 0, 256 );
+	grad.addColorStop( 0, '#fff4c0' );
+	grad.addColorStop( 0.3, '#ffcc33' );
+	grad.addColorStop( 0.5, '#ff9900' );
+	grad.addColorStop( 0.7, '#ff6600' );
+	grad.addColorStop( 1, '#cc3300' );
+	ctx.fillStyle = grad;
+	ctx.fillRect( 0, 0, 512, 256 );
+
+	// Turbulence spots
+	for ( let i = 0; i < 200; i++ ) {
+
+		const x = Math.random() * 512;
+		const y = Math.random() * 256;
+		const r = 2 + Math.random() * 12;
+		const alpha = 0.05 + Math.random() * 0.15;
+		ctx.beginPath();
+		ctx.arc( x, y, r, 0, Math.PI * 2 );
+		ctx.fillStyle = `rgba(${180 + Math.random() * 75}, ${Math.random() * 80}, 0, ${alpha})`;
+		ctx.fill();
+
+	}
+
+	// Bright granulation
+	for ( let i = 0; i < 300; i++ ) {
+
+		const x = Math.random() * 512;
+		const y = Math.random() * 256;
+		const r = 1 + Math.random() * 4;
+		ctx.beginPath();
+		ctx.arc( x, y, r, 0, Math.PI * 2 );
+		ctx.fillStyle = `rgba(255, 255, 200, ${0.02 + Math.random() * 0.06})`;
+		ctx.fill();
+
+	}
+
+	const tex = new THREE.CanvasTexture( canvas );
+	tex.colorSpace = THREE.SRGBColorSpace;
+	return tex;
+
+}
+
+// Earth texture now loaded from file (see buildSolarSystem)
+
+function createMarsTexture() {
+
+	const canvas = document.createElement( 'canvas' );
+	canvas.width = 512;
+	canvas.height = 256;
+	const ctx = canvas.getContext( '2d' );
+
+	const grad = ctx.createLinearGradient( 0, 0, 0, 256 );
+	grad.addColorStop( 0, '#c4733a' );
+	grad.addColorStop( 0.3, '#cc5533' );
+	grad.addColorStop( 0.5, '#b84422' );
+	grad.addColorStop( 0.7, '#a03818' );
+	grad.addColorStop( 1, '#8a2e14' );
+	ctx.fillStyle = grad;
+	ctx.fillRect( 0, 0, 512, 256 );
+
+	// Darker regions (Syrtis Major etc.)
+	ctx.fillStyle = 'rgba(80, 30, 10, 0.3)';
+	for ( let i = 0; i < 30; i++ ) {
+
+		ctx.beginPath();
+		ctx.ellipse(
+			Math.random() * 512, Math.random() * 256,
+			10 + Math.random() * 40, 5 + Math.random() * 15,
+			Math.random() * Math.PI, 0, Math.PI * 2
+		);
+		ctx.fill();
+
+	}
+
+	// Polar ice cap
+	ctx.fillStyle = '#d8c8b4';
+	ctx.beginPath();
+	ctx.ellipse( 256, 6, 80, 10, 0, 0, Math.PI * 2 );
+	ctx.fill();
+	ctx.beginPath();
+	ctx.ellipse( 256, 250, 60, 8, 0, 0, Math.PI * 2 );
+	ctx.fill();
+
+	// Impact craters
+	for ( let i = 0; i < 15; i++ ) {
+
+		const cx = Math.random() * 512;
+		const cy = 30 + Math.random() * 196;
+		const cr = 3 + Math.random() * 8;
+		ctx.beginPath();
+		ctx.arc( cx, cy, cr, 0, Math.PI * 2 );
+		ctx.strokeStyle = 'rgba(60, 20, 5, 0.25)';
+		ctx.lineWidth = 1;
+		ctx.stroke();
+
+	}
+
+	const tex = new THREE.CanvasTexture( canvas );
+	tex.colorSpace = THREE.SRGBColorSpace;
+	return tex;
+
+}
+
+function createSaturnTexture() {
+
+	const canvas = document.createElement( 'canvas' );
+	canvas.width = 512;
+	canvas.height = 256;
+	const ctx = canvas.getContext( '2d' );
+
+	// Banded atmosphere
+	const bands = [
+		'#e8d4a0', '#d4b878', '#c4a460', '#dcc890',
+		'#e0cc88', '#c8a858', '#d8c080', '#e4d098',
+		'#caaa60', '#dcc488', '#c0a050', '#d8c080'
+	];
+
+	const bandH = 256 / bands.length;
+
+	for ( let i = 0; i < bands.length; i++ ) {
+
+		ctx.fillStyle = bands[ i ];
+		ctx.fillRect( 0, i * bandH, 512, bandH + 1 );
+
+	}
+
+	// Soft horizontal streaks
+	ctx.globalAlpha = 0.08;
+	for ( let i = 0; i < 60; i++ ) {
+
+		const y = Math.random() * 256;
+		ctx.fillStyle = Math.random() > 0.5 ? '#ffffff' : '#8a7040';
+		ctx.fillRect( 0, y, 512, 1 + Math.random() * 2 );
+
+	}
+
+	ctx.globalAlpha = 1;
+
+	const tex = new THREE.CanvasTexture( canvas );
+	tex.colorSpace = THREE.SRGBColorSpace;
+	return tex;
+
+}
+
+// Moon texture now loaded from file (see buildSolarSystem)
+
+function createRingTexture() {
+
+	const canvas = document.createElement( 'canvas' );
+	canvas.width = 512;
+	canvas.height = 64;
+	const ctx = canvas.getContext( '2d' );
+
+	// Create ring bands with gaps
+	const ringData = [
+		{ start: 0, end: 0.08, opacity: 0.1, color: '#c4a050' },
+		{ start: 0.08, end: 0.12, opacity: 0, color: '#000000' },
+		{ start: 0.12, end: 0.35, opacity: 0.55, color: '#d8bc78' },
+		{ start: 0.35, end: 0.38, opacity: 0.2, color: '#c0a060' },
+		{ start: 0.38, end: 0.42, opacity: 0.05, color: '#aa8844' },
+		{ start: 0.42, end: 0.7, opacity: 0.45, color: '#cbb070' },
+		{ start: 0.7, end: 0.73, opacity: 0.1, color: '#a89050' },
+		{ start: 0.73, end: 0.85, opacity: 0.3, color: '#bca860' },
+		{ start: 0.85, end: 1.0, opacity: 0.08, color: '#998040' },
+	];
+
+	for ( const band of ringData ) {
+
+		const x0 = band.start * 512;
+		const x1 = band.end * 512;
+		ctx.globalAlpha = band.opacity;
+		ctx.fillStyle = band.color;
+		ctx.fillRect( x0, 0, x1 - x0, 64 );
+
+		// Add variation
+		for ( let i = 0; i < ( x1 - x0 ) * 0.5; i++ ) {
+
+			ctx.globalAlpha = band.opacity * ( 0.3 + Math.random() * 0.7 );
+			ctx.fillStyle = Math.random() > 0.5 ? '#e0cc88' : '#9a8040';
+			ctx.fillRect( x0 + Math.random() * ( x1 - x0 ), Math.random() * 64, 1, 64 );
+
+		}
+
+	}
+
+	ctx.globalAlpha = 1;
+
+	const tex = new THREE.CanvasTexture( canvas );
+	tex.colorSpace = THREE.SRGBColorSpace;
+	return tex;
+
+}
+
+// ── Orbit line helper ───────────────────────────────
+
+function createOrbitLine( radius, color, segments = 192 ) {
+
+	const pts = [];
+	for ( let i = 0; i <= segments; i++ ) {
+
+		const angle = ( i / segments ) * Math.PI * 2;
+		pts.push( new THREE.Vector3( Math.cos( angle ) * radius, 0, Math.sin( angle ) * radius ) );
+
+	}
+
+	const geo = new THREE.BufferGeometry().setFromPoints( pts );
+	const mat = new THREE.LineBasicMaterial( {
+		color,
+		transparent: true,
+		opacity: 0.18,
+		depthWrite: false
+	} );
+
+	const line = new THREE.Line( geo, mat );
+	orbitLines.push( line );
+	return line;
+
+}
+
+// ── Sun glow sprite ─────────────────────────────────
+
+function createSunGlowSprite() {
+
+	const canvas = document.createElement( 'canvas' );
+	canvas.width = 256;
+	canvas.height = 256;
+	const ctx = canvas.getContext( '2d' );
+
+	const grad = ctx.createRadialGradient( 128, 128, 0, 128, 128, 128 );
+	grad.addColorStop( 0, 'rgba(255, 220, 80, 0.6)' );
+	grad.addColorStop( 0.15, 'rgba(255, 180, 40, 0.3)' );
+	grad.addColorStop( 0.4, 'rgba(255, 120, 20, 0.1)' );
+	grad.addColorStop( 0.7, 'rgba(255, 80, 0, 0.03)' );
+	grad.addColorStop( 1, 'rgba(255, 40, 0, 0)' );
+	ctx.fillStyle = grad;
+	ctx.fillRect( 0, 0, 256, 256 );
+
+	const tex = new THREE.CanvasTexture( canvas );
+	const spriteMat = new THREE.SpriteMaterial( {
+		map: tex,
+		transparent: true,
+		blending: THREE.AdditiveBlending,
+		depthWrite: false
+	} );
+
+	const sprite = new THREE.Sprite( spriteMat );
+	sprite.scale.set( 14, 14, 1 );
+	return sprite;
+
+}
+
+// ── Sun outer glow (corona) ──────────────────────────
+
+function createSunOuterGlow() {
+
+	const canvas = document.createElement( 'canvas' );
+	canvas.width = 256;
+	canvas.height = 256;
+	const ctx = canvas.getContext( '2d' );
+
+	const grad = ctx.createRadialGradient( 128, 128, 0, 128, 128, 128 );
+	grad.addColorStop( 0, 'rgba(255, 200, 60, 0.35)' );
+	grad.addColorStop( 0.1, 'rgba(255, 160, 30, 0.2)' );
+	grad.addColorStop( 0.25, 'rgba(255, 100, 10, 0.08)' );
+	grad.addColorStop( 0.5, 'rgba(255, 60, 0, 0.02)' );
+	grad.addColorStop( 1, 'rgba(255, 30, 0, 0)' );
+	ctx.fillStyle = grad;
+	ctx.fillRect( 0, 0, 256, 256 );
+
+	const tex = new THREE.CanvasTexture( canvas );
+	const spriteMat = new THREE.SpriteMaterial( {
+		map: tex,
+		transparent: true,
+		blending: THREE.AdditiveBlending,
+		depthWrite: false
+	} );
+
+	const sprite = new THREE.Sprite( spriteMat );
+	sprite.scale.set( 28, 28, 1 );
+	sprite.name = 'OuterGlow';
+	return sprite;
+
+}
+
+// ── Build solar system ──────────────────────────────
+
+function buildSolarSystem() {
+
+	const solarSystem = new THREE.Group();
+	solarSystem.name = 'Solar System';
+	scene.add( solarSystem );
+
+	// Ambient fill
+	scene.add( new THREE.AmbientLight( 0x111122, 0.15 ) );
+
+	// ── Sun ─────────────────────────────
+
+	const sunGeo = new THREE.SphereGeometry( 3, 48, 24 );
+	const sunMat = new THREE.MeshStandardMaterial( {
+		map: createSunTexture(),
+		emissive: 0xffaa33,
+		emissiveIntensity: 2.5,
+		emissiveMap: createSunTexture(),
+		roughness: 1.0,
+		metalness: 0.0
+	} );
+	const sun = new THREE.Mesh( sunGeo, sunMat );
+	sun.name = 'Sun';
+	solarSystem.add( sun );
+	bodies.sun = { mesh: sun, label: 'Sun', color: '#ffdd44' };
+
+	// Sun glow sprite (inner corona)
+	sun.add( createSunGlowSprite() );
+
+	// Sun outer corona glow (larger, softer)
+	sun.add( createSunOuterGlow() );
+
+	// Sun point light
+	const sunLight = new THREE.PointLight( 0xfff4e0, 4, 200, 1.2 );
+	sunLight.castShadow = false;
+	sun.add( sunLight );
+
+	// Secondary dim light for fill on dark sides
+	const fillLight = new THREE.PointLight( 0x334466, 0.3, 200, 2 );
+	fillLight.position.set( 0, 20, 0 );
+	scene.add( fillLight );
+
+	// ── Earth System ────────────────────
+
+	const earthOrbitRadius = 12;
+	const earthOrbitNode = new THREE.Group();
+	earthOrbitNode.name = 'Earth Orbit';
+	solarSystem.add( earthOrbitNode );
+	solarSystem.add( createOrbitLine( earthOrbitRadius, 0x4a9eff ) );
+	orbits.earthOrbit = earthOrbitNode;
+
+	const earthGeo = new THREE.SphereGeometry( 1.0, 48, 24 );
+	const earthDayTex = textureLoader.load( 'https://threejs.org/examples/textures/planets/earth_day_4096.jpg' );
+	earthDayTex.colorSpace = THREE.SRGBColorSpace;
+	const earthNormalTex = textureLoader.load( 'https://threejs.org/examples/textures/planets/earth_normal_2048.jpg' );
+	earthNormalTex.colorSpace = THREE.NoColorSpace;
+	const earthSpecTex = textureLoader.load( 'https://threejs.org/examples/textures/planets/earth_specular_2048.jpg' );
+	earthSpecTex.colorSpace = THREE.NoColorSpace;
+	const earthMat = new THREE.MeshStandardMaterial( {
+		map: earthDayTex,
+		normalMap: earthNormalTex,
+		normalScale: new THREE.Vector2( 0.85, 0.85 ),
+		roughnessMap: earthSpecTex,
+		roughness: 0.55,
+		metalness: 0.1
+	} );
+	const earth = new THREE.Mesh( earthGeo, earthMat );
+	earth.name = 'Earth';
+	earth.position.x = earthOrbitRadius;
+	earthOrbitNode.add( earth );
+	bodies.earth = { mesh: earth, label: 'Earth', color: '#4a9eff' };
+
+	// Earth cloud layer (slightly larger transparent sphere)
+	const cloudGeo = new THREE.SphereGeometry( 1.02, 48, 24 );
+	const cloudTex = textureLoader.load( 'https://threejs.org/examples/textures/planets/earth_clouds_1024.png' );
+	cloudTex.colorSpace = THREE.SRGBColorSpace;
+	const cloudMat = new THREE.MeshStandardMaterial( {
+		map: cloudTex,
+		transparent: true,
+		opacity: 0.45,
+		depthWrite: false,
+		side: THREE.DoubleSide
+	} );
+	const clouds = new THREE.Mesh( cloudGeo, cloudMat );
+	clouds.name = 'Clouds';
+	earth.add( clouds );
+
+	// Earth atmosphere halo
+	const atmosGeo = new THREE.SphereGeometry( 1.06, 32, 16 );
+	const atmosMat = new THREE.MeshBasicMaterial( {
+		color: 0x4488ff,
+		transparent: true,
+		opacity: 0.08,
+		side: THREE.BackSide
+	} );
+	earth.add( new THREE.Mesh( atmosGeo, atmosMat ) );
+
+	// Moon orbit node (child of earth orbit so it follows earth)
+	const moonOrbitRadius = 2.2;
+	const moonOrbitNode = new THREE.Group();
+	moonOrbitNode.name = 'Moon Orbit';
+	moonOrbitNode.position.x = earthOrbitRadius;
+	earthOrbitNode.add( moonOrbitNode );
+	orbits.moonOrbit = moonOrbitNode;
+
+	const moonOLine = createOrbitLine( moonOrbitRadius, 0x888888 );
+	moonOrbitNode.add( moonOLine );
+
+	const moonGeo = new THREE.SphereGeometry( 0.28, 24, 12 );
+	const moonTex = textureLoader.load( 'https://threejs.org/examples/textures/planets/moon_1024.jpg' );
+	moonTex.colorSpace = THREE.SRGBColorSpace;
+	const moonMat = new THREE.MeshStandardMaterial( {
+		map: moonTex,
+		roughness: 0.85,
+		metalness: 0.05
+	} );
+	const moon = new THREE.Mesh( moonGeo, moonMat );
+	moon.name = 'Moon';
+	moon.position.x = moonOrbitRadius;
+	moonOrbitNode.add( moon );
+	bodies.moon = { mesh: moon, label: 'Moon', color: '#aaaaaa' };
+
+	// ── Mars System ─────────────────────
+
+	const marsOrbitRadius = 18;
+	const marsOrbitNode = new THREE.Group();
+	marsOrbitNode.name = 'Mars Orbit';
+	solarSystem.add( marsOrbitNode );
+	solarSystem.add( createOrbitLine( marsOrbitRadius, 0xff6b6b ) );
+	orbits.marsOrbit = marsOrbitNode;
+
+	const marsGeo = new THREE.SphereGeometry( 0.65, 48, 24 );
+	const marsMat = new THREE.MeshStandardMaterial( {
+		map: createMarsTexture(),
+		roughness: 0.7,
+		metalness: 0.15
+	} );
+	const mars = new THREE.Mesh( marsGeo, marsMat );
+	mars.name = 'Mars';
+	mars.position.x = marsOrbitRadius;
+	marsOrbitNode.add( mars );
+	bodies.mars = { mesh: mars, label: 'Mars', color: '#cc4422' };
+
+	// Phobos
+	const phobosOrbitRadius = 1.4;
+	const phobosOrbitNode = new THREE.Group();
+	phobosOrbitNode.name = 'Phobos Orbit';
+	phobosOrbitNode.position.x = marsOrbitRadius;
+	marsOrbitNode.add( phobosOrbitNode );
+	orbits.phobosOrbit = phobosOrbitNode;
+
+	const phobosOLine = createOrbitLine( phobosOrbitRadius, 0x886644 );
+	phobosOrbitNode.add( phobosOLine );
+
+	const phobosGeo = new THREE.SphereGeometry( 0.08, 8, 6 );
+	const phobosMat = new THREE.MeshStandardMaterial( { color: 0x887766, roughness: 0.9 } );
+	const phobos = new THREE.Mesh( phobosGeo, phobosMat );
+	phobos.name = 'Phobos';
+	phobos.position.x = phobosOrbitRadius;
+	phobosOrbitNode.add( phobos );
+	bodies.phobos = { mesh: phobos, label: 'Phobos', color: '#887766' };
+
+	// Deimos
+	const deimosOrbitRadius = 1.9;
+	const deimosOrbitNode = new THREE.Group();
+	deimosOrbitNode.name = 'Deimos Orbit';
+	deimosOrbitNode.position.x = marsOrbitRadius;
+	marsOrbitNode.add( deimosOrbitNode );
+	orbits.deimosOrbit = deimosOrbitNode;
+
+	const deimosOLine = createOrbitLine( deimosOrbitRadius, 0x666688 );
+	deimosOrbitNode.add( deimosOLine );
+
+	const deimosGeo = new THREE.SphereGeometry( 0.06, 8, 6 );
+	const deimosMat = new THREE.MeshStandardMaterial( { color: 0x998877, roughness: 0.9 } );
+	const deimos = new THREE.Mesh( deimosGeo, deimosMat );
+	deimos.name = 'Deimos';
+	deimos.position.x = deimosOrbitRadius;
+	deimosOrbitNode.add( deimos );
+	bodies.deimos = { mesh: deimos, label: 'Deimos', color: '#998877' };
+
+	// ── Asteroid Belt ───────────────────
+
+	buildAsteroidBelt( solarSystem );
+
+	// ── Saturn System ───────────────────
+
+	const saturnOrbitRadius = 32;
+	const saturnOrbitNode = new THREE.Group();
+	saturnOrbitNode.name = 'Saturn Orbit';
+	solarSystem.add( saturnOrbitNode );
+	solarSystem.add( createOrbitLine( saturnOrbitRadius, 0xe8d4a0 ) );
+	orbits.saturnOrbit = saturnOrbitNode;
+
+	const saturnGeo = new THREE.SphereGeometry( 2.2, 48, 24 );
+	const saturnMat = new THREE.MeshStandardMaterial( {
+		map: createSaturnTexture(),
+		roughness: 0.5,
+		metalness: 0.2
+	} );
+	const saturn = new THREE.Mesh( saturnGeo, saturnMat );
+	saturn.name = 'Saturn';
+	saturn.position.x = saturnOrbitRadius;
+	saturnOrbitNode.add( saturn );
+	bodies.saturn = { mesh: saturn, label: 'Saturn', color: '#e8d4a0' };
+
+	// Saturn rings
+	const ringInner = 3.0;
+	const ringOuter = 5.2;
+	const ringGeo = new THREE.RingGeometry( ringInner, ringOuter, 96, 3 );
+
+	// Fix ring UVs for proper radial texture mapping
+	const ringPos = ringGeo.attributes.position;
+	const ringUv = ringGeo.attributes.uv;
+	for ( let i = 0; i < ringPos.count; i++ ) {
+
+		const x = ringPos.getX( i );
+		const z = ringPos.getZ( i );
+		const dist = Math.sqrt( x * x + z * z );
+		ringUv.setXY( i, ( dist - ringInner ) / ( ringOuter - ringInner ), 0.5 );
+
+	}
+
+	const ringTex = createRingTexture();
+	const ringMat = new THREE.MeshBasicMaterial( {
+		map: ringTex,
+		side: THREE.DoubleSide,
+		transparent: true,
+		opacity: 0.85,
+		depthWrite: false
+	} );
+	const ring = new THREE.Mesh( ringGeo, ringMat );
+	ring.rotation.x = - Math.PI / 2;
+	ring.name = 'Rings';
+	saturn.add( ring );
+
+	// Tilt saturn and rings slightly
+	saturn.rotation.z = THREE.MathUtils.degToRad( 26.7 );
+
+	// Titan (Saturn's moon)
+	const titanOrbitRadius = 6.5;
+	const titanOrbitNode = new THREE.Group();
+	titanOrbitNode.name = 'Titan Orbit';
+	titanOrbitNode.position.x = saturnOrbitRadius;
+	saturnOrbitNode.add( titanOrbitNode );
+	orbits.titanOrbit = titanOrbitNode;
+
+	const titanOLine = createOrbitLine( titanOrbitRadius, 0xccaa66 );
+	titanOrbitNode.add( titanOLine );
+
+	const titanGeo = new THREE.SphereGeometry( 0.32, 24, 12 );
+	const titanMat = new THREE.MeshStandardMaterial( { color: 0xddaa55, roughness: 0.6, metalness: 0.1 } );
+	const titan = new THREE.Mesh( titanGeo, titanMat );
+	titan.name = 'Titan';
+	titan.position.x = titanOrbitRadius;
+	titanOrbitNode.add( titan );
+	bodies.titan = { mesh: titan, label: 'Titan', color: '#ddaa55' };
+
+	// Titan atmosphere haze
+	const titanAtmosGeo = new THREE.SphereGeometry( 0.38, 16, 8 );
+	const titanAtmosMat = new THREE.MeshBasicMaterial( {
+		color: 0xddaa44,
+		transparent: true,
+		opacity: 0.06,
+		side: THREE.BackSide
+	} );
+	titan.add( new THREE.Mesh( titanAtmosGeo, titanAtmosMat ) );
+
+	// Create labels for all bodies
+	for ( const [ key, data ] of Object.entries( bodies ) ) {
+
+		createLabel( key, data.label, data.color );
+
+	}
+
+}
+
+// ── Asteroid Belt ───────────────────────────────────
+
+function buildAsteroidBelt( parent ) {
+
+	const count = 600;
+	const innerR = 22;
+	const outerR = 26;
+
+	const dummy = new THREE.Object3D();
+
+	// Use a rough rock geometry
+	const rockGeo = new THREE.IcosahedronGeometry( 0.08, 0 );
+	const rockMat = new THREE.MeshStandardMaterial( {
+		color: 0x888080,
+		roughness: 0.9,
+		metalness: 0.2,
+		flatShading: true
+	} );
+
+	const instanced = new THREE.InstancedMesh( rockGeo, rockMat, count );
+	instanced.name = 'Asteroid Belt';
+
+	const color = new THREE.Color();
+
+	for ( let i = 0; i < count; i++ ) {
+
+		const angle = Math.random() * Math.PI * 2;
+		const r = innerR + Math.random() * ( outerR - innerR );
+		const y = ( Math.random() - 0.5 ) * 1.2;
+
+		dummy.position.set(
+			Math.cos( angle ) * r,
+			y,
+			Math.sin( angle ) * r
+		);
+
+		const s = 0.3 + Math.random() * 1.5;
+		dummy.scale.set( s, s * ( 0.5 + Math.random() * 0.5 ), s );
+		dummy.rotation.set( Math.random() * Math.PI, Math.random() * Math.PI, 0 );
+		dummy.updateMatrix();
+		instanced.setMatrixAt( i, dummy.matrix );
+
+		const brightness = 0.4 + Math.random() * 0.3;
+		color.setRGB( brightness, brightness * 0.95, brightness * 0.9 );
+		instanced.setColorAt( i, color );
+
+	}
+
+	parent.add( instanced );
+
+	// Subtle orbit lines for belt boundaries
+	const beltLineInner = createOrbitLine( innerR, 0x444444 );
+	beltLineInner.material.opacity = 0.06;
+	parent.add( beltLineInner );
+
+	const beltLineOuter = createOrbitLine( outerR, 0x444444 );
+	beltLineOuter.material.opacity = 0.06;
+	parent.add( beltLineOuter );
+
+}
+
+// ── Labels ──────────────────────────────────────────
+
+function createLabel( id, text, color ) {
+
+	const container = document.getElementById( 'label-container' );
+	const el = document.createElement( 'div' );
+	el.className = 'planet-label';
+	el.textContent = text;
+	el.style.color = color;
+	container.appendChild( el );
+	labelElements.push( { el, id } );
+
+}
+
+function updateLabels() {
+
+	const w2 = window.innerWidth / 2;
+	const h2 = window.innerHeight / 2;
+	const vec = new THREE.Vector3();
+
+	for ( const lbl of labelElements ) {
+
+		const data = bodies[ lbl.id ];
+		if ( ! data ) continue;
+
+		data.mesh.getWorldPosition( vec );
+
+		// Offset above the body
+		const bodyR = data.mesh.geometry.parameters.radius || 0.5;
+		vec.y += bodyR + 0.5;
+
+		vec.project( camera );
+
+		if ( vec.z > 1 ) {
+
+			lbl.el.style.display = 'none';
+			continue;
+
+		}
+
+		lbl.el.style.display = params.showLabels ? '' : 'none';
+		lbl.el.style.left = ( vec.x * w2 + w2 ) + 'px';
+		lbl.el.style.top = ( - vec.y * h2 + h2 ) + 'px';
+
+	}
+
+}
+
+// ── Scene Tree ──────────────────────────────────────
+
+function buildTree() {
+
+	const root = document.getElementById( 'tree-root' );
+
+	const treeData = {
+		name: 'Scene', color: '#6b7394', children: [
+			{ name: 'Sun', color: '#ffdd44', id: 'sun', children: [
+				{ name: 'Glow Sprite', color: '#ff9900' },
+				{ name: 'Point Light', color: '#fff4e0' }
+			] },
+			{ name: 'Earth Orbit', color: '#4a9eff', id: 'earthOrbit', children: [
+				{ name: 'Earth', color: '#4a9eff', id: 'earth', children: [
+					{ name: 'Atmosphere', color: '#4488ff' }
+				] },
+				{ name: 'Moon Orbit', color: '#888888', id: 'moonOrbit', children: [
+					{ name: 'Moon', color: '#aaaaaa', id: 'moon' }
+				] }
+			] },
+			{ name: 'Mars Orbit', color: '#ff6b6b', id: 'marsOrbit', children: [
+				{ name: 'Mars', color: '#cc4422', id: 'mars' },
+				{ name: 'Phobos Orbit', color: '#886644', id: 'phobosOrbit', children: [
+					{ name: 'Phobos', color: '#887766', id: 'phobos' }
+				] },
+				{ name: 'Deimos Orbit', color: '#666688', id: 'deimosOrbit', children: [
+					{ name: 'Deimos', color: '#998877', id: 'deimos' }
+				] }
+			] },
+			{ name: 'Asteroid Belt', color: '#888080' },
+			{ name: 'Saturn Orbit', color: '#e8d4a0', id: 'saturnOrbit', children: [
+				{ name: 'Saturn', color: '#e8d4a0', id: 'saturn', children: [
+					{ name: 'Rings', color: '#d8bc78' }
+				] },
+				{ name: 'Titan Orbit', color: '#ccaa66', id: 'titanOrbit', children: [
+					{ name: 'Titan', color: '#ddaa55', id: 'titan' }
+				] }
+			] },
+			{ name: 'Starfield', color: '#556688' }
+		]
+	};
+
+	function renderNode( node, container ) {
+
+		const nodeEl = document.createElement( 'div' );
+		nodeEl.className = 'tree-node';
+		if ( node.id ) nodeEl.dataset.id = node.id;
+
+		const dot = document.createElement( 'span' );
+		dot.className = 'dot';
+		dot.style.backgroundColor = node.color;
+		dot.style.color = node.color;
+		nodeEl.appendChild( dot );
+
+		const name = document.createElement( 'span' );
+		name.className = 'name';
+		name.textContent = node.name;
+		nodeEl.appendChild( name );
+
+		container.appendChild( nodeEl );
+
+		if ( node.children ) {
+
+			const childContainer = document.createElement( 'div' );
+			childContainer.className = 'tree-children';
+			container.appendChild( childContainer );
+			node.children.forEach( child => renderNode( child, childContainer ) );
+
+		}
+
+	}
+
+	renderNode( treeData, root );
+
+}
+
+// ── Interaction: click to select planet ─────────────
+
+function setupInteraction() {
+
+	const raycaster = new THREE.Raycaster();
+	const mouse = new THREE.Vector2();
+	const hierarchyEl = document.getElementById( 'hierarchy-path' );
+
+	renderer.domElement.addEventListener( 'click', ( event ) => {
+
+		mouse.x = ( event.clientX / window.innerWidth ) * 2 - 1;
+		mouse.y = - ( event.clientY / window.innerHeight ) * 2 + 1;
+
+		raycaster.setFromCamera( mouse, camera );
+
+		const meshes = [];
+		for ( const [ , data ] of Object.entries( bodies ) ) {
+
+			meshes.push( data.mesh );
+
+		}
+
+		const intersects = raycaster.intersectObjects( meshes );
+
+		if ( intersects.length > 0 ) {
+
+			const hit = intersects[ 0 ].object;
+			const path = getHierarchyPath( hit );
+
+			hierarchyEl.textContent = path;
+			hierarchyEl.classList.add( 'visible' );
+
+			// Find the body key for highlighting
+			let hitKey = null;
+			for ( const [ key, data ] of Object.entries( bodies ) ) {
+
+				if ( data.mesh === hit ) {
+
+					hitKey = key;
+					break;
+
+				}
+
+			}
+
+			highlightTreePath( hitKey );
+			highlightBody3D( hitKey );
+			showHierarchyLines( hitKey );
+
+			clearTimeout( selectedTimeout );
+			selectedTimeout = setTimeout( () => {
+
+				hierarchyEl.classList.remove( 'visible' );
+				clearTreeHighlights();
+				clearHighlight3D();
+				clearHierarchyLines();
+
+			}, 4000 );
+
+		}
+
+	} );
+
+}
+
+function getHierarchyPath( obj ) {
+
+	const parts = [];
+	let current = obj;
+	while ( current ) {
+
+		if ( current.name && current.name !== '' ) {
+
+			parts.unshift( current.name );
+
+		}
+
+		current = current.parent;
+
+	}
+
+	return parts.join( ' > ' );
+
+}
+
+function highlightTreePath( bodyId ) {
+
+	clearTreeHighlights();
+
+	if ( ! bodyId ) return;
+
+	// Build set of all IDs in the path to this body
+	const pathIds = new Set();
+
+	// Map body to its orbit ancestors
+	const parentMap = {
+		moon: [ 'moonOrbit', 'earthOrbit' ],
+		earth: [ 'earthOrbit' ],
+		phobos: [ 'phobosOrbit', 'marsOrbit' ],
+		deimos: [ 'deimosOrbit', 'marsOrbit' ],
+		mars: [ 'marsOrbit' ],
+		saturn: [ 'saturnOrbit' ],
+		titan: [ 'titanOrbit', 'saturnOrbit' ],
+		sun: []
+	};
+
+	if ( parentMap[ bodyId ] ) {
+
+		parentMap[ bodyId ].forEach( id => pathIds.add( id ) );
+
+	}
+
+	const treeNodes = document.querySelectorAll( '.tree-node' );
+	treeNodes.forEach( node => {
+
+		const id = node.dataset.id;
+		if ( id === bodyId ) {
+
+			node.classList.add( 'selected' );
+
+		} else if ( id && pathIds.has( id ) ) {
+
+			node.classList.add( 'highlight' );
+
+		}
+
+	} );
+
+}
+
+function clearTreeHighlights() {
+
+	document.querySelectorAll( '.tree-node.highlight' ).forEach( n => n.classList.remove( 'highlight' ) );
+	document.querySelectorAll( '.tree-node.selected' ).forEach( n => n.classList.remove( 'selected' ) );
+
+}
+
+// ── 3D Selection Highlight ──────────────────────────
+
+function highlightBody3D( bodyKey ) {
+
+	clearHighlight3D();
+
+	if ( ! bodyKey || ! bodies[ bodyKey ] ) return;
+
+	const mesh = bodies[ bodyKey ].mesh;
+	const bodyColor = new THREE.Color( bodies[ bodyKey ].color );
+
+	// Create a pulsing outline shell around the selected body
+	const radius = mesh.geometry.parameters.radius || 0.5;
+	const shellGeo = new THREE.SphereGeometry( radius * 1.25, 32, 16 );
+	const shellMat = new THREE.MeshBasicMaterial( {
+		color: bodyColor,
+		transparent: true,
+		opacity: 0.25,
+		side: THREE.BackSide,
+		depthWrite: false,
+		blending: THREE.AdditiveBlending
+	} );
+
+	selectionHighlight = new THREE.Mesh( shellGeo, shellMat );
+	selectionHighlight.name = '__selectionHighlight__';
+	selectionHighlight.userData.baseColor = bodyColor.clone();
+	timer.update();
+	selectionHighlight.userData.startTime = timer.getElapsed();
+	mesh.add( selectionHighlight );
+
+	selectedBody = bodyKey;
+
+}
+
+function clearHighlight3D() {
+
+	if ( selectionHighlight && selectionHighlight.parent ) {
+
+		selectionHighlight.parent.remove( selectionHighlight );
+		selectionHighlight.geometry.dispose();
+		selectionHighlight.material.dispose();
+
+	}
+
+	selectionHighlight = null;
+	selectedBody = null;
+
+}
+
+function updateHighlight3D() {
+
+	if ( ! selectionHighlight ) return;
+
+	timer.update();
+	const elapsed = timer.getElapsed() - selectionHighlight.userData.startTime;
+	const pulse = 1.15 + Math.sin( elapsed * 4.0 ) * 0.1;
+	selectionHighlight.scale.set( pulse, pulse, pulse );
+	selectionHighlight.material.opacity = 0.2 + Math.sin( elapsed * 3.0 ) * 0.1;
+
+}
+
+// ── Hierarchy Connection Lines ─────────────────────
+
+function showHierarchyLines( bodyKey ) {
+
+	clearHierarchyLines();
+
+	if ( ! bodyKey ) return;
+
+	// Determine which mesh/group to use as root for drawing lines
+	const bodyMesh = bodies[ bodyKey ] ? bodies[ bodyKey ].mesh : null;
+	const orbitGroup = orbits[ bodyKey ];
+	const targetObj = bodyMesh || orbitGroup;
+	if ( ! targetObj ) return;
+
+	// Walk up from the target to the solar system root, drawing lines
+	const lineMat = new THREE.LineBasicMaterial( {
+		color: 0xfbbf24,
+		transparent: true,
+		opacity: 0.5,
+		depthWrite: false,
+		depthTest: true
+	} );
+
+	// Draw line from this object up to its parent body, and down to children bodies
+	const worldPos = new THREE.Vector3();
+	targetObj.getWorldPosition( worldPos );
+
+	// Find parent body in the hierarchy
+	const parentChain = getParentBodies( bodyKey );
+	for ( const parentKey of parentChain ) {
+
+		const parentMesh = bodies[ parentKey ] ? bodies[ parentKey ].mesh : null;
+		const parentOrbit = orbits[ parentKey ];
+		const parentObj = parentMesh || parentOrbit;
+		if ( ! parentObj ) continue;
+
+		const parentPos = new THREE.Vector3();
+		parentObj.getWorldPosition( parentPos );
+
+		const geo = new THREE.BufferGeometry().setFromPoints( [ worldPos, parentPos ] );
+		const line = new THREE.Line( geo, lineMat.clone() );
+		line.renderOrder = 999;
+		line.name = '__hierarchyLine__';
+		scene.add( line );
+		hierarchyLines.push( line );
+
+	}
+
+	// Draw lines to child bodies
+	const childKeys = getChildBodies( bodyKey );
+	for ( const childKey of childKeys ) {
+
+		const childMesh = bodies[ childKey ] ? bodies[ childKey ].mesh : null;
+		const childOrbit = orbits[ childKey ];
+		const childObj = childMesh || childOrbit;
+		if ( ! childObj ) continue;
+
+		const childPos = new THREE.Vector3();
+		childObj.getWorldPosition( childPos );
+
+		const geo = new THREE.BufferGeometry().setFromPoints( [ worldPos, childPos ] );
+		const childLineMat = new THREE.LineBasicMaterial( {
+			color: new THREE.Color( bodies[ childKey ] ? bodies[ childKey ].color : '#fbbf24' ),
+			transparent: true,
+			opacity: 0.4,
+			depthWrite: false,
+			depthTest: true
+		} );
+		const line = new THREE.Line( geo, childLineMat );
+		line.renderOrder = 999;
+		line.name = '__hierarchyLine__';
+		scene.add( line );
+		hierarchyLines.push( line );
+
+	}
+
+}
+
+function getParentBodies( key ) {
+
+	const parentMap = {
+		sun: [],
+		earth: [ 'sun' ],
+		moon: [ 'earth', 'sun' ],
+		mars: [ 'sun' ],
+		phobos: [ 'mars', 'sun' ],
+		deimos: [ 'mars', 'sun' ],
+		saturn: [ 'sun' ],
+		titan: [ 'saturn', 'sun' ],
+		earthOrbit: [ 'sun' ],
+		moonOrbit: [ 'earth', 'sun' ],
+		marsOrbit: [ 'sun' ],
+		phobosOrbit: [ 'mars', 'sun' ],
+		deimosOrbit: [ 'mars', 'sun' ],
+		saturnOrbit: [ 'sun' ],
+		titanOrbit: [ 'saturn', 'sun' ]
+	};
+
+	return parentMap[ key ] || [];
+
+}
+
+function getChildBodies( key ) {
+
+	const childMap = {
+		sun: [ 'earth', 'mars', 'saturn' ],
+		earth: [ 'moon' ],
+		mars: [ 'phobos', 'deimos' ],
+		saturn: [ 'titan' ],
+		earthOrbit: [ 'earth' ],
+		moonOrbit: [ 'moon' ],
+		marsOrbit: [ 'mars' ],
+		phobosOrbit: [ 'phobos' ],
+		deimosOrbit: [ 'deimos' ],
+		saturnOrbit: [ 'saturn' ],
+		titanOrbit: [ 'titan' ]
+	};
+
+	return childMap[ key ] || [];
+
+}
+
+function updateHierarchyLines() {
+
+	// Update line positions since planets are moving
+	for ( const line of hierarchyLines ) {
+
+		// Lines get stale as objects orbit; we rebuild each frame
+		// (simpler and guarantees correctness)
+
+	}
+
+	// Instead of patching geometry, just rebuild if lines exist
+	if ( hierarchyLines.length > 0 && selectedBody ) {
+
+		const bodyMesh = bodies[ selectedBody ] ? bodies[ selectedBody ].mesh : null;
+		const orbitGroup = orbits[ selectedBody ];
+		const targetObj = bodyMesh || orbitGroup;
+		if ( ! targetObj ) return;
+
+		const worldPos = new THREE.Vector3();
+		targetObj.getWorldPosition( worldPos );
+
+		let lineIdx = 0;
+
+		// Update parent lines
+		const parentChain = getParentBodies( selectedBody );
+		for ( const parentKey of parentChain ) {
+
+			if ( lineIdx >= hierarchyLines.length ) break;
+			const parentMesh = bodies[ parentKey ] ? bodies[ parentKey ].mesh : null;
+			const parentOrbit = orbits[ parentKey ];
+			const parentObj = parentMesh || parentOrbit;
+			if ( ! parentObj ) { lineIdx++; continue; }
+
+			const parentPos = new THREE.Vector3();
+			parentObj.getWorldPosition( parentPos );
+
+			const positions = hierarchyLines[ lineIdx ].geometry.attributes.position;
+			positions.setXYZ( 0, worldPos.x, worldPos.y, worldPos.z );
+			positions.setXYZ( 1, parentPos.x, parentPos.y, parentPos.z );
+			positions.needsUpdate = true;
+			lineIdx++;
+
+		}
+
+		// Update child lines
+		const childKeys = getChildBodies( selectedBody );
+		for ( const childKey of childKeys ) {
+
+			if ( lineIdx >= hierarchyLines.length ) break;
+			const childMesh = bodies[ childKey ] ? bodies[ childKey ].mesh : null;
+			const childOrbit = orbits[ childKey ];
+			const childObj = childMesh || childOrbit;
+			if ( ! childObj ) { lineIdx++; continue; }
+
+			const childPos = new THREE.Vector3();
+			childObj.getWorldPosition( childPos );
+
+			const positions = hierarchyLines[ lineIdx ].geometry.attributes.position;
+			positions.setXYZ( 0, worldPos.x, worldPos.y, worldPos.z );
+			positions.setXYZ( 1, childPos.x, childPos.y, childPos.z );
+			positions.needsUpdate = true;
+			lineIdx++;
+
+		}
+
+	}
+
+}
+
+function clearHierarchyLines() {
+
+	for ( const line of hierarchyLines ) {
+
+		scene.remove( line );
+		line.geometry.dispose();
+		line.material.dispose();
+
+	}
+
+	hierarchyLines = [];
+
+}
+
+// ── Controls binding ────────────────────────────────
+
+function setupControls() {
+
+	const speedSlider = document.getElementById( 'speed-slider' );
+	const speedVal = document.getElementById( 'speed-val' );
+	const toggleOrbits = document.getElementById( 'toggle-orbits' );
+	const toggleLabels = document.getElementById( 'toggle-labels' );
+
+	speedSlider.addEventListener( 'input', () => {
+
+		params.timeScale = parseFloat( speedSlider.value );
+		speedVal.textContent = params.timeScale.toFixed( 1 ) + 'x';
+
+	} );
+
+	toggleOrbits.addEventListener( 'change', () => {
+
+		params.showOrbits = toggleOrbits.checked;
+		orbitLines.forEach( l => l.visible = params.showOrbits );
+
+	} );
+
+	toggleLabels.addEventListener( 'change', () => {
+
+		params.showLabels = toggleLabels.checked;
+
+	} );
+
+	// Also allow clicking tree nodes to fly to that body
+	document.querySelectorAll( '.tree-node[data-id]' ).forEach( node => {
+
+		node.addEventListener( 'click', () => {
+
+			const id = node.dataset.id;
+
+			if ( bodies[ id ] ) {
+
+				const worldPos = new THREE.Vector3();
+				bodies[ id ].mesh.getWorldPosition( worldPos );
+
+				const hierarchyEl = document.getElementById( 'hierarchy-path' );
+				const path = getHierarchyPath( bodies[ id ].mesh );
+				hierarchyEl.textContent = path;
+				hierarchyEl.classList.add( 'visible' );
+
+				highlightTreePath( id );
+				highlightBody3D( id );
+				showHierarchyLines( id );
+
+				clearTimeout( selectedTimeout );
+				selectedTimeout = setTimeout( () => {
+
+					hierarchyEl.classList.remove( 'visible' );
+					clearTreeHighlights();
+					clearHighlight3D();
+					clearHierarchyLines();
+
+				}, 4000 );
+
+			} else if ( orbits[ id ] ) {
+
+				highlightTreePath( id );
+				showHierarchyLines( id );
+
+				clearTimeout( selectedTimeout );
+				selectedTimeout = setTimeout( () => {
+
+					clearTreeHighlights();
+					clearHierarchyLines();
+
+				}, 4000 );
+
+			}
+
+		} );
+
+	} );
+
+}
+
+// ── Resize ──────────────────────────────────────────
+
+function onResize() {
+
+	camera.aspect = window.innerWidth / window.innerHeight;
+	camera.updateProjectionMatrix();
+	renderer.setSize( window.innerWidth, window.innerHeight );
+	composer.setSize( window.innerWidth, window.innerHeight );
+
+}
+
+// ── Animation ───────────────────────────────────────
+
+function animate() {
+
+	controls.update();
+
+	timer.update();
+	const dt = timer.getDelta();
+	timer.update();
+	const time = timer.getElapsed() * params.timeScale;
+
+	// Sun self-rotation + texture scroll feel
+	if ( bodies.sun ) bodies.sun.mesh.rotation.y = time * 0.08;
+
+	// Sun glow pulsation
+	const glowSprite = bodies.sun.mesh.children[ 0 ];
+	if ( glowSprite && glowSprite.isSprite ) {
+
+		const pulse = 14 + Math.sin( time * 1.5 ) * 1.2;
+		glowSprite.scale.set( pulse, pulse, 1 );
+		glowSprite.material.opacity = 0.8 + Math.sin( time * 2.3 ) * 0.15;
+
+	}
+
+	// Outer corona pulsation (slower, larger)
+	const outerGlow = bodies.sun.mesh.getObjectByName( 'OuterGlow' );
+	if ( outerGlow && outerGlow.isSprite ) {
+
+		const outerPulse = 28 + Math.sin( time * 0.7 ) * 2.5;
+		outerGlow.scale.set( outerPulse, outerPulse, 1 );
+		outerGlow.material.opacity = 0.5 + Math.sin( time * 1.1 ) * 0.12;
+
+	}
+
+	// Sun emissive pulsation
+	if ( bodies.sun.mesh.material.emissiveIntensity !== undefined ) {
+
+		bodies.sun.mesh.material.emissiveIntensity = 2.5 + Math.sin( time * 1.8 ) * 0.6;
+
+	}
+
+	// Earth system
+	if ( orbits.earthOrbit ) orbits.earthOrbit.rotation.y = time * 0.5;
+	if ( bodies.earth ) bodies.earth.mesh.rotation.y = time * 2.5;
+	// Cloud layer rotates slightly faster than Earth surface for drift effect
+	if ( bodies.earth && bodies.earth.mesh.getObjectByName( 'Clouds' ) ) {
+
+		bodies.earth.mesh.getObjectByName( 'Clouds' ).rotation.y = time * 2.8;
+
+	}
+	if ( orbits.moonOrbit ) orbits.moonOrbit.rotation.y = time * 2.0;
+	if ( bodies.moon ) bodies.moon.mesh.rotation.y = time * 1.5;
+
+	// Mars system
+	if ( orbits.marsOrbit ) orbits.marsOrbit.rotation.y = time * 0.32;
+	if ( bodies.mars ) bodies.mars.mesh.rotation.y = time * 2.4;
+	if ( orbits.phobosOrbit ) orbits.phobosOrbit.rotation.y = time * 4.0;
+	if ( orbits.deimosOrbit ) orbits.deimosOrbit.rotation.y = time * 2.5;
+
+	// Saturn system
+	if ( orbits.saturnOrbit ) orbits.saturnOrbit.rotation.y = time * 0.15;
+	if ( bodies.saturn ) bodies.saturn.mesh.rotation.y = time * 3.0;
+	if ( orbits.titanOrbit ) orbits.titanOrbit.rotation.y = time * 0.8;
+	if ( bodies.titan ) bodies.titan.mesh.rotation.y = time * 0.6;
+
+	// Tree: highlight body closest to camera view center
+	updateTreeActiveState();
+
+	// Update 3D selection highlight pulse
+	updateHighlight3D();
+
+	// Update hierarchy connection lines (follow orbiting objects)
+	updateHierarchyLines();
+
+	// Labels
+	updateLabels();
+
+	// Render with bloom
+	composer.render();
+
+}
+
+function updateTreeActiveState() {
+
+	const cameraDir = new THREE.Vector3();
+	camera.getWorldDirection( cameraDir );
+	const cameraPos = camera.position.clone();
+
+	const treeNodes = document.querySelectorAll( '.tree-node[data-id]' );
+	let bestDot = - 1;
+	let bestNode = null;
+
+	treeNodes.forEach( node => {
+
+		node.classList.remove( 'active' );
+		const id = node.dataset.id;
+
+		if ( bodies[ id ] ) {
+
+			const worldPos = new THREE.Vector3();
+			bodies[ id ].mesh.getWorldPosition( worldPos );
+			const toBody = worldPos.clone().sub( cameraPos ).normalize();
+			const dot = cameraDir.dot( toBody );
+
+			if ( dot > bestDot ) {
+
+				bestDot = dot;
+				bestNode = node;
+
+			}
+
+		}
+
+	} );
+
+	if ( bestNode && bestDot > 0.9 ) {
+
+		bestNode.classList.add( 'active' );
+
+	}
+
+}
+
+</script>
+<script src="../shared/demo-nav.js"></script>
+</body>
+</html>

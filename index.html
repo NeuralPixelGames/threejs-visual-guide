@@ -3,10 +3,10 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Three.js Visual Encyclopedia - A Complete Visual Guide</title>
-<meta name="description" content="Every Three.js concept explained visually - 96 illustrated breakdowns covering geometry, materials, cameras, shaders, physics, audio and more. Built for visual learners.">
-<meta property="og:title" content="Three.js Visual Encyclopedia">
-<meta property="og:description" content="96 visual breakdowns covering every Three.js concept. For visual learners.">
+<title>Three.js Visual &amp; Interactive Encyclopedia - A Complete Guide</title>
+<meta name="description" content="Every Three.js concept explained visually and interactively - 96 illustrated breakdowns plus hands-on interactive demos covering geometry, materials, cameras, shaders, physics, audio and more. Built for visual learners.">
+<meta property="og:title" content="Three.js Visual &amp; Interactive Encyclopedia">
+<meta property="og:description" content="96 visual breakdowns plus interactive demos covering every Three.js concept. For visual learners.">
 <meta property="og:image" content="images/encyclopedia/01_hero.webp">
 <style>
 :root {
@@ -315,6 +315,39 @@ footer p { color:var(--muted); font-size:0.82rem; }
   .hero-badges { gap: 0.4rem; }
   .badge { font-size: 0.7rem; padding: 0.25rem 0.75rem; }
 }
+
+/* ─── INTERACTIVE GUIDE NAV LINK ─── */
+nav a.nav-interactive {
+  color: var(--green);
+  font-weight: 700;
+  background: rgba(0,255,136,0.08);
+  border-left: 1px solid rgba(0,255,136,0.2);
+  border-right: 1px solid rgba(0,255,136,0.2);
+}
+nav a.nav-interactive:hover {
+  color: #fff;
+  background: rgba(0,255,136,0.18);
+}
+
+/* ─── INTERACTIVE DEMO BUTTON (section headers) ─── */
+.demo-link {
+  display:inline-flex; align-items:center; gap:0.35rem;
+  padding:0.3rem 0.85rem; border-radius:6px; font-size:0.78rem; font-weight:600;
+  background:rgba(0,255,136,0.1); border:1px solid rgba(0,255,136,0.3);
+  color:var(--green); text-decoration:none; transition:all 0.2s;
+  white-space:nowrap;
+}
+.demo-link:hover { background:rgba(0,255,136,0.22); border-color:rgba(0,255,136,0.6); color:#fff; }
+
+/* ─── GREEN CTA BUTTON ─── */
+.btn-g {
+  background: var(--green); color: #040812;
+  box-shadow: 0 4px 24px rgba(0,255,136,0.4);
+}
+.btn-g:hover {
+  box-shadow: 0 4px 40px rgba(0,255,136,0.7);
+  transform: translateY(-2px);
+}
 </style>
 </head>
 <body>
@@ -341,6 +374,7 @@ footer p { color:var(--muted); font-size:0.82rem; }
   <a href="#helpers">Helpers</a>
   <a href="#curves">Curves</a>
   <a href="#math">Math</a>
+  <a href="demos/index.html" class="nav-interactive">&#9655; Interactive Guide</a>
   <a href="https://github.com/sponsors/web3dev1337" target="_blank" rel="noopener">Sponsor</a>
 </nav>
 
@@ -362,6 +396,7 @@ footer p { color:var(--muted); font-size:0.82rem; }
   </div>
   <div class="hero-cta">
     <a href="#video" class="btn btn-p">▶ Watch Full Video</a>
+    <a href="demos/index.html" class="btn btn-g">&#9655; Interactive Guide</a>
     <a href="https://x.com/AIOnlyDeveloper" target="_blank" class="twitter-cta">
       <svg width="16" height="16" viewBox="0 0 24 24" fill="white"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-4.714-6.231-5.401 6.231H2.747l7.73-8.835L1.254 2.25H8.08l4.259 5.63zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg>
       Follow for More
@@ -426,6 +461,7 @@ renderer.<span class="fn">setAnimationLoop</span>( () => renderer.<span class="f
   <div class="section-break-header">
     <span class="section-num ba">02</span>
     <h2 style="color:var(--amber)">Geometry</h2>
+    <a href="demos/geometry/primitives.html" class="demo-link">&#9655; Try Interactive Demo</a>
   </div>
   <p class="section-intro">Geometry defines the shape of a 3D object - the vertices, edges and faces that make up its surface. Under the hood, everything is a <code>BufferGeometry</code>: flat typed arrays of vertex data (position, normal, UV, color, index) sent directly to the GPU. Three.js ships 21 built-in geometry constructors, plus the tools to create your own from scratch or load from files.</p>
   <div class="section-links">
@@ -469,6 +505,7 @@ renderer.<span class="fn">setAnimationLoop</span>( () => renderer.<span class="f
   <div class="section-break-header">
     <span class="section-num bm">03</span>
     <h2 style="color:var(--magenta)">Materials</h2>
+    <a href="demos/materials/all-materials.html" class="demo-link">&#9655; Try Interactive Demo</a>
   </div>
   <p class="section-intro">Materials control how geometry looks when rendered - its colour, shininess, transparency, and how it reacts to light. Three.js has materials for every use case and performance budget: from the cheapest flat <code>MeshBasicMaterial</code> (no lighting) to the fully physics-based <code>MeshPhysicalMaterial</code> with clearcoat, sheen, iridescence, transmission and subsurface scattering. The right material makes the difference between flat and photorealistic.</p>
   <div class="section-links">
@@ -517,6 +554,7 @@ renderer.<span class="fn">setAnimationLoop</span>( () => renderer.<span class="f
   <div class="section-break-header">
     <span class="section-num ba">04</span>
     <h2 style="color:var(--amber)">Lighting</h2>
+    <a href="demos/lights/all-lights.html" class="demo-link">&#9655; Try Interactive Demo</a>
   </div>
   <p class="section-intro">Lighting is what makes a 3D scene feel real. A well-lit scene communicates depth, weight, material type and mood. Three.js offers 7 light types - from the ambient fill that eliminates harsh shadows to the precise spotlight casting dramatic shadows. Only DirectionalLight, SpotLight and PointLight can cast shadows; each uses a shadow map technique (rendering the scene from the light's POV to determine occlusion).</p>
   <div class="section-links">
@@ -556,6 +594,7 @@ key.shadow.mapSize.<span class="fn">set</span>( <span class="str">2048</span>, <
   <div class="section-break-header">
     <span class="section-num bg">05</span>
     <h2 style="color:var(--green)">Scene Objects</h2>
+    <a href="demos/objects/scene-graph.html" class="demo-link">&#9655; Try Interactive Demo</a>
   </div>
   <p class="section-intro">Everything in a Three.js scene is an <code>Object3D</code> - the base class providing position, rotation, scale, visibility, and parent/child hierarchy. From the basic <code>Mesh</code> to the GPU-instanced <code>InstancedMesh</code> that draws 100,000 copies in a single draw call, each object type exists to solve a specific rendering challenge.</p>
   <div class="section-links">
@@ -594,6 +633,7 @@ key.shadow.mapSize.<span class="fn">set</span>( <span class="str">2048</span>, <
   <div class="section-break-header">
     <span class="section-num bc">07</span>
     <h2 style="color:var(--cyan)">Cameras</h2>
+    <a href="demos/cameras/perspective.html" class="demo-link">&#9655; Try Interactive Demo</a>
   </div>
   <p class="section-intro">The camera defines how the 3D scene is projected onto your 2D screen. <code>PerspectiveCamera</code> mimics human vision - objects farther away appear smaller. <code>OrthographicCamera</code> has no perspective - objects stay the same size regardless of distance, giving the classic isometric game look. The remaining cameras serve specialised purposes: real-time reflections, multi-viewport, and VR.</p>
   <div class="section-links">
@@ -672,6 +712,7 @@ sphere.material.envMap = cubeRT.texture; <span class="cm">// use as reflection</
   <div class="section-break-header">
     <span class="section-num bm">08</span>
     <h2 style="color:var(--magenta)">Textures</h2>
+    <a href="demos/textures/normal-maps.html" class="demo-link">&#9655; Try Interactive Demo</a>
   </div>
   <p class="section-intro">Textures are images mapped onto geometry surfaces to add visual detail without adding geometry. A UV map on each vertex tells the GPU which part of the texture to sample there. Three.js supports flat colour textures, normal maps for fake surface depth, full PBR texture sets, video textures, HDR environments, and compressed GPU-native formats for 4–8× less VRAM usage.</p>
   <div class="section-links">
@@ -711,6 +752,7 @@ sphere.material.envMap = cubeRT.texture; <span class="cm">// use as reflection</
   <div class="section-break-header">
     <span class="section-num bc">09</span>
     <h2 style="color:var(--cyan)">Renderer Features</h2>
+    <a href="demos/renderer/shadow-types.html" class="demo-link">&#9655; Try Interactive Demo</a>
   </div>
   <p class="section-intro">The renderer transforms your scene into pixels. Three.js has WebGLRenderer (the proven standard, works everywhere) and WebGPURenderer (the modern future, compute shaders, better performance). Both share a common abstraction layer so most code runs on either. Key features: shadow maps, environment mapping, tone mapping, anti-aliasing, and render targets for off-screen rendering.</p>
   <div class="section-links">
