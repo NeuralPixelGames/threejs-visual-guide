@@ -123,8 +123,8 @@
 	<a href="../index.html" id="back-btn">&larr; Hub</a>
 	<div id="info"><strong>Orthographic Camera</strong><br>Toggle between perspective and orthographic projections</div>
 	<div id="camera-type-switcher">
-		<label><input type="radio" name="cameraType" value="Perspective" checked>Perspective</label>
-		<label><input type="radio" name="cameraType" value="Orthographic">Orthographic</label>
+		<label><input type="radio" name="cameraType" value="Perspective">Perspective</label>
+		<label><input type="radio" name="cameraType" value="Orthographic" checked>Orthographic</label>
 	</div>
 	<div id="camera-label"><strong>Perspective</strong> &mdash; Objects shrink with distance</div>
 	<div id="container"></div>
@@ -141,7 +141,7 @@
 		let sceneObjects = [];
 
 		const params = {
-			cameraType: 'Perspective',
+			cameraType: 'Orthographic',
 			orthoSize: 8,
 			left: - 8,
 			right: 8,
@@ -190,7 +190,7 @@
 			orthoCamera.position.copy( perspCamera.position );
 			orthoCamera.zoom = 1;
 
-			activeCamera = perspCamera;
+			activeCamera = orthoCamera;
 
 			// Controls
 			controls = new OrbitControls( activeCamera, renderer.domElement );
