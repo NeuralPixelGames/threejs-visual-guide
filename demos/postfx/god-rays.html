@@ -379,11 +379,11 @@
 
 		// -- Load God Rays Demo Model --
 		const dracoLoader = new DRACOLoader();
-		dracoLoader.setDecoderPath( '../../examples/jsm/libs/draco/gltf/' );
+		dracoLoader.setDecoderPath( 'https://cdn.jsdelivr.net/npm/three@0.183.0/examples/jsm/libs/draco/gltf/' );
 		const gltfLoader = new GLTFLoader();
 		gltfLoader.setDRACOLoader( dracoLoader );
 
-		gltfLoader.load( '../../examples/models/gltf/godrays_demo.glb', ( gltf ) => {
+		gltfLoader.load( 'https://cdn.jsdelivr.net/npm/three@0.183.0/examples/models/gltf/godrays_demo.glb', ( gltf ) => {
 
 			const model = gltf.scene;
 
