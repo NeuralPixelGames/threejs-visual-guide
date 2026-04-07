@@ -30,7 +30,7 @@
 		.hud-best .gpu-best { color: #22c55e; }
 
 		#backend-panel {
-			position: fixed; bottom: 90px; left: 50%; transform: translateX(-50%); z-index: 20;
+			position: fixed; bottom: 100px; left: 50%; transform: translateX(-50%); z-index: 20;
 			background: rgba(10, 14, 26, 0.88); backdrop-filter: blur(10px);
 			border: 1px solid rgba(74, 158, 255, 0.25); border-radius: 10px;
 			padding: 10px 16px; font-family: 'Inter', system-ui, sans-serif;
@@ -57,7 +57,7 @@
 		}
 
 		#table-toggle {
-			position: fixed; top: 52px; right: 10px; z-index: 20;
+			position: fixed; top: 100px; right: 10px; z-index: 20;
 			background: rgba(10, 14, 26, 0.88); backdrop-filter: blur(10px);
 			border: 1px solid rgba(74, 158, 255, 0.3); border-radius: 8px;
 			padding: 7px 14px; color: #4a9eff; font-size: 11px; font-weight: 600;
@@ -66,7 +66,7 @@
 		#table-toggle:hover { background: rgba(74, 158, 255, 0.15); }
 
 		#feature-table {
-			position: fixed; top: 84px; right: 10px; z-index: 20;
+			position: fixed; top: 132px; right: 10px; z-index: 20;
 			background: rgba(8, 12, 22, 0.94); backdrop-filter: blur(12px);
 			border: 1px solid rgba(74, 158, 255, 0.2); border-radius: 10px;
 			padding: 12px; display: none; font-family: 'Inter', system-ui, sans-serif;
@@ -182,7 +182,7 @@ const bestGlEl = document.getElementById( 'best-gl' );
 const bestGpuEl = document.getElementById( 'best-gpu' );
 const overlay = document.getElementById( 'switching-overlay' );
 
-const params = { instances: 5000, autoRotate: true, shadows: true };
+const params = { instances: 20000, autoRotate: true, shadows: true };
 const colors = [ 0x4a9eff, 0x22c55e, 0xa855f7, 0xf97316, 0xf43f5e, 0x06b6d4, 0xeab308, 0x8b5cf6 ];
 
 let renderer, scene, camera, controls, dirLight;
@@ -213,6 +213,18 @@ function buildScene() {
 	scene.add( dirLight );
 
 	scene.add( new THREE.HemisphereLight( 0x1a2744, 0x080c16, 0.4 ) );
+
+	// Extra point lights to stress lighting calculations
+	const pointColors = [ 0x4a9eff, 0xff4466, 0x22cc88, 0xffaa22, 0xa855f7, 0x06b6d4, 0xf43f5e, 0xeab308 ];
+	for ( let i = 0; i < 8; i++ ) {
+
+		const pl = new THREE.PointLight( pointColors[ i ], 2.0, 20 );
+		const angle = ( i / 8 ) * Math.PI * 2;
+		pl.position.set( Math.cos( angle ) * 8, 3 + Math.sin( i ) * 2, Math.sin( angle ) * 8 );
+		pl.castShadow = params.shadows;
+		scene.add( pl );
+
+	}
 
 	const ground = new THREE.Mesh(
 		new THREE.PlaneGeometry( 200, 200 ),
@@ -264,10 +276,10 @@ function buildInstances( count ) {
 
 	// Mix of geometry types for visual variety
 	const geos = [
-		new THREE.IcosahedronGeometry( 0.3, 1 ),
-		new THREE.BoxGeometry( 0.4, 0.4, 0.4 ),
-		new THREE.ConeGeometry( 0.25, 0.5, 8 ),
-		new THREE.TorusGeometry( 0.2, 0.08, 8, 16 )
+		new THREE.IcosahedronGeometry( 0.3, 3 ),
+		new THREE.SphereGeometry( 0.25, 24, 24 ),
+		new THREE.TorusKnotGeometry( 0.18, 0.06, 64, 12 ),
+		new THREE.TorusGeometry( 0.2, 0.08, 16, 32 )
 	];
 
 	const perGeo = Math.ceil( count / geos.length );
@@ -455,7 +467,7 @@ document.querySelectorAll( '#backend-panel input[name="backend"]' ).forEach( inp
 
 // GUI
 const gui = new GUI( { width: 280 } );
-gui.add( params, 'instances', 1000, 100000, 1000 ).name( 'Object Count' ).onChange( v => {
+gui.add( params, 'instances', 1000, 500000, 1000 ).name( 'Object Count' ).onChange( v => {
 
 	buildInstances( v );
 
