@@ -1,0 +1,1308 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<title>Pixel / Retro -- Three.js Encyclopedia v2</title>
+	<meta charset="utf-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<link rel="stylesheet" href="../shared/demo-base.css">
+	<style>
+		.style-panel {
+			position: fixed;
+			left: 22px;
+			bottom: 22px;
+			z-index: 50;
+			max-width: 290px;
+			background: linear-gradient(135deg, rgba(12, 20, 8, 0.92) 0%, rgba(8, 28, 12, 0.88) 100%);
+			backdrop-filter: blur(20px);
+			-webkit-backdrop-filter: blur(20px);
+			border: 1px solid rgba(0, 255, 100, 0.2);
+			border-radius: 14px;
+			padding: 18px 22px;
+			color: #e0e5f0;
+			font-family: 'Inter', system-ui, sans-serif;
+			font-size: 13px;
+			box-shadow: 0 8px 40px rgba(0, 0, 0, 0.5), 0 0 60px rgba(0, 255, 100, 0.06);
+			animation: fadeInUp 0.6s ease-out both;
+			animation-delay: 0.4s;
+		}
+
+		.style-kicker {
+			display: inline-block;
+			font-size: 10px;
+			font-weight: 600;
+			text-transform: uppercase;
+			letter-spacing: 0.12em;
+			color: #00ff64;
+			margin-bottom: 6px;
+		}
+
+		.style-panel h3 {
+			margin: 0 0 8px;
+			font-size: 15px;
+			font-weight: 600;
+			color: #f8fbff;
+			letter-spacing: 0.01em;
+		}
+
+		.style-panel p {
+			margin: 0 0 12px;
+			color: rgba(230, 236, 245, 0.78);
+			line-height: 1.55;
+			font-size: 12px;
+		}
+
+		.style-chips {
+			display: flex;
+			flex-wrap: wrap;
+			gap: 6px;
+		}
+
+		.style-chip {
+			display: inline-block;
+			background: rgba(0, 255, 100, 0.1);
+			border: 1px solid rgba(0, 255, 100, 0.25);
+			border-radius: 100px;
+			padding: 3px 10px;
+			font-size: 10px;
+			color: #00ff64;
+			font-family: 'Inter', system-ui, sans-serif;
+			letter-spacing: 0.03em;
+			white-space: nowrap;
+		}
+
+		.style-chip.magenta {
+			background: rgba(255, 0, 180, 0.08);
+			border-color: rgba(255, 0, 180, 0.25);
+			color: #ff6bd6;
+		}
+
+		.style-chip.amber {
+			background: rgba(255, 180, 0, 0.08);
+			border-color: rgba(255, 180, 0, 0.25);
+			color: #ffb400;
+		}
+
+		.style-chip.cyan {
+			background: rgba(0, 255, 255, 0.08);
+			border-color: rgba(0, 255, 255, 0.25);
+			color: #00e5ff;
+		}
+
+		.quad-label {
+			position: fixed;
+			z-index: 10;
+			background: rgba(10, 14, 26, 0.75);
+			backdrop-filter: blur(8px);
+			-webkit-backdrop-filter: blur(8px);
+			border: 1px solid rgba(74, 158, 255, 0.25);
+			border-radius: 6px;
+			padding: 3px 10px;
+			color: #e0e5f0;
+			font-size: 11px;
+			pointer-events: none;
+			user-select: none;
+			animation: fadeInUp 0.5s ease-out both;
+			animation-delay: 0.3s;
+		}
+
+		.quad-label strong { color: #f7fbff; font-size: 12px; }
+
+		.quad-label-tl { top: 46px; left: 20px; }
+		.quad-label-tr { top: 46px; left: calc(50% + 20px); }
+		.quad-label-bl { top: calc(50% + 10px); left: 20px; }
+		.quad-label-br { top: calc(50% + 10px); left: calc(50% + 20px); }
+
+		.quad-divider-h {
+			position: fixed;
+			top: 50%;
+			left: 0;
+			width: 100%;
+			height: 1px;
+			background: rgba(255, 255, 255, 0.15);
+			z-index: 10;
+			pointer-events: none;
+		}
+
+		.quad-divider-v {
+			position: fixed;
+			top: 0;
+			left: 50%;
+			width: 1px;
+			height: 100%;
+			background: rgba(255, 255, 255, 0.15);
+			z-index: 10;
+			pointer-events: none;
+		}
+
+		@media (max-width: 900px) {
+			.style-panel {
+				left: 10px;
+				right: 10px;
+				bottom: 10px;
+				max-width: none;
+				padding: 14px 16px;
+			}
+		}
+	</style>
+</head>
+<body>
+
+<a href="../index.html" id="back-btn">&larr; Hub</a>
+<div id="info"><strong>Pixel / Retro</strong> -- Quad split: Clean | Pixelated | Scanlines | Full CRT</div>
+
+<div class="quad-label quad-label-tl"><strong>Clean</strong></div>
+<div class="quad-label quad-label-tr"><strong>Pixelated</strong></div>
+<div class="quad-label quad-label-bl"><strong>Scanlines</strong></div>
+<div class="quad-label quad-label-br"><strong>Full CRT</strong></div>
+<div class="quad-divider-h"></div>
+<div class="quad-divider-v"></div>
+
+<section class="style-panel">
+	<div class="style-kicker">Post-Processing</div>
+	<h3>Pixel / Retro</h3>
+	<p>Quad split comparing clean, pixelated, scanlines-only, and full CRT. Each quadrant uses scissor/viewport rendering with separate shader materials.</p>
+	<div class="style-chips">
+		<span class="style-chip">downsampling</span>
+		<span class="style-chip magenta">nearest-neighbor</span>
+		<span class="style-chip amber">CRT effect</span>
+		<span class="style-chip cyan">scanlines</span>
+	</div>
+</section>
+
+<script type="importmap">
+{
+	"imports": {
+		"three": "https://cdn.jsdelivr.net/npm/three@0.183.0/build/three.module.js",
+		"three/addons/": "https://cdn.jsdelivr.net/npm/three@0.183.0/examples/jsm/"
+	}
+}
+</script>
+
+<script type="module">
+import * as THREE from 'three';
+import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+import { GUI } from 'three/addons/libs/lil-gui.module.min.js';
+
+let renderer, scene, camera, controls, clock;
+let pixelRT, fullRT;
+let crtMaterial, pixelOnlyMaterial, scanlineOnlyMaterial;
+let quadScene, quadCam, quadMesh;
+let characters = [];
+let floatingCoins = [];
+let clouds = [];
+
+const params = {
+	pixelSize: 4,
+	scanlines: true,
+	scanlineIntensity: 0.08,
+	crtCurvature: 0.13,
+	colorDepth: true,
+	colorLevels: 8
+};
+
+// ─── CRT Shader Source (must be before init) ─────────────
+
+const CRT_VERTEX = `
+	varying vec2 vUv;
+	void main() {
+		vUv = uv;
+		gl_Position = projectionMatrix * modelViewMatrix * vec4( position, 1.0 );
+	}
+`;
+
+const CRT_FRAGMENT = `
+	uniform sampler2D tDiffuse;
+	uniform vec2 resolution;
+	uniform float scanlines;
+	uniform float scanlineIntensity;
+	uniform float curvature;
+	uniform float colorDepth;
+	uniform float colorLevels;
+	uniform float time;
+
+	varying vec2 vUv;
+
+	vec2 curveUV( vec2 uv ) {
+		uv = uv * 2.0 - 1.0;
+		float r2 = dot( uv, uv );
+		uv *= 1.0 + curvature * r2;
+		uv = uv * 0.5 + 0.5;
+		return uv;
+	}
+
+	void main() {
+
+		vec2 uv = vUv;
+
+		// Apply CRT curvature
+		if ( curvature > 0.0 ) {
+			uv = curveUV( uv );
+		}
+
+		// Black outside curved screen
+		if ( uv.x < 0.0 || uv.x > 1.0 || uv.y < 0.0 || uv.y > 1.0 ) {
+			gl_FragColor = vec4( 0.0, 0.0, 0.0, 1.0 );
+			return;
+		}
+
+		vec4 color = texture2D( tDiffuse, uv );
+
+		// Color depth reduction (posterize)
+		if ( colorDepth > 0.5 ) {
+			color.rgb = floor( color.rgb * colorLevels + 0.5 ) / colorLevels;
+		}
+
+		// Scanlines
+		if ( scanlines > 0.5 ) {
+			float screenY = gl_FragCoord.y;
+			float scanline = sin( screenY * 3.14159 * 1.0 ) * 0.5 + 0.5;
+			scanline = pow( scanline, 0.6 );
+			color.rgb *= 1.0 - scanlineIntensity * ( 1.0 - scanline );
+
+			// Subtle RGB sub-pixel separation
+			float subpixel = mod( gl_FragCoord.x, 3.0 );
+			if ( subpixel < 1.0 ) {
+				color.r *= 1.05;
+				color.gb *= 0.97;
+			} else if ( subpixel < 2.0 ) {
+				color.g *= 1.05;
+				color.rb *= 0.97;
+			} else {
+				color.b *= 1.05;
+				color.rg *= 0.97;
+			}
+		}
+
+		// Subtle vignette
+		vec2 vigUV = vUv * 2.0 - 1.0;
+		float vig = 1.0 - dot( vigUV, vigUV ) * 0.25;
+		color.rgb *= vig;
+
+		// Slight phosphor glow (brightens slightly)
+		color.rgb *= 1.05;
+
+		gl_FragColor = color;
+
+	}
+`;
+
+function createCRTUniforms( overrides ) {
+
+	const base = {
+		tDiffuse: { value: null },
+		resolution: { value: new THREE.Vector2( window.innerWidth, window.innerHeight ) },
+		scanlines: { value: params.scanlines ? 1.0 : 0.0 },
+		scanlineIntensity: { value: params.scanlineIntensity },
+		curvature: { value: params.crtCurvature },
+		colorDepth: { value: params.colorDepth ? 1.0 : 0.0 },
+		colorLevels: { value: params.colorLevels },
+		time: { value: 0.0 }
+	};
+
+	if ( overrides ) {
+
+		for ( const key in overrides ) {
+
+			if ( base[ key ] ) base[ key ].value = overrides[ key ];
+
+		}
+
+	}
+
+	return base;
+
+}
+
+init();
+
+function init() {
+
+	clock = new THREE.Clock();
+
+	renderer = new THREE.WebGLRenderer( { antialias: true } );
+	renderer.setPixelRatio( window.devicePixelRatio );
+	renderer.setSize( window.innerWidth, window.innerHeight );
+	renderer.toneMapping = THREE.ACESFilmicToneMapping;
+	renderer.toneMappingExposure = 1.6;
+	renderer.shadowMap.enabled = true;
+	renderer.shadowMap.type = THREE.PCFShadowMap;
+	document.body.appendChild( renderer.domElement );
+
+	scene = new THREE.Scene();
+	scene.background = new THREE.Color( 0x5588cc );
+
+	camera = new THREE.PerspectiveCamera( 50, window.innerWidth / window.innerHeight, 0.1, 200 );
+	camera.position.set( 0, 6, 16 );
+
+	controls = new OrbitControls( camera, renderer.domElement );
+	controls.enableDamping = true;
+	controls.dampingFactor = 0.06;
+	controls.target.set( 0, 3, 0 );
+	controls.maxPolarAngle = Math.PI * 0.6;
+	controls.minDistance = 6;
+	controls.maxDistance = 30;
+	controls.update();
+
+	buildRetroScene();
+	setupPixelRT();
+	setupFullRT();
+	setupCRTMaterial();
+	setupQuadBlit();
+	setupGUI();
+
+	window.addEventListener( 'resize', onResize );
+	renderer.setAnimationLoop( animate );
+
+}
+
+
+// ─── Retro Game Scene ────────────────────────────────────────
+
+function buildRetroScene() {
+
+	// ── Sky gradient (background plane far away) ─────────
+	const skyGeo = new THREE.PlaneGeometry( 200, 100 );
+	const skyMat = new THREE.ShaderMaterial( {
+		uniforms: {
+			topColor: { value: new THREE.Color( 0x2244aa ) },
+			bottomColor: { value: new THREE.Color( 0x88bbff ) }
+		},
+		vertexShader: `
+			varying vec2 vUv;
+			void main() {
+				vUv = uv;
+				gl_Position = projectionMatrix * modelViewMatrix * vec4( position, 1.0 );
+			}
+		`,
+		fragmentShader: `
+			uniform vec3 topColor;
+			uniform vec3 bottomColor;
+			varying vec2 vUv;
+			void main() {
+				gl_FragColor = vec4( mix( bottomColor, topColor, vUv.y ), 1.0 );
+			}
+		`,
+		side: THREE.DoubleSide,
+		depthWrite: false
+	} );
+	const sky = new THREE.Mesh( skyGeo, skyMat );
+	sky.position.set( 0, 30, - 80 );
+	scene.add( sky );
+
+	// ── Pixelated sun ────────────────────────────────────
+	const sunGeo = new THREE.CircleGeometry( 6, 8 );
+	const sunMat = new THREE.MeshBasicMaterial( { color: 0xffdd44 } );
+	const sun = new THREE.Mesh( sunGeo, sunMat );
+	sun.position.set( 15, 40, - 75 );
+	scene.add( sun );
+
+	// Sun glow ring
+	const sunGlowGeo = new THREE.RingGeometry( 6, 8, 8 );
+	const sunGlowMat = new THREE.MeshBasicMaterial( {
+		color: 0xffaa00,
+		transparent: true,
+		opacity: 0.4,
+		side: THREE.DoubleSide
+	} );
+	const sunGlow = new THREE.Mesh( sunGlowGeo, sunGlowMat );
+	sunGlow.position.copy( sun.position );
+	sunGlow.position.z += 0.1;
+	scene.add( sunGlow );
+
+	// ── Ground blocks (chunky terrain) ───────────────────
+	const grassColor = 0x44aa44;
+	const dirtColor = 0x886633;
+	const stoneColor = 0x888888;
+
+	// Main grass platform
+	for ( let x = - 12; x <= 12; x ++ ) {
+
+		for ( let z = - 6; z <= 6; z ++ ) {
+
+			const grassBlock = createBlock( x, 0, z, grassColor );
+			grassBlock.receiveShadow = true;
+			scene.add( grassBlock );
+
+			// Dirt layers underneath
+			const depth = 1 + Math.floor( Math.random() * 2 );
+			for ( let d = 1; d <= depth; d ++ ) {
+
+				const block = createBlock( x, - d, z, d === depth ? stoneColor : dirtColor );
+				scene.add( block );
+
+			}
+
+		}
+
+	}
+
+	// Raised platforms (stepping blocks)
+	const platformPositions = [
+		{ x: - 8, y: 1, z: 0, w: 3, d: 2, color: 0x44aa44 },
+		{ x: - 5, y: 2, z: - 1, w: 2, d: 2, color: 0x44aa44 },
+		{ x: 5, y: 1, z: 2, w: 4, d: 2, color: 0x44aa44 },
+		{ x: 8, y: 2, z: 1, w: 2, d: 3, color: 0x44aa44 },
+		{ x: 8, y: 3, z: 0, w: 1, d: 1, color: 0x44aa44 },
+	];
+
+	for ( const p of platformPositions ) {
+
+		for ( let px = 0; px < p.w; px ++ ) {
+
+			for ( let pz = 0; pz < p.d; pz ++ ) {
+
+				const block = createBlock( p.x + px, p.y, p.z + pz, p.color );
+				block.receiveShadow = true;
+				scene.add( block );
+
+				// Side dirt
+				const sideBlock = createBlock( p.x + px, p.y - 1, p.z + pz, dirtColor );
+				scene.add( sideBlock );
+
+			}
+
+		}
+
+	}
+
+	// ── Water blocks ─────────────────────────────────────
+	for ( let x = - 12; x <= 12; x ++ ) {
+
+		for ( let z = 7; z <= 10; z ++ ) {
+
+			const waterBlock = new THREE.Mesh(
+				new THREE.BoxGeometry( 1, 0.6, 1 ),
+				new THREE.MeshStandardMaterial( {
+					color: 0x3366cc,
+					transparent: true,
+					opacity: 0.7,
+					roughness: 0.1,
+					metalness: 0.3
+				} )
+			);
+			waterBlock.position.set( x, - 0.2, z );
+			scene.add( waterBlock );
+
+		}
+
+	}
+
+	// ── Main character (hero) ────────────────────────────
+	const hero = createCharacter( 0, 1.5, 2, 0xff4444, 0x2244aa, 0xffcc88 );
+	scene.add( hero );
+	characters.push( { group: hero, baseY: 1.5, bobSpeed: 2.5, bobAmt: 0.15 } );
+
+	// ── NPC characters ───────────────────────────────────
+	const npc1 = createCharacter( - 5, 3.5, - 1, 0x44cc44, 0x44cc44, 0xffcc88 );
+	scene.add( npc1 );
+	characters.push( { group: npc1, baseY: 3.5, bobSpeed: 2.0, bobAmt: 0.1 } );
+
+	const npc2 = createCharacter( 6, 2.5, 2, 0xcc44cc, 0xffaa00, 0xffcc88 );
+	scene.add( npc2 );
+	characters.push( { group: npc2, baseY: 2.5, bobSpeed: 3.0, bobAmt: 0.12 } );
+
+	// ── Enemy (slime) ────────────────────────────────────
+	const slime1 = createSlime( 3, 1.4, 0, 0x44cc44 );
+	scene.add( slime1 );
+	characters.push( { group: slime1, baseY: 1.4, bobSpeed: 4.0, bobAmt: 0.1, isSlime: true } );
+
+	const slime2 = createSlime( - 3, 1.4, 3, 0x8844cc );
+	scene.add( slime2 );
+	characters.push( { group: slime2, baseY: 1.4, bobSpeed: 3.5, bobAmt: 0.12, isSlime: true } );
+
+	// ── Trees ────────────────────────────────────────────
+	createTree( - 10, 1, - 4 );
+	createTree( - 7, 1, 4 );
+	createTree( 10, 1, - 3 );
+	createTree( 11, 1, 3 );
+	createTree( - 2, 1, - 5 );
+	createTree( 4, 1, - 4 );
+
+	// ── Floating coins ───────────────────────────────────
+	const coinPositions = [
+		[ - 6, 3.5, 0 ], [ - 4, 4.5, - 1 ], [ 0, 3, 0 ],
+		[ 3, 3.5, 1 ], [ 7, 3.5, 2 ], [ 8, 4.5, 0 ],
+		[ - 1, 4, - 3 ], [ 1, 4, - 3 ]
+	];
+
+	for ( const pos of coinPositions ) {
+
+		const coin = createCoin( pos[ 0 ], pos[ 1 ], pos[ 2 ] );
+		scene.add( coin );
+		floatingCoins.push( {
+			mesh: coin,
+			baseY: pos[ 1 ],
+			phase: Math.random() * Math.PI * 2,
+			speed: 1.5 + Math.random() * 0.5
+		} );
+
+	}
+
+	// ── Question blocks ──────────────────────────────────
+	createQuestionBlock( - 2, 3, 1 );
+	createQuestionBlock( 0, 3, 1 );
+	createQuestionBlock( 2, 3, 1 );
+	createQuestionBlock( - 4, 5, - 1 );
+
+	// ── Mushrooms ────────────────────────────────────────
+	createMushroom( - 9, 1, 1 );
+	createMushroom( 4, 1, 3 );
+	createMushroom( 11, 1, 0 );
+
+	// ── Flowers ──────────────────────────────────────────
+	createFlower( - 6, 1, 2, 0xff4488 );
+	createFlower( - 1, 1, 4, 0xffaa00 );
+	createFlower( 3, 1, - 2, 0xff4488 );
+	createFlower( 7, 1, 4, 0x44aaff );
+	createFlower( - 11, 1, - 2, 0xffaa00 );
+
+	// ── Clouds ───────────────────────────────────────────
+	for ( let i = 0; i < 8; i ++ ) {
+
+		const cloud = createCloud(
+			( Math.random() - 0.5 ) * 50,
+			12 + Math.random() * 8,
+			- 20 - Math.random() * 30
+		);
+		scene.add( cloud );
+		clouds.push( {
+			mesh: cloud,
+			speed: 0.3 + Math.random() * 0.4,
+			startX: cloud.position.x
+		} );
+
+	}
+
+	// ── Castle in background ─────────────────────────────
+	createCastle( 0, 1, - 25 );
+
+	// ── Lighting ─────────────────────────────────────────
+	const ambient = new THREE.AmbientLight( 0xffeedd, 1.0 );
+	scene.add( ambient );
+
+	const dirLight = new THREE.DirectionalLight( 0xffffff, 1.8 );
+	dirLight.position.set( 8, 15, 10 );
+	dirLight.castShadow = true;
+	dirLight.shadow.mapSize.set( 2048, 2048 );
+	dirLight.shadow.camera.left = - 20;
+	dirLight.shadow.camera.right = 20;
+	dirLight.shadow.camera.top = 20;
+	dirLight.shadow.camera.bottom = - 5;
+	dirLight.shadow.camera.near = 0.5;
+	dirLight.shadow.camera.far = 50;
+	scene.add( dirLight );
+
+	const fillLight = new THREE.DirectionalLight( 0x88aaff, 0.6 );
+	fillLight.position.set( - 5, 8, - 5 );
+	scene.add( fillLight );
+
+	// Warm ground bounce
+	const bounceLight = new THREE.HemisphereLight( 0x88bbff, 0x446622, 0.5 );
+	scene.add( bounceLight );
+
+}
+
+
+// ─── Scene Building Helpers ──────────────────────────────────
+
+function createBlock( x, y, z, color ) {
+
+	const geo = new THREE.BoxGeometry( 1, 1, 1 );
+	const mat = new THREE.MeshStandardMaterial( {
+		color,
+		roughness: 0.85,
+		metalness: 0.0
+	} );
+	const mesh = new THREE.Mesh( geo, mat );
+	mesh.position.set( x, y, z );
+	mesh.castShadow = true;
+	return mesh;
+
+}
+
+function createCharacter( x, y, z, hatColor, bodyColor, skinColor ) {
+
+	const group = new THREE.Group();
+	group.position.set( x, y, z );
+
+	// Body
+	const body = new THREE.Mesh(
+		new THREE.BoxGeometry( 0.7, 0.8, 0.5 ),
+		new THREE.MeshStandardMaterial( { color: bodyColor, roughness: 0.7 } )
+	);
+	body.position.y = 0;
+	body.castShadow = true;
+	group.add( body );
+
+	// Head
+	const head = new THREE.Mesh(
+		new THREE.BoxGeometry( 0.6, 0.6, 0.5 ),
+		new THREE.MeshStandardMaterial( { color: skinColor, roughness: 0.7 } )
+	);
+	head.position.y = 0.7;
+	head.castShadow = true;
+	group.add( head );
+
+	// Hat
+	const hat = new THREE.Mesh(
+		new THREE.BoxGeometry( 0.7, 0.3, 0.55 ),
+		new THREE.MeshStandardMaterial( { color: hatColor, roughness: 0.6 } )
+	);
+	hat.position.y = 1.15;
+	hat.castShadow = true;
+	group.add( hat );
+
+	// Eyes
+	const eyeMat = new THREE.MeshBasicMaterial( { color: 0x111111 } );
+	const eyeL = new THREE.Mesh( new THREE.BoxGeometry( 0.1, 0.12, 0.05 ), eyeMat );
+	eyeL.position.set( - 0.15, 0.78, 0.26 );
+	group.add( eyeL );
+
+	const eyeR = new THREE.Mesh( new THREE.BoxGeometry( 0.1, 0.12, 0.05 ), eyeMat );
+	eyeR.position.set( 0.15, 0.78, 0.26 );
+	group.add( eyeR );
+
+	// Legs
+	const legMat = new THREE.MeshStandardMaterial( { color: 0x222288, roughness: 0.8 } );
+	const legL = new THREE.Mesh( new THREE.BoxGeometry( 0.3, 0.4, 0.4 ), legMat );
+	legL.position.set( - 0.18, - 0.6, 0 );
+	legL.castShadow = true;
+	group.add( legL );
+
+	const legR = new THREE.Mesh( new THREE.BoxGeometry( 0.3, 0.4, 0.4 ), legMat );
+	legR.position.set( 0.18, - 0.6, 0 );
+	legR.castShadow = true;
+	group.add( legR );
+
+	return group;
+
+}
+
+function createSlime( x, y, z, color ) {
+
+	const group = new THREE.Group();
+	group.position.set( x, y, z );
+
+	// Body (squished sphere using scaled box for retro feel)
+	const body = new THREE.Mesh(
+		new THREE.SphereGeometry( 0.5, 6, 4 ),
+		new THREE.MeshStandardMaterial( {
+			color,
+			roughness: 0.3,
+			metalness: 0.1,
+			transparent: true,
+			opacity: 0.85
+		} )
+	);
+	body.scale.set( 1, 0.7, 1 );
+	body.castShadow = true;
+	group.add( body );
+
+	// Eyes
+	const eyeMat = new THREE.MeshBasicMaterial( { color: 0xffffff } );
+	const pupilMat = new THREE.MeshBasicMaterial( { color: 0x111111 } );
+
+	const eyeL = new THREE.Mesh( new THREE.BoxGeometry( 0.15, 0.18, 0.05 ), eyeMat );
+	eyeL.position.set( - 0.15, 0.15, 0.42 );
+	group.add( eyeL );
+
+	const eyeR = new THREE.Mesh( new THREE.BoxGeometry( 0.15, 0.18, 0.05 ), eyeMat );
+	eyeR.position.set( 0.15, 0.15, 0.42 );
+	group.add( eyeR );
+
+	const pupilL = new THREE.Mesh( new THREE.BoxGeometry( 0.08, 0.1, 0.05 ), pupilMat );
+	pupilL.position.set( - 0.12, 0.15, 0.46 );
+	group.add( pupilL );
+
+	const pupilR = new THREE.Mesh( new THREE.BoxGeometry( 0.08, 0.1, 0.05 ), pupilMat );
+	pupilR.position.set( 0.18, 0.15, 0.46 );
+	group.add( pupilR );
+
+	return group;
+
+}
+
+function createTree( x, y, z ) {
+
+	// Trunk
+	const trunk = new THREE.Mesh(
+		new THREE.BoxGeometry( 0.6, 2, 0.6 ),
+		new THREE.MeshStandardMaterial( { color: 0x664422, roughness: 0.9 } )
+	);
+	trunk.position.set( x, y + 1, z );
+	trunk.castShadow = true;
+	scene.add( trunk );
+
+	// Foliage layers (stacked cross pattern for retro look)
+	const leafColor = 0x228833;
+	const leafMat = new THREE.MeshStandardMaterial( { color: leafColor, roughness: 0.8 } );
+
+	const sizes = [ 2.5, 2.0, 1.5 ];
+	for ( let i = 0; i < sizes.length; i ++ ) {
+
+		const s = sizes[ i ];
+		const leaf = new THREE.Mesh(
+			new THREE.BoxGeometry( s, 0.8, s ),
+			leafMat
+		);
+		leaf.position.set( x, y + 2.4 + i * 0.7, z );
+		leaf.castShadow = true;
+		scene.add( leaf );
+
+	}
+
+	// Top cap
+	const cap = new THREE.Mesh(
+		new THREE.BoxGeometry( 0.8, 0.5, 0.8 ),
+		new THREE.MeshStandardMaterial( { color: 0x33aa44, roughness: 0.8 } )
+	);
+	cap.position.set( x, y + 4.7, z );
+	cap.castShadow = true;
+	scene.add( cap );
+
+}
+
+function createCoin( x, y, z ) {
+
+	const group = new THREE.Group();
+	group.position.set( x, y, z );
+
+	const coin = new THREE.Mesh(
+		new THREE.CylinderGeometry( 0.3, 0.3, 0.08, 8 ),
+		new THREE.MeshStandardMaterial( {
+			color: 0xffcc00,
+			roughness: 0.2,
+			metalness: 0.8,
+			emissive: 0xffaa00,
+			emissiveIntensity: 0.3
+		} )
+	);
+	coin.rotation.z = Math.PI / 2;
+	coin.castShadow = true;
+	group.add( coin );
+
+	// Star emblem
+	const star = new THREE.Mesh(
+		new THREE.BoxGeometry( 0.12, 0.12, 0.1 ),
+		new THREE.MeshBasicMaterial( { color: 0xffee88 } )
+	);
+	star.position.set( 0.05, 0, 0 );
+	group.add( star );
+
+	return group;
+
+}
+
+function createQuestionBlock( x, y, z ) {
+
+	const block = new THREE.Mesh(
+		new THREE.BoxGeometry( 1, 1, 1 ),
+		new THREE.MeshStandardMaterial( {
+			color: 0xffaa00,
+			roughness: 0.6,
+			metalness: 0.1,
+			emissive: 0xff8800,
+			emissiveIntensity: 0.15
+		} )
+	);
+	block.position.set( x, y, z );
+	block.castShadow = true;
+	scene.add( block );
+
+	// Question mark (simplified with boxes)
+	const qMat = new THREE.MeshBasicMaterial( { color: 0xffffff } );
+
+	const qTop = new THREE.Mesh( new THREE.BoxGeometry( 0.35, 0.08, 0.05 ), qMat );
+	qTop.position.set( x, y + 0.3, z + 0.51 );
+	scene.add( qTop );
+
+	const qRight = new THREE.Mesh( new THREE.BoxGeometry( 0.08, 0.15, 0.05 ), qMat );
+	qRight.position.set( x + 0.15, y + 0.18, z + 0.51 );
+	scene.add( qRight );
+
+	const qMid = new THREE.Mesh( new THREE.BoxGeometry( 0.2, 0.08, 0.05 ), qMat );
+	qMid.position.set( x + 0.02, y + 0.06, z + 0.51 );
+	scene.add( qMid );
+
+	const qStem = new THREE.Mesh( new THREE.BoxGeometry( 0.08, 0.12, 0.05 ), qMat );
+	qStem.position.set( x - 0.02, y - 0.05, z + 0.51 );
+	scene.add( qStem );
+
+	const qDot = new THREE.Mesh( new THREE.BoxGeometry( 0.08, 0.08, 0.05 ), qMat );
+	qDot.position.set( x - 0.02, y - 0.25, z + 0.51 );
+	scene.add( qDot );
+
+}
+
+function createMushroom( x, y, z ) {
+
+	// Stem
+	const stem = new THREE.Mesh(
+		new THREE.BoxGeometry( 0.3, 0.4, 0.3 ),
+		new THREE.MeshStandardMaterial( { color: 0xeeeecc, roughness: 0.7 } )
+	);
+	stem.position.set( x, y + 0.2, z );
+	scene.add( stem );
+
+	// Cap
+	const cap = new THREE.Mesh(
+		new THREE.BoxGeometry( 0.6, 0.3, 0.6 ),
+		new THREE.MeshStandardMaterial( { color: 0xdd2222, roughness: 0.6 } )
+	);
+	cap.position.set( x, y + 0.55, z );
+	cap.castShadow = true;
+	scene.add( cap );
+
+	// White spots
+	const spotMat = new THREE.MeshBasicMaterial( { color: 0xffffff } );
+	const spot = new THREE.Mesh( new THREE.BoxGeometry( 0.12, 0.05, 0.12 ), spotMat );
+	spot.position.set( x - 0.1, y + 0.72, z + 0.1 );
+	scene.add( spot );
+
+	const spot2 = new THREE.Mesh( new THREE.BoxGeometry( 0.12, 0.05, 0.12 ), spotMat );
+	spot2.position.set( x + 0.15, y + 0.72, z - 0.1 );
+	scene.add( spot2 );
+
+}
+
+function createFlower( x, y, z, petalColor ) {
+
+	// Stem
+	const stem = new THREE.Mesh(
+		new THREE.BoxGeometry( 0.06, 0.5, 0.06 ),
+		new THREE.MeshStandardMaterial( { color: 0x44aa22, roughness: 0.8 } )
+	);
+	stem.position.set( x, y + 0.25, z );
+	scene.add( stem );
+
+	// Petals (4 directions)
+	const petalMat = new THREE.MeshStandardMaterial( { color: petalColor, roughness: 0.5 } );
+	const offsets = [ [ 0.12, 0 ], [ - 0.12, 0 ], [ 0, 0.12 ], [ 0, - 0.12 ] ];
+
+	for ( const off of offsets ) {
+
+		const petal = new THREE.Mesh( new THREE.BoxGeometry( 0.1, 0.1, 0.1 ), petalMat );
+		petal.position.set( x + off[ 0 ], y + 0.6, z + off[ 1 ] );
+		scene.add( petal );
+
+	}
+
+	// Center
+	const center = new THREE.Mesh(
+		new THREE.BoxGeometry( 0.08, 0.08, 0.08 ),
+		new THREE.MeshBasicMaterial( { color: 0xffff44 } )
+	);
+	center.position.set( x, y + 0.6, z );
+	scene.add( center );
+
+}
+
+function createCloud( x, y, z ) {
+
+	const group = new THREE.Group();
+	group.position.set( x, y, z );
+
+	const cloudMat = new THREE.MeshBasicMaterial( {
+		color: 0xffffff,
+		transparent: true,
+		opacity: 0.9
+	} );
+
+	// Build a chunky cloud from boxes
+	const blocks = [
+		[ 0, 0, 0, 2, 1, 1 ],
+		[ - 0.8, 0.5, 0, 1.2, 0.8, 0.8 ],
+		[ 0.6, 0.4, 0, 1.4, 0.9, 0.9 ],
+		[ - 0.3, 0.8, 0, 1.0, 0.6, 0.7 ],
+	];
+
+	for ( const b of blocks ) {
+
+		const box = new THREE.Mesh(
+			new THREE.BoxGeometry( b[ 3 ], b[ 4 ], b[ 5 ] ),
+			cloudMat
+		);
+		box.position.set( b[ 0 ], b[ 1 ], b[ 2 ] );
+		group.add( box );
+
+	}
+
+	return group;
+
+}
+
+function createCastle( x, y, z ) {
+
+	const castleMat = new THREE.MeshStandardMaterial( { color: 0xccccbb, roughness: 0.8 } );
+	const roofMat = new THREE.MeshStandardMaterial( { color: 0xcc3333, roughness: 0.6 } );
+	const darkMat = new THREE.MeshStandardMaterial( { color: 0x444444, roughness: 0.9 } );
+
+	// Main tower
+	const tower = new THREE.Mesh( new THREE.BoxGeometry( 3, 8, 3 ), castleMat );
+	tower.position.set( x, y + 4, z );
+	tower.castShadow = true;
+	scene.add( tower );
+
+	// Tower roof (pyramid-ish)
+	const roof = new THREE.Mesh( new THREE.ConeGeometry( 2.5, 3, 4 ), roofMat );
+	roof.position.set( x, y + 9.5, z );
+	roof.rotation.y = Math.PI / 4;
+	roof.castShadow = true;
+	scene.add( roof );
+
+	// Left wing
+	const wingL = new THREE.Mesh( new THREE.BoxGeometry( 2.5, 5, 2.5 ), castleMat );
+	wingL.position.set( x - 4, y + 2.5, z );
+	wingL.castShadow = true;
+	scene.add( wingL );
+
+	// Left wing battlements
+	for ( let i = 0; i < 3; i ++ ) {
+
+		const battlement = new THREE.Mesh( new THREE.BoxGeometry( 0.5, 0.8, 0.5 ), castleMat );
+		battlement.position.set( x - 5 + i * 1, y + 5.4, z + 1.2 );
+		scene.add( battlement );
+
+	}
+
+	// Right wing
+	const wingR = new THREE.Mesh( new THREE.BoxGeometry( 2.5, 5, 2.5 ), castleMat );
+	wingR.position.set( x + 4, y + 2.5, z );
+	wingR.castShadow = true;
+	scene.add( wingR );
+
+	// Right wing battlements
+	for ( let i = 0; i < 3; i ++ ) {
+
+		const battlement = new THREE.Mesh( new THREE.BoxGeometry( 0.5, 0.8, 0.5 ), castleMat );
+		battlement.position.set( x + 3 + i * 1, y + 5.4, z + 1.2 );
+		scene.add( battlement );
+
+	}
+
+	// Side tower roofs
+	const roofL = new THREE.Mesh( new THREE.ConeGeometry( 1.8, 2, 4 ), roofMat );
+	roofL.position.set( x - 4, y + 6, z );
+	roofL.rotation.y = Math.PI / 4;
+	scene.add( roofL );
+
+	const roofR = new THREE.Mesh( new THREE.ConeGeometry( 1.8, 2, 4 ), roofMat );
+	roofR.position.set( x + 4, y + 6, z );
+	roofR.rotation.y = Math.PI / 4;
+	scene.add( roofR );
+
+	// Door
+	const door = new THREE.Mesh( new THREE.BoxGeometry( 1.2, 2, 0.1 ), darkMat );
+	door.position.set( x, y + 1, z + 1.55 );
+	scene.add( door );
+
+	// Windows
+	const windowMat = new THREE.MeshBasicMaterial( { color: 0xffee88 } );
+	const windowPositions = [
+		[ x - 0.6, y + 5, z + 1.55 ],
+		[ x + 0.6, y + 5, z + 1.55 ],
+		[ x, y + 6.5, z + 1.55 ],
+		[ x - 4, y + 3, z + 1.3 ],
+		[ x + 4, y + 3, z + 1.3 ],
+	];
+
+	for ( const wp of windowPositions ) {
+
+		const win = new THREE.Mesh( new THREE.BoxGeometry( 0.4, 0.5, 0.1 ), windowMat );
+		win.position.set( wp[ 0 ], wp[ 1 ], wp[ 2 ] );
+		scene.add( win );
+
+	}
+
+	// Flag on main tower
+	const flagPole = new THREE.Mesh(
+		new THREE.BoxGeometry( 0.06, 2, 0.06 ),
+		new THREE.MeshStandardMaterial( { color: 0x888888 } )
+	);
+	flagPole.position.set( x, y + 12, z );
+	scene.add( flagPole );
+
+	const flag = new THREE.Mesh(
+		new THREE.BoxGeometry( 0.8, 0.5, 0.05 ),
+		new THREE.MeshBasicMaterial( { color: 0xff4444 } )
+	);
+	flag.position.set( x + 0.4, y + 12.6, z );
+	scene.add( flag );
+
+}
+
+
+// ─── Pixel Render Target ─────────────────────────────────────
+
+function setupPixelRT() {
+
+	const w = Math.max( 16, Math.floor( window.innerWidth / params.pixelSize ) );
+	const h = Math.max( 16, Math.floor( window.innerHeight / params.pixelSize ) );
+
+	pixelRT = new THREE.WebGLRenderTarget( w, h, {
+		minFilter: THREE.NearestFilter,
+		magFilter: THREE.NearestFilter,
+		generateMipmaps: false
+	} );
+
+}
+
+function updatePixelRT() {
+
+	const w = Math.max( 16, Math.floor( window.innerWidth / params.pixelSize ) );
+	const h = Math.max( 16, Math.floor( window.innerHeight / params.pixelSize ) );
+	pixelRT.setSize( w, h );
+
+}
+
+
+// ─── Full Resolution Render Target (for scanline-only quad) ─
+
+function setupFullRT() {
+
+	fullRT = new THREE.WebGLRenderTarget( window.innerWidth, window.innerHeight, {
+		minFilter: THREE.LinearFilter,
+		magFilter: THREE.LinearFilter,
+		generateMipmaps: false
+	} );
+
+}
+
+function updateFullRT() {
+
+	fullRT.setSize( window.innerWidth, window.innerHeight );
+
+}
+
+
+function setupCRTMaterial() {
+
+	// Full CRT (pixelated + scanlines + curvature)
+	crtMaterial = new THREE.ShaderMaterial( {
+		uniforms: createCRTUniforms(),
+		vertexShader: CRT_VERTEX,
+		fragmentShader: CRT_FRAGMENT
+	} );
+
+	// Pixel only (no scanlines, no curvature)
+	pixelOnlyMaterial = new THREE.ShaderMaterial( {
+		uniforms: createCRTUniforms( { scanlines: 0.0, curvature: 0.0 } ),
+		vertexShader: CRT_VERTEX,
+		fragmentShader: CRT_FRAGMENT
+	} );
+
+	// Scanlines only (full-res texture, scanlines + curvature, no pixelation)
+	scanlineOnlyMaterial = new THREE.ShaderMaterial( {
+		uniforms: createCRTUniforms(),
+		vertexShader: CRT_VERTEX,
+		fragmentShader: CRT_FRAGMENT
+	} );
+
+}
+
+
+// ─── Quad Blit Setup ─────────────────────────────────────────
+
+function setupQuadBlit() {
+
+	quadScene = new THREE.Scene();
+	quadCam = new THREE.OrthographicCamera( - 1, 1, 1, - 1, 0, 1 );
+	quadMesh = new THREE.Mesh(
+		new THREE.PlaneGeometry( 2, 2 ),
+		crtMaterial
+	);
+	quadScene.add( quadMesh );
+
+}
+
+
+// ─── GUI ─────────────────────────────────────────────────────
+
+function syncUniforms( key, value ) {
+
+	for ( const mat of [ crtMaterial, pixelOnlyMaterial, scanlineOnlyMaterial ] ) {
+
+		if ( mat.uniforms[ key ] ) mat.uniforms[ key ].value = value;
+
+	}
+
+}
+
+function setupGUI() {
+
+	const gui = new GUI();
+
+	const pixelFolder = gui.addFolder( 'Pixelation' );
+	pixelFolder.add( params, 'pixelSize', 1, 16, 1 ).name( 'Pixel Size' ).onChange( updatePixelRT );
+	pixelFolder.open();
+
+	const crtFolder = gui.addFolder( 'CRT Effect' );
+	crtFolder.add( params, 'scanlines' ).name( 'Scanlines' ).onChange( v => {
+
+		const sv = v ? 1.0 : 0.0;
+		crtMaterial.uniforms.scanlines.value = sv;
+		scanlineOnlyMaterial.uniforms.scanlines.value = sv;
+		// pixelOnlyMaterial stays at 0
+
+	} );
+	crtFolder.add( params, 'scanlineIntensity', 0, 1, 0.01 ).name( 'Scanline Strength' ).onChange( v => {
+
+		crtMaterial.uniforms.scanlineIntensity.value = v;
+		scanlineOnlyMaterial.uniforms.scanlineIntensity.value = v;
+
+	} );
+	crtFolder.add( params, 'crtCurvature', 0, 1, 0.01 ).name( 'Curvature' ).onChange( v => {
+
+		crtMaterial.uniforms.curvature.value = v;
+		scanlineOnlyMaterial.uniforms.curvature.value = v;
+		// pixelOnlyMaterial stays at 0
+
+	} );
+	crtFolder.open();
+
+	const colorFolder = gui.addFolder( 'Color' );
+	colorFolder.add( params, 'colorDepth' ).name( 'Color Reduction' ).onChange( v => {
+
+		syncUniforms( 'colorDepth', v ? 1.0 : 0.0 );
+
+	} );
+	colorFolder.add( params, 'colorLevels', 2, 32, 1 ).name( 'Color Levels' ).onChange( v => {
+
+		syncUniforms( 'colorLevels', v );
+
+	} );
+	colorFolder.open();
+
+}
+
+
+// ─── Resize ──────────────────────────────────────────────────
+
+function onResize() {
+
+	const w = window.innerWidth;
+	const h = window.innerHeight;
+	camera.aspect = w / h;
+	camera.updateProjectionMatrix();
+	renderer.setSize( w, h );
+	updatePixelRT();
+	updateFullRT();
+
+	for ( const mat of [ crtMaterial, pixelOnlyMaterial, scanlineOnlyMaterial ] ) {
+
+		mat.uniforms.resolution.value.set( w, h );
+
+	}
+
+}
+
+
+// ─── Animation Loop ─────────────────────────────────────────
+
+function animate() {
+
+	const elapsed = clock.getElapsedTime();
+
+	controls.update();
+
+	// Animate characters (bobbing)
+	for ( const ch of characters ) {
+
+		ch.group.position.y = ch.baseY + Math.sin( elapsed * ch.bobSpeed ) * ch.bobAmt;
+
+		if ( ch.isSlime ) {
+
+			const squash = 1.0 + Math.sin( elapsed * ch.bobSpeed * 2 ) * 0.15;
+			ch.group.scale.set( 1.0 / squash, squash, 1.0 / squash );
+
+		}
+
+	}
+
+	// Animate coins (spin + float)
+	for ( const c of floatingCoins ) {
+
+		c.mesh.rotation.y = elapsed * 2.5;
+		c.mesh.position.y = c.baseY + Math.sin( elapsed * c.speed + c.phase ) * 0.2;
+
+	}
+
+	// Animate clouds (drift)
+	for ( const cl of clouds ) {
+
+		cl.mesh.position.x = cl.startX + elapsed * cl.speed;
+		if ( cl.mesh.position.x > 35 ) cl.mesh.position.x -= 70;
+
+	}
+
+	// Update CRT time on all materials
+	crtMaterial.uniforms.time.value = elapsed;
+	pixelOnlyMaterial.uniforms.time.value = elapsed;
+	scanlineOnlyMaterial.uniforms.time.value = elapsed;
+
+	// ── 2x2 Quad split-screen render ────────────────────
+	const w = window.innerWidth;
+	const h = window.innerHeight;
+	const halfW = Math.floor( w / 2 );
+	const halfH = Math.floor( h / 2 );
+
+	// Set camera aspect for each quadrant
+	camera.aspect = halfW / halfH;
+	camera.updateProjectionMatrix();
+
+	renderer.setScissorTest( true );
+
+	// ── Top-left: Clean (direct scene render, no effects) ──
+	renderer.setViewport( 0, halfH, halfW, h - halfH );
+	renderer.setScissor( 0, halfH, halfW, h - halfH );
+	renderer.render( scene, camera );
+
+	// ── Render scene to pixel RT for pixelated quads ──
+	renderer.setScissorTest( false );
+	renderer.setRenderTarget( pixelRT );
+	camera.aspect = pixelRT.width / pixelRT.height;
+	camera.updateProjectionMatrix();
+	renderer.render( scene, camera );
+	renderer.setRenderTarget( null );
+
+	// ── Render scene to full-res RT for scanline-only quad ──
+	renderer.setRenderTarget( fullRT );
+	camera.aspect = fullRT.width / fullRT.height;
+	camera.updateProjectionMatrix();
+	renderer.render( scene, camera );
+	renderer.setRenderTarget( null );
+
+	// Restore camera aspect for quad blits
+	camera.aspect = halfW / halfH;
+	camera.updateProjectionMatrix();
+
+	renderer.setScissorTest( true );
+
+	// ── Top-right: Pixelated only (no scanlines/curvature) ──
+	renderer.setViewport( halfW, halfH, w - halfW, h - halfH );
+	renderer.setScissor( halfW, halfH, w - halfW, h - halfH );
+	pixelOnlyMaterial.uniforms.tDiffuse.value = pixelRT.texture;
+	quadMesh.material = pixelOnlyMaterial;
+	renderer.render( quadScene, quadCam );
+
+	// ── Bottom-left: Scanlines only (full-res + CRT effects) ──
+	renderer.setViewport( 0, 0, halfW, halfH );
+	renderer.setScissor( 0, 0, halfW, halfH );
+	scanlineOnlyMaterial.uniforms.tDiffuse.value = fullRT.texture;
+	quadMesh.material = scanlineOnlyMaterial;
+	renderer.render( quadScene, quadCam );
+
+	// ── Bottom-right: Full CRT (pixelated + scanlines + curvature) ──
+	renderer.setViewport( halfW, 0, w - halfW, halfH );
+	renderer.setScissor( halfW, 0, w - halfW, halfH );
+	crtMaterial.uniforms.tDiffuse.value = pixelRT.texture;
+	quadMesh.material = crtMaterial;
+	renderer.render( quadScene, quadCam );
+
+	renderer.setScissorTest( false );
+
+}
+</script>
+<script src="../shared/demo-nav.js"></script>
+</body>
+</html>

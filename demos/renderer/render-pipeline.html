@@ -1,0 +1,431 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<title>Render Pipeline - Three.js Encyclopedia</title>
+	<meta charset="utf-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<link rel="stylesheet" href="../shared/demo-base.css">
+	<style>
+		#stage-label {
+			position: fixed;
+			bottom: 24px;
+			left: 50%;
+			transform: translateX( -50% );
+			z-index: 10;
+			background: rgba( 10, 14, 26, 0.85 );
+			backdrop-filter: blur( 8px );
+			border: 1px solid rgba( 74, 158, 255, 0.3 );
+			border-radius: 12px;
+			padding: 10px 24px;
+			color: #4a9eff;
+			font-size: 15px;
+			font-family: 'Inter', system-ui, sans-serif;
+			font-weight: 600;
+			letter-spacing: 0.5px;
+			text-align: center;
+			pointer-events: none;
+			transition: all 0.3s;
+		}
+	</style>
+</head>
+<body>
+<a href="../index.html" id="back-btn">&larr; Hub</a>
+<div id="info">
+	<strong>Render Pipeline Stages</strong><br>
+	Visualize each stage: vertices, wireframe, rasterized, shaded, final
+</div>
+<div id="container"></div>
+<div id="stage-label">Stage: Final</div>
+
+<script type="importmap">
+{
+	"imports": {
+		"three": "https://cdn.jsdelivr.net/npm/three@0.183.0/build/three.module.js",
+		"three/addons/": "https://cdn.jsdelivr.net/npm/three@0.183.0/examples/jsm/"
+	}
+}
+</script>
+
+<script type="module">
+import * as THREE from 'three';
+import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+import { GUI } from 'three/addons/libs/lil-gui.module.min.js';
+
+const container = document.getElementById( 'container' );
+const stageLabel = document.getElementById( 'stage-label' );
+const renderer = new THREE.WebGLRenderer( { antialias: true } );
+renderer.setPixelRatio( window.devicePixelRatio );
+renderer.setSize( window.innerWidth, window.innerHeight );
+renderer.toneMapping = THREE.ACESFilmicToneMapping;
+renderer.toneMappingExposure = 1.2;
+renderer.shadowMap.enabled = true;
+renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+container.appendChild( renderer.domElement );
+
+const scene = new THREE.Scene();
+scene.background = new THREE.Color( 0x0a0e1a );
+scene.fog = new THREE.FogExp2( 0x0a0e1a, 0.012 );
+
+const camera = new THREE.PerspectiveCamera( 50, window.innerWidth / window.innerHeight, 0.1, 200 );
+camera.position.set( 10, 8, 12 );
+
+const controls = new OrbitControls( camera, renderer.domElement );
+controls.enableDamping = true;
+controls.dampingFactor = 0.08;
+controls.target.set( 0, 1.5, 0 );
+
+// --- Lights ---
+const ambientLight = new THREE.AmbientLight( 0x303850, 0.6 );
+scene.add( ambientLight );
+
+const mainLight = new THREE.DirectionalLight( 0xffeedd, 3.0 );
+mainLight.position.set( 10, 18, 8 );
+mainLight.castShadow = true;
+mainLight.shadow.mapSize.set( 2048, 2048 );
+mainLight.shadow.camera.left = - 12;
+mainLight.shadow.camera.right = 12;
+mainLight.shadow.camera.top = 12;
+mainLight.shadow.camera.bottom = - 12;
+mainLight.shadow.bias = - 0.001;
+scene.add( mainLight );
+
+const fillLight = new THREE.DirectionalLight( 0x4488ff, 0.5 );
+fillLight.position.set( - 6, 6, - 4 );
+scene.add( fillLight );
+
+const rimLight = new THREE.PointLight( 0xff6622, 1.0, 30 );
+rimLight.position.set( - 8, 8, - 6 );
+scene.add( rimLight );
+
+// --- Ground ---
+const groundGroup = new THREE.Group();
+const ground = new THREE.Mesh(
+	new THREE.PlaneGeometry( 80, 80 ),
+	new THREE.MeshStandardMaterial( { color: 0x0d1220, roughness: 0.85, metalness: 0.15 } )
+);
+ground.rotation.x = - Math.PI / 2;
+ground.receiveShadow = true;
+groundGroup.add( ground );
+
+const grid = new THREE.GridHelper( 40, 40, 0x1a2540, 0x111a2e );
+grid.position.y = 0.01;
+groundGroup.add( grid );
+
+scene.add( groundGroup );
+
+// --- Scene objects ---
+const colors = [ 0x4a9eff, 0x22c55e, 0xa855f7, 0xf97316, 0xf43f5e, 0x06b6d4 ];
+
+// Object definitions (geometry + positions)
+const objectDefs = [];
+
+// Central torus knot
+const knotGeo = new THREE.TorusKnotGeometry( 1.0, 0.35, 100, 24 );
+objectDefs.push( { geo: knotGeo, pos: [ 0, 2.5, 0 ], color: 0x4a9eff, name: 'knot' } );
+
+// Sphere
+const sphereGeo = new THREE.SphereGeometry( 0.9, 32, 24 );
+objectDefs.push( { geo: sphereGeo, pos: [ - 3.5, 1.5, 0 ], color: 0x22c55e, name: 'sphere' } );
+
+// Dodecahedron
+const dodecaGeo = new THREE.DodecahedronGeometry( 0.9 );
+objectDefs.push( { geo: dodecaGeo, pos: [ 3.5, 1.5, 0 ], color: 0xa855f7, name: 'dodeca' } );
+
+// Cylinder
+const cylGeo = new THREE.CylinderGeometry( 0.5, 0.7, 2, 16 );
+objectDefs.push( { geo: cylGeo, pos: [ 0, 1.5, - 3.5 ], color: 0xf97316, name: 'cylinder' } );
+
+// Torus
+const torusGeo = new THREE.TorusGeometry( 0.8, 0.3, 24, 48 );
+objectDefs.push( { geo: torusGeo, pos: [ 0, 1.5, 3.5 ], color: 0xf43f5e, name: 'torus' } );
+
+// Icosahedron
+const icoGeo = new THREE.IcosahedronGeometry( 0.8, 0 );
+objectDefs.push( { geo: icoGeo, pos: [ - 3, 1.5, - 3 ], color: 0x06b6d4, name: 'ico' } );
+
+// Cone
+const coneGeo = new THREE.ConeGeometry( 0.7, 1.8, 12 );
+objectDefs.push( { geo: coneGeo, pos: [ 3, 1.5, - 3 ], color: 0xfbbf24, name: 'cone' } );
+
+// Box
+const boxGeo = new THREE.BoxGeometry( 1.2, 1.2, 1.2 );
+objectDefs.push( { geo: boxGeo, pos: [ - 3, 1.2, 3 ], color: 0xec4899, name: 'box' } );
+
+// Capsule
+const capGeo = new THREE.CapsuleGeometry( 0.4, 1.0, 16, 24 );
+objectDefs.push( { geo: capGeo, pos: [ 3, 1.5, 3 ], color: 0x8b5cf6, name: 'capsule' } );
+
+// For each object, we create multiple representations:
+// - Points (vertices stage)
+// - Wireframe (wireframe stage)
+// - Flat-shaded mesh (rasterized stage)
+// - Smooth shaded mesh (shaded stage)
+// - Full PBR mesh (final stage)
+
+const allObjects = { vertices: [], wireframe: [], rasterized: [], shaded: [], final: [] };
+
+objectDefs.forEach( def => {
+
+	const pos = new THREE.Vector3( ...def.pos );
+
+	// Vertices: points
+	const pointsMat = new THREE.PointsMaterial( {
+		color: def.color,
+		size: 0.06,
+		sizeAttenuation: true
+	} );
+	const points = new THREE.Points( def.geo, pointsMat );
+	points.position.copy( pos );
+	points.visible = false;
+	scene.add( points );
+	allObjects.vertices.push( points );
+
+	// Wireframe: line segments
+	const wireGeo = new THREE.WireframeGeometry( def.geo );
+	const wireMat = new THREE.LineBasicMaterial( { color: def.color, transparent: true, opacity: 0.8 } );
+	const wire = new THREE.LineSegments( wireGeo, wireMat );
+	wire.position.copy( pos );
+	wire.visible = false;
+	scene.add( wire );
+	allObjects.wireframe.push( wire );
+
+	// Rasterized: flat shading, no lighting detail
+	const flatMat = new THREE.MeshBasicMaterial( {
+		color: def.color,
+		wireframe: false,
+		transparent: true,
+		opacity: 0.85
+	} );
+	const flatMesh = new THREE.Mesh( def.geo, flatMat );
+	flatMesh.position.copy( pos );
+	flatMesh.visible = false;
+	scene.add( flatMesh );
+	allObjects.rasterized.push( flatMesh );
+
+	// Shaded: Lambert with flat shading
+	const shadedMat = new THREE.MeshLambertMaterial( {
+		color: def.color,
+		flatShading: true
+	} );
+	const shadedMesh = new THREE.Mesh( def.geo, shadedMat );
+	shadedMesh.position.copy( pos );
+	shadedMesh.castShadow = true;
+	shadedMesh.receiveShadow = true;
+	shadedMesh.visible = false;
+	scene.add( shadedMesh );
+	allObjects.shaded.push( shadedMesh );
+
+	// Final: full PBR standard material
+	const finalMat = new THREE.MeshStandardMaterial( {
+		color: def.color,
+		roughness: 0.3,
+		metalness: 0.5
+	} );
+	const finalMesh = new THREE.Mesh( def.geo, finalMat );
+	finalMesh.position.copy( pos );
+	finalMesh.castShadow = true;
+	finalMesh.receiveShadow = true;
+	finalMesh.visible = true;
+	scene.add( finalMesh );
+	allObjects.final.push( finalMesh );
+
+} );
+
+// --- Stage descriptions ---
+const stageDescriptions = {
+	'vertices': 'Vertices -- Raw vertex positions from geometry buffers',
+	'wireframe': 'Wireframe -- Triangle edges after vertex assembly',
+	'rasterized': 'Rasterized -- Fragments filled, no lighting',
+	'shaded': 'Shaded -- Per-vertex lighting (Lambert)',
+	'final': 'Final -- Full PBR shading, shadows, tone mapping'
+};
+
+function setStage( stage ) {
+
+	const stages = [ 'vertices', 'wireframe', 'rasterized', 'shaded', 'final' ];
+
+	stages.forEach( s => {
+
+		allObjects[ s ].forEach( obj => {
+
+			obj.visible = ( s === stage );
+
+		} );
+
+	} );
+
+	// Ground and shadows only visible in shaded + final
+	const showGround = ( stage === 'shaded' || stage === 'final' );
+	groundGroup.visible = showGround;
+	renderer.shadowMap.enabled = showGround;
+
+	// Fog only in final
+	scene.fog = ( stage === 'final' ) ? new THREE.FogExp2( 0x0a0e1a, 0.012 ) : null;
+
+	// Adjust background for vertex/wireframe stages
+	if ( stage === 'vertices' || stage === 'wireframe' ) {
+
+		scene.background = new THREE.Color( 0x050510 );
+
+	} else {
+
+		scene.background = new THREE.Color( 0x0a0e1a );
+
+	}
+
+	stageLabel.textContent = stageDescriptions[ stage ] || stage;
+
+}
+
+// --- GUI ---
+const params = {
+	stage: 'vertices',
+	autoRotate: true,
+	showStats: false
+};
+
+const stages = [ 'vertices', 'wireframe', 'rasterized', 'shaded', 'final' ];
+const stageLabelsShort = { vertices: '1. Vertices', wireframe: '2. Wireframe', rasterized: '3. Rasterized', shaded: '4. Shaded', final: '5. Final' };
+
+// Radio button panel
+const radioPanel = document.createElement( 'div' );
+radioPanel.id = 'stage-radio-panel';
+radioPanel.innerHTML = '<div class="panel-title">Pipeline Stage</div>' + stages.map( s => {
+
+	const checked = s === params.stage ? 'checked' : '';
+	return `<label class="${s === params.stage ? 'active' : ''}"><input type="radio" name="stage" value="${s}" ${checked}><span>${stageLabelsShort[ s ]}</span></label>`;
+
+} ).join( '' );
+
+const radioCss = document.createElement( 'style' );
+radioCss.textContent = `
+	#stage-radio-panel {
+		position: fixed; top: 52px; right: 10px; z-index: 10;
+		background: rgba(10, 14, 26, 0.88); backdrop-filter: blur(10px);
+		border: 1px solid rgba(74, 158, 255, 0.25); border-radius: 10px;
+		padding: 14px 16px; font-family: 'Inter', system-ui, sans-serif;
+	}
+	#stage-radio-panel .panel-title {
+		font-size: 10px; font-weight: 700; text-transform: uppercase;
+		letter-spacing: 0.12em; color: #4a9eff; margin-bottom: 10px;
+	}
+	#stage-radio-panel label {
+		display: flex; align-items: center; gap: 8px;
+		padding: 5px 8px; border-radius: 6px; cursor: pointer;
+		font-size: 13px; color: #aab7d2; transition: all 0.15s;
+	}
+	#stage-radio-panel label:hover { background: rgba(74, 158, 255, 0.08); color: #e0e5f0; }
+	#stage-radio-panel label.active { background: rgba(74, 158, 255, 0.15); color: #fff; }
+	#stage-radio-panel input[type="radio"] {
+		appearance: none; width: 14px; height: 14px; border-radius: 50%;
+		border: 2px solid #4a6a9a; background: transparent; cursor: pointer; flex-shrink: 0;
+	}
+	#stage-radio-panel input[type="radio"]:checked {
+		border-color: #4a9eff; background: #4a9eff;
+		box-shadow: inset 0 0 0 2px rgba(10, 14, 26, 0.9);
+	}
+`;
+document.head.appendChild( radioCss );
+document.body.appendChild( radioPanel );
+
+radioPanel.querySelectorAll( 'input[name="stage"]' ).forEach( input => {
+
+	input.addEventListener( 'change', () => {
+
+		params.stage = input.value;
+		setStage( input.value );
+		radioPanel.querySelectorAll( 'label' ).forEach( l => l.classList.toggle( 'active', l.querySelector( 'input' ).value === input.value ) );
+
+	} );
+
+} );
+
+const gui = new GUI();
+gui.title( 'Settings' );
+
+gui.add( params, 'autoRotate' ).name( 'Auto Rotate' );
+
+gui.add( params, 'showStats' ).name( 'Show Stats' ).onChange( v => {
+
+	statsDiv.style.display = v ? 'block' : 'none';
+
+} );
+
+setStage( 'vertices' );
+
+// --- Simple stats display ---
+const statsDiv = document.createElement( 'div' );
+statsDiv.style.cssText = 'position:fixed;bottom:80px;left:50%;transform:translateX(-50%);z-index:10;background:rgba(10,14,26,0.85);backdrop-filter:blur(8px);border:1px solid rgba(74,158,255,0.3);border-radius:8px;padding:8px 16px;color:#e0e5f0;font-size:12px;font-family:monospace;display:none;white-space:pre;';
+document.body.appendChild( statsDiv );
+
+// --- Animate ---
+const clock = new THREE.Clock();
+
+function animate() {
+
+	requestAnimationFrame( animate );
+	const elapsed = clock.getElapsedTime();
+
+	if ( params.autoRotate ) {
+
+		const stages = [ 'vertices', 'wireframe', 'rasterized', 'shaded', 'final' ];
+		stages.forEach( stage => {
+
+			allObjects[ stage ].forEach( ( obj, i ) => {
+
+				obj.rotation.y = elapsed * 0.3 + i * 0.4;
+
+				if ( objectDefs[ i ].name === 'knot' ) {
+
+					obj.rotation.x = elapsed * 0.15;
+
+				}
+
+				if ( objectDefs[ i ].name === 'torus' ) {
+
+					obj.rotation.x = elapsed * 0.2;
+
+				}
+
+				// Gentle bob
+				const baseY = objectDefs[ i ].pos[ 1 ];
+				obj.position.y = baseY + Math.sin( elapsed * 1.0 + i * 0.7 ) * 0.15;
+
+			} );
+
+		} );
+
+	}
+
+	// Update stats
+	if ( params.showStats ) {
+
+		const info = renderer.info;
+		statsDiv.textContent =
+			`Draw calls: ${ info.render.calls }\n` +
+			`Triangles:  ${ info.render.triangles }\n` +
+			`Points:     ${ info.render.points }\n` +
+			`Lines:      ${ info.render.lines }\n` +
+			`Geometries: ${ info.memory.geometries }\n` +
+			`Textures:   ${ info.memory.textures }`;
+
+	}
+
+	controls.update();
+	renderer.render( scene, camera );
+
+}
+
+animate();
+
+window.addEventListener( 'resize', () => {
+
+	camera.aspect = window.innerWidth / window.innerHeight;
+	camera.updateProjectionMatrix();
+	renderer.setSize( window.innerWidth, window.innerHeight );
+
+} );
+</script>
+<script src="../shared/demo-nav.js"></script>
+</body>
+</html>

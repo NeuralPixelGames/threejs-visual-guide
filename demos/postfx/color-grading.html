@@ -1,0 +1,720 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<title>Color Grading -- Three.js Encyclopedia v2</title>
+	<meta charset="utf-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<link rel="stylesheet" href="../shared/demo-base.css">
+	<style>
+		.preset-panel {
+			position: fixed;
+			left: 20px;
+			bottom: 20px;
+			z-index: 50;
+			background: linear-gradient(135deg, rgba(10, 12, 24, 0.9) 0%, rgba(14, 18, 32, 0.88) 100%);
+			backdrop-filter: blur(18px);
+			-webkit-backdrop-filter: blur(18px);
+			border: 1px solid rgba(74, 158, 255, 0.18);
+			border-radius: 14px;
+			padding: 16px 20px;
+			color: #e0e5f0;
+			font-family: 'Inter', system-ui, sans-serif;
+			font-size: 13px;
+			box-shadow: 0 8px 36px rgba(0, 0, 0, 0.45), inset 0 1px 0 rgba(255, 255, 255, 0.04);
+			animation: fadeInUp 0.6s ease-out both;
+			animation-delay: 0.5s;
+			min-width: 200px;
+		}
+		.preset-panel .kicker {
+			display: inline-block;
+			font-size: 10px;
+			font-weight: 600;
+			text-transform: uppercase;
+			letter-spacing: 0.12em;
+			color: #4a9eff;
+			margin-bottom: 6px;
+		}
+		.preset-panel h3 {
+			margin: 0 0 12px;
+			font-size: 15px;
+			font-weight: 600;
+			color: #f8fbff;
+		}
+		.preset-option {
+			display: flex;
+			align-items: center;
+			gap: 8px;
+			padding: 5px 0;
+			cursor: pointer;
+			transition: color 0.2s;
+		}
+		.preset-option:hover {
+			color: #fff;
+		}
+		.preset-option input[type="radio"] {
+			accent-color: #4a9eff;
+			width: 14px;
+			height: 14px;
+			cursor: pointer;
+		}
+		.preset-option label {
+			cursor: pointer;
+			font-size: 13px;
+			user-select: none;
+		}
+		.preset-option .preset-desc {
+			font-size: 10px;
+			color: rgba(230, 236, 245, 0.5);
+			margin-left: auto;
+			padding-left: 10px;
+		}
+		@media (max-width: 900px) {
+			.preset-panel {
+				left: 10px;
+				right: 10px;
+				bottom: 10px;
+				max-width: none;
+				padding: 12px 14px;
+			}
+		}
+	</style>
+</head>
+<body>
+
+<a href="../index.html" id="back-btn">&larr; Hub</a>
+<div id="info"><strong>Color Grading</strong> -- Lift/gamma/gain + saturation/contrast/brightness via custom ShaderPass</div>
+
+<section class="preset-panel" id="presetPanel">
+	<div class="kicker">Post-Processing</div>
+	<h3>Color Grade Presets</h3>
+</section>
+
+<script type="importmap">
+{
+	"imports": {
+		"three": "https://cdn.jsdelivr.net/npm/three@0.183.0/build/three.module.js",
+		"three/addons/": "https://cdn.jsdelivr.net/npm/three@0.183.0/examples/jsm/"
+	}
+}
+</script>
+
+<script type="module">
+import * as THREE from 'three';
+import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+import { GUI } from 'three/addons/libs/lil-gui.module.min.js';
+import { EffectComposer } from 'three/addons/postprocessing/EffectComposer.js';
+import { RenderPass } from 'three/addons/postprocessing/RenderPass.js';
+import { ShaderPass } from 'three/addons/postprocessing/ShaderPass.js';
+import { OutputPass } from 'three/addons/postprocessing/OutputPass.js';
+
+let renderer, scene, camera, controls, clock;
+let composer, gradePass;
+
+
+// ── Presets ─────────────────────────────────────────────────
+
+const presets = {
+	none: {
+		label: 'None',
+		desc: 'no grading',
+		saturation: 1.0,
+		contrast: 1.0,
+		brightness: 1.0,
+		liftR: 0.0, liftG: 0.0, liftB: 0.0,
+		gammaR: 1.0, gammaG: 1.0, gammaB: 1.0,
+		gainR: 1.0, gainG: 1.0, gainB: 1.0,
+		hueShift: 0.0
+	},
+	cinematic: {
+		label: 'Cinematic',
+		desc: 'desaturated, lifted blacks',
+		saturation: 0.85,
+		contrast: 1.08,
+		brightness: 1.0,
+		liftR: 0.02, liftG: 0.015, liftB: 0.025,
+		gammaR: 1.0, gammaG: 0.98, gammaB: 0.96,
+		gainR: 1.0, gainG: 0.98, gainB: 0.95,
+		hueShift: 0.0
+	},
+	warm: {
+		label: 'Warm',
+		desc: 'golden warmth',
+		saturation: 1.05,
+		contrast: 1.04,
+		brightness: 1.01,
+		liftR: 0.015, liftG: 0.005, liftB: -0.01,
+		gammaR: 1.02, gammaG: 1.0, gammaB: 0.96,
+		gainR: 1.04, gainG: 1.01, gainB: 0.94,
+		hueShift: 0.0
+	},
+	cool: {
+		label: 'Cool',
+		desc: 'blue shadows',
+		saturation: 0.92,
+		contrast: 1.04,
+		brightness: 0.99,
+		liftR: -0.01, liftG: 0.0, liftB: 0.02,
+		gammaR: 0.98, gammaG: 0.99, gammaB: 1.02,
+		gainR: 0.96, gainG: 0.98, gainB: 1.04,
+		hueShift: 0.0
+	},
+	vintage: {
+		label: 'Vintage',
+		desc: 'slight sepia, faded',
+		saturation: 0.78,
+		contrast: 0.96,
+		brightness: 1.02,
+		liftR: 0.025, liftG: 0.015, liftB: 0.005,
+		gammaR: 1.02, gammaG: 1.0, gammaB: 0.95,
+		gainR: 1.02, gainG: 0.98, gainB: 0.90,
+		hueShift: 0.005
+	}
+};
+
+const params = {
+	preset: 'none',
+	saturation: 1.0,
+	contrast: 1.0,
+	brightness: 1.0,
+	liftR: 0.0, liftG: 0.0, liftB: 0.0,
+	gammaR: 1.0, gammaG: 1.0, gammaB: 1.0,
+	gainR: 1.0, gainG: 1.0, gainB: 1.0,
+	hueShift: 0.0
+};
+
+
+// ── Color Grade Shader ──────────────────────────────────────
+
+const ColorGradeShader = {
+	name: 'ColorGradeShader',
+	uniforms: {
+		tDiffuse: { value: null },
+		saturation: { value: 1.0 },
+		contrast: { value: 1.0 },
+		brightness: { value: 1.0 },
+		lift: { value: new THREE.Vector3( 0, 0, 0 ) },
+		gamma: { value: new THREE.Vector3( 1, 1, 1 ) },
+		gain: { value: new THREE.Vector3( 1, 1, 1 ) },
+		hueShift: { value: 0.0 }
+	},
+	vertexShader: /* glsl */`
+		varying vec2 vUv;
+		void main() {
+			vUv = uv;
+			gl_Position = projectionMatrix * modelViewMatrix * vec4( position, 1.0 );
+		}
+	`,
+	fragmentShader: /* glsl */`
+		uniform sampler2D tDiffuse;
+		uniform float saturation;
+		uniform float contrast;
+		uniform float brightness;
+		uniform vec3 lift;
+		uniform vec3 gamma;
+		uniform vec3 gain;
+		uniform float hueShift;
+		varying vec2 vUv;
+
+		vec3 rgb2hsv( vec3 c ) {
+			vec4 K = vec4( 0.0, -1.0/3.0, 2.0/3.0, -1.0 );
+			vec4 p = mix( vec4( c.bg, K.wz ), vec4( c.gb, K.xy ), step( c.b, c.g ) );
+			vec4 q = mix( vec4( p.xyw, c.r ), vec4( c.r, p.yzx ), step( p.x, c.r ) );
+			float d = q.x - min( q.w, q.y );
+			float e = 1.0e-10;
+			return vec3( abs( q.z + ( q.w - q.y ) / ( 6.0 * d + e ) ), d / ( q.x + e ), q.x );
+		}
+
+		vec3 hsv2rgb( vec3 c ) {
+			vec4 K = vec4( 1.0, 2.0/3.0, 1.0/3.0, 3.0 );
+			vec3 p = abs( fract( c.xxx + K.xyz ) * 6.0 - K.www );
+			return c.z * mix( K.xxx, clamp( p - K.xxx, 0.0, 1.0 ), c.y );
+		}
+
+		void main() {
+			vec4 texel = texture2D( tDiffuse, vUv );
+			vec3 color = texel.rgb;
+
+			// Brightness
+			color *= brightness;
+
+			// Lift / Gamma / Gain (ASC CDL style)
+			color = gain * ( color + lift * ( 1.0 - color ) );
+			color = max( color, 0.0 );
+			color = pow( color, 1.0 / max( gamma, vec3( 0.01 ) ) );
+
+			// Hue shift + Saturation via HSV
+			vec3 hsv = rgb2hsv( color );
+			hsv.x = fract( hsv.x + hueShift );
+			hsv.y *= saturation;
+			color = hsv2rgb( hsv );
+
+			// Contrast around midpoint
+			color = clamp( color, 0.0, 1.0 );
+			color = 0.5 + ( color - 0.5 ) * contrast;
+
+			gl_FragColor = vec4( clamp( color, 0.0, 1.0 ), texel.a );
+		}
+	`
+};
+
+
+var guiControllers = [];
+
+// ── Init ────────────────────────────────────────────────────
+
+init();
+
+function init() {
+
+	clock = new THREE.Clock();
+
+	renderer = new THREE.WebGLRenderer( { antialias: true } );
+	renderer.setPixelRatio( window.devicePixelRatio );
+	renderer.setSize( window.innerWidth, window.innerHeight );
+	renderer.toneMapping = THREE.ACESFilmicToneMapping;
+	renderer.toneMappingExposure = 1.0;
+	renderer.shadowMap.enabled = true;
+	renderer.shadowMap.type = THREE.PCFShadowMap;
+	document.body.appendChild( renderer.domElement );
+
+	scene = new THREE.Scene();
+	scene.background = new THREE.Color( 0x1a1a24 );
+
+	camera = new THREE.PerspectiveCamera( 45, window.innerWidth / window.innerHeight, 0.1, 100 );
+	camera.position.set( 5, 4.5, 8 );
+
+	controls = new OrbitControls( camera, renderer.domElement );
+	controls.enableDamping = true;
+	controls.dampingFactor = 0.07;
+	controls.target.set( 0, 1.5, 0 );
+	controls.maxPolarAngle = Math.PI * 0.58;
+	controls.minDistance = 4;
+	controls.maxDistance = 18;
+	controls.update();
+
+	buildShowroom();
+	setupComposer();
+	setupPresetPanel();
+	setupGUI();
+
+	window.addEventListener( 'resize', onResize );
+	onResize();
+	renderer.setAnimationLoop( animate );
+
+}
+
+
+// ── Showroom Scene ──────────────────────────────────────────
+
+function buildShowroom() {
+
+	// Environment: gradient cubemap
+	const envScene = new THREE.Scene();
+	const envCam = new THREE.CubeCamera( 0.1, 100, new THREE.WebGLCubeRenderTarget( 256 ) );
+
+	const skyGeo = new THREE.SphereGeometry( 40, 32, 16 );
+	const skyMat = new THREE.ShaderMaterial( {
+		side: THREE.BackSide,
+		uniforms: {
+			topColor: { value: new THREE.Color( 0x2a3a5c ) },
+			bottomColor: { value: new THREE.Color( 0x0d0d14 ) }
+		},
+		vertexShader: `
+			varying vec3 vWorldPos;
+			void main() {
+				vWorldPos = ( modelMatrix * vec4( position, 1.0 ) ).xyz;
+				gl_Position = projectionMatrix * modelViewMatrix * vec4( position, 1.0 );
+			}
+		`,
+		fragmentShader: `
+			uniform vec3 topColor;
+			uniform vec3 bottomColor;
+			varying vec3 vWorldPos;
+			void main() {
+				float h = normalize( vWorldPos ).y * 0.5 + 0.5;
+				gl_FragColor = vec4( mix( bottomColor, topColor, h ), 1.0 );
+			}
+		`
+	} );
+	envScene.add( new THREE.Mesh( skyGeo, skyMat ) );
+	envCam.update( renderer, envScene );
+	scene.environment = envCam.renderTarget.texture;
+
+	// Floor
+	const floorMat = new THREE.MeshStandardMaterial( { color: 0x888888, roughness: 0.25, metalness: 0.1 } );
+	const floor = new THREE.Mesh( new THREE.PlaneGeometry( 20, 20 ), floorMat );
+	floor.rotation.x = - Math.PI / 2;
+	floor.receiveShadow = true;
+	scene.add( floor );
+
+	// Back wall
+	const wallMat = new THREE.MeshStandardMaterial( { color: 0xbbb8b0, roughness: 0.8, metalness: 0.0 } );
+	const backWall = new THREE.Mesh( new THREE.PlaneGeometry( 20, 8 ), wallMat );
+	backWall.position.set( 0, 4, - 5 );
+	backWall.receiveShadow = true;
+	scene.add( backWall );
+
+	const leftWall = new THREE.Mesh( new THREE.PlaneGeometry( 10, 8 ), wallMat.clone() );
+	leftWall.material.color.set( 0xa8a6a0 );
+	leftWall.position.set( - 6, 4, 0 );
+	leftWall.rotation.y = Math.PI / 2;
+	leftWall.receiveShadow = true;
+	scene.add( leftWall );
+
+	// Pedestal
+	const pedestalMat = new THREE.MeshStandardMaterial( { color: 0x404040, roughness: 0.3, metalness: 0.7 } );
+	const pedestal = new THREE.Mesh( new THREE.CylinderGeometry( 1.5, 1.5, 0.15, 48 ), pedestalMat );
+	pedestal.position.set( 0, 0.8, 0 );
+	pedestal.receiveShadow = true;
+	pedestal.castShadow = true;
+	scene.add( pedestal );
+
+	const pedestalLeg = new THREE.Mesh( new THREE.CylinderGeometry( 0.25, 0.35, 0.8, 16 ), pedestalMat );
+	pedestalLeg.position.set( 0, 0.4, 0 );
+	pedestalLeg.castShadow = true;
+	scene.add( pedestalLeg );
+
+	// Vase (lathe)
+	const vasePoints = [];
+	for ( let i = 0; i < 12; i ++ ) {
+
+		const t = i / 11;
+		const r = 0.25 + 0.35 * Math.sin( t * Math.PI ) - 0.15 * Math.sin( t * Math.PI * 2.5 );
+		vasePoints.push( new THREE.Vector2( Math.max( 0.05, r ), t * 1.8 ) );
+
+	}
+
+	const vaseMat = new THREE.MeshStandardMaterial( { color: 0xcc3333, roughness: 0.3, metalness: 0.15 } );
+	const vase = new THREE.Mesh( new THREE.LatheGeometry( vasePoints, 24 ), vaseMat );
+	vase.position.set( 0, 0.88, 0 );
+	vase.castShadow = true;
+	scene.add( vase );
+
+	// Flowers
+	const flowerColors = [ 0xff4488, 0xffaa22, 0xff2266, 0xff6699, 0xffcc44 ];
+	for ( let i = 0; i < 5; i ++ ) {
+
+		const angle = ( i / 5 ) * Math.PI * 2 + 0.3;
+		const height = 1.6 + Math.random() * 0.8;
+		const lean = 0.3 + Math.random() * 0.2;
+
+		const stemMat = new THREE.MeshStandardMaterial( { color: 0x2d5a1e, roughness: 0.8 } );
+		const stem = new THREE.Mesh( new THREE.CylinderGeometry( 0.015, 0.015, height, 4 ), stemMat );
+		stem.position.set( Math.cos( angle ) * lean, 0.88 + height / 2, Math.sin( angle ) * lean );
+		stem.rotation.x = Math.sin( angle ) * 0.15;
+		stem.rotation.z = Math.cos( angle ) * 0.15;
+		stem.castShadow = true;
+		scene.add( stem );
+
+		const bloomMat = new THREE.MeshStandardMaterial( { color: flowerColors[ i ], roughness: 0.6 } );
+		const bloom = new THREE.Mesh( new THREE.SphereGeometry( 0.08 + Math.random() * 0.06, 8, 6 ), bloomMat );
+		bloom.position.set(
+			Math.cos( angle ) * lean + Math.sin( angle ) * 0.1,
+			0.88 + height + 0.05,
+			Math.sin( angle ) * lean + Math.cos( angle ) * 0.05
+		);
+		bloom.castShadow = true;
+		scene.add( bloom );
+
+	}
+
+	// Metallic sphere
+	const artSphere = new THREE.Mesh(
+		new THREE.SphereGeometry( 0.5, 32, 24 ),
+		new THREE.MeshStandardMaterial( { color: 0x2266cc, roughness: 0.05, metalness: 0.95 } )
+	);
+	artSphere.position.set( - 2.2, 1.4, - 1 );
+	artSphere.castShadow = true;
+	scene.add( artSphere );
+
+	const standMat = new THREE.MeshStandardMaterial( { color: 0x333333, roughness: 0.5, metalness: 0.3 } );
+	const stand = new THREE.Mesh( new THREE.CylinderGeometry( 0.3, 0.35, 0.9, 12 ), standMat );
+	stand.position.set( - 2.2, 0.45, - 1 );
+	stand.castShadow = true;
+	stand.receiveShadow = true;
+	scene.add( stand );
+
+	// Stacked boxes
+	const boxGroup = new THREE.Group();
+	boxGroup.position.set( 2.5, 0, - 1.5 );
+
+	const box1 = new THREE.Mesh(
+		new THREE.BoxGeometry( 0.7, 1.4, 0.7 ),
+		new THREE.MeshStandardMaterial( { color: 0x22aa55, roughness: 0.4, metalness: 0.3 } )
+	);
+	box1.position.y = 0.7;
+	box1.castShadow = true;
+	boxGroup.add( box1 );
+
+	const box2 = new THREE.Mesh(
+		new THREE.BoxGeometry( 0.5, 0.5, 0.5 ),
+		new THREE.MeshStandardMaterial( { color: 0xddaa22, roughness: 0.3, metalness: 0.5 } )
+	);
+	box2.position.set( 0.15, 1.65, 0.1 );
+	box2.rotation.y = 0.6;
+	box2.castShadow = true;
+	boxGroup.add( box2 );
+
+	const box3 = new THREE.Mesh(
+		new THREE.BoxGeometry( 0.35, 0.35, 0.35 ),
+		new THREE.MeshStandardMaterial( { color: 0xaa3377, roughness: 0.5, metalness: 0.2 } )
+	);
+	box3.position.set( - 0.1, 2.1, - 0.05 );
+	box3.rotation.set( 0.3, 0.8, 0.2 );
+	box3.castShadow = true;
+	boxGroup.add( box3 );
+
+	scene.add( boxGroup );
+
+	// Torus knot
+	const knot = new THREE.Mesh(
+		new THREE.TorusKnotGeometry( 0.35, 0.1, 80, 16 ),
+		new THREE.MeshStandardMaterial( { color: 0xcc6600, roughness: 0.2, metalness: 0.8 } )
+	);
+	knot.position.set( - 1, 1.3, 2.2 );
+	knot.castShadow = true;
+	scene.add( knot );
+
+	const knotStand = new THREE.Mesh(
+		new THREE.CylinderGeometry( 0.2, 0.25, 0.8, 12 ),
+		standMat.clone()
+	);
+	knotStand.position.set( - 1, 0.4, 2.2 );
+	knotStand.castShadow = true;
+	scene.add( knotStand );
+
+	// Neutral gray reference sphere
+	const graySphere = new THREE.Mesh(
+		new THREE.SphereGeometry( 0.3, 24, 16 ),
+		new THREE.MeshStandardMaterial( { color: 0x808080, roughness: 0.5, metalness: 0.0 } )
+	);
+	graySphere.position.set( 1.5, 1.18, 1.8 );
+	graySphere.castShadow = true;
+	scene.add( graySphere );
+
+	const grayStand = new THREE.Mesh(
+		new THREE.CylinderGeometry( 0.15, 0.2, 0.75, 12 ),
+		standMat.clone()
+	);
+	grayStand.position.set( 1.5, 0.375, 1.8 );
+	grayStand.castShadow = true;
+	scene.add( grayStand );
+
+	// Painting on back wall
+	const paintingGroup = new THREE.Group();
+	paintingGroup.position.set( 0, 3.2, - 4.95 );
+
+	const frameMat = new THREE.MeshStandardMaterial( { color: 0x222222, roughness: 0.6, metalness: 0.4 } );
+	paintingGroup.add( new THREE.Mesh( new THREE.BoxGeometry( 3.2, 2.2, 0.08 ), frameMat ) );
+
+	const stripeColors = [ 0xdd3344, 0x2277cc, 0x33aa55, 0xffbb22, 0x9944cc, 0xff6644 ];
+	const stripeW = 3.0 / stripeColors.length;
+	for ( let i = 0; i < stripeColors.length; i ++ ) {
+
+		const stripe = new THREE.Mesh(
+			new THREE.PlaneGeometry( stripeW - 0.02, 1.9 ),
+			new THREE.MeshStandardMaterial( { color: stripeColors[ i ], roughness: 0.85 } )
+		);
+		stripe.position.set( - 1.5 + stripeW * 0.5 + i * stripeW, 0, 0.05 );
+		paintingGroup.add( stripe );
+
+	}
+
+	scene.add( paintingGroup );
+
+	// Lighting
+	const keyLight = new THREE.DirectionalLight( 0xffeedd, 2.5 );
+	keyLight.position.set( 4, 7, 3 );
+	keyLight.target.position.set( 0, 1, 0 );
+	keyLight.castShadow = true;
+	keyLight.shadow.mapSize.set( 1024, 1024 );
+	keyLight.shadow.camera.left = - 6;
+	keyLight.shadow.camera.right = 6;
+	keyLight.shadow.camera.top = 6;
+	keyLight.shadow.camera.bottom = - 2;
+	keyLight.shadow.camera.near = 1;
+	keyLight.shadow.camera.far = 20;
+	keyLight.shadow.bias = - 0.002;
+	scene.add( keyLight );
+	scene.add( keyLight.target );
+
+	const fillLight = new THREE.DirectionalLight( 0x8899cc, 0.8 );
+	fillLight.position.set( - 5, 4, 2 );
+	scene.add( fillLight );
+
+	const rimLight = new THREE.DirectionalLight( 0xffffff, 0.6 );
+	rimLight.position.set( 0, 5, - 6 );
+	scene.add( rimLight );
+
+	scene.add( new THREE.AmbientLight( 0x404050, 0.4 ) );
+
+	const ptWarm = new THREE.PointLight( 0xffaa66, 0.6, 8 );
+	ptWarm.position.set( 0, 2.5, 1 );
+	scene.add( ptWarm );
+
+	const spotPainting = new THREE.SpotLight( 0xffffff, 1.5, 8, Math.PI / 8, 0.5, 1 );
+	spotPainting.position.set( 0, 6, - 2 );
+	spotPainting.target.position.set( 0, 3.2, - 5 );
+	scene.add( spotPainting );
+	scene.add( spotPainting.target );
+
+}
+
+
+// ── Composer Setup ──────────────────────────────────────────
+
+function setupComposer() {
+
+	composer = new EffectComposer( renderer );
+	composer.addPass( new RenderPass( scene, camera ) );
+
+	gradePass = new ShaderPass( ColorGradeShader );
+	composer.addPass( gradePass );
+	composer.addPass( new OutputPass() );
+
+}
+
+function syncPassFromParams() {
+
+	const u = gradePass.uniforms;
+	u.saturation.value = params.saturation;
+	u.contrast.value = params.contrast;
+	u.brightness.value = params.brightness;
+	u.lift.value.set( params.liftR, params.liftG, params.liftB );
+	u.gamma.value.set( params.gammaR, params.gammaG, params.gammaB );
+	u.gain.value.set( params.gainR, params.gainG, params.gainB );
+	u.hueShift.value = params.hueShift;
+
+}
+
+function applyPreset( name ) {
+
+	const p = presets[ name ];
+	if ( ! p ) return;
+
+	params.preset = name;
+	params.saturation = p.saturation;
+	params.contrast = p.contrast;
+	params.brightness = p.brightness;
+	params.liftR = p.liftR; params.liftG = p.liftG; params.liftB = p.liftB;
+	params.gammaR = p.gammaR; params.gammaG = p.gammaG; params.gammaB = p.gammaB;
+	params.gainR = p.gainR; params.gainG = p.gainG; params.gainB = p.gainB;
+	params.hueShift = p.hueShift;
+
+	syncPassFromParams();
+	updateGUIDisplays();
+
+}
+
+
+// ── Preset Radio Panel ──────────────────────────────────────
+
+function setupPresetPanel() {
+
+	const panel = document.getElementById( 'presetPanel' );
+
+	for ( const [ key, preset ] of Object.entries( presets ) ) {
+
+		const row = document.createElement( 'div' );
+		row.className = 'preset-option';
+
+		const radio = document.createElement( 'input' );
+		radio.type = 'radio';
+		radio.name = 'colorPreset';
+		radio.id = 'preset-' + key;
+		radio.value = key;
+		radio.checked = key === 'none';
+		radio.addEventListener( 'change', () => applyPreset( key ) );
+
+		const label = document.createElement( 'label' );
+		label.htmlFor = 'preset-' + key;
+		label.textContent = preset.label;
+
+		const desc = document.createElement( 'span' );
+		desc.className = 'preset-desc';
+		desc.textContent = preset.desc;
+
+		row.appendChild( radio );
+		row.appendChild( label );
+		row.appendChild( desc );
+		panel.appendChild( row );
+
+	}
+
+}
+
+
+// ── GUI (Sliders) ───────────────────────────────────────────
+
+function setupGUI() {
+
+	const gui = new GUI();
+
+	const basic = gui.addFolder( 'Basic' );
+	guiControllers.push( basic.add( params, 'saturation', 0, 2, 0.01 ).name( 'Saturation' ).onChange( onSliderChange ) );
+	guiControllers.push( basic.add( params, 'contrast', 0.5, 1.5, 0.01 ).name( 'Contrast' ).onChange( onSliderChange ) );
+	guiControllers.push( basic.add( params, 'brightness', 0.5, 1.5, 0.01 ).name( 'Brightness' ).onChange( onSliderChange ) );
+	guiControllers.push( basic.add( params, 'hueShift', - 0.5, 0.5, 0.005 ).name( 'Hue Shift' ).onChange( onSliderChange ) );
+	basic.open();
+
+	const liftF = gui.addFolder( 'Lift (shadows)' );
+	guiControllers.push( liftF.add( params, 'liftR', - 0.1, 0.1, 0.005 ).name( 'R' ).onChange( onSliderChange ) );
+	guiControllers.push( liftF.add( params, 'liftG', - 0.1, 0.1, 0.005 ).name( 'G' ).onChange( onSliderChange ) );
+	guiControllers.push( liftF.add( params, 'liftB', - 0.1, 0.1, 0.005 ).name( 'B' ).onChange( onSliderChange ) );
+
+	const gammaF = gui.addFolder( 'Gamma (midtones)' );
+	guiControllers.push( gammaF.add( params, 'gammaR', 0.5, 1.5, 0.01 ).name( 'R' ).onChange( onSliderChange ) );
+	guiControllers.push( gammaF.add( params, 'gammaG', 0.5, 1.5, 0.01 ).name( 'G' ).onChange( onSliderChange ) );
+	guiControllers.push( gammaF.add( params, 'gammaB', 0.5, 1.5, 0.01 ).name( 'B' ).onChange( onSliderChange ) );
+
+	const gainF = gui.addFolder( 'Gain (highlights)' );
+	guiControllers.push( gainF.add( params, 'gainR', 0.5, 1.5, 0.01 ).name( 'R' ).onChange( onSliderChange ) );
+	guiControllers.push( gainF.add( params, 'gainG', 0.5, 1.5, 0.01 ).name( 'G' ).onChange( onSliderChange ) );
+	guiControllers.push( gainF.add( params, 'gainB', 0.5, 1.5, 0.01 ).name( 'B' ).onChange( onSliderChange ) );
+
+}
+
+function onSliderChange() {
+
+	syncPassFromParams();
+
+}
+
+function updateGUIDisplays() {
+
+	for ( const c of guiControllers ) {
+
+		c.updateDisplay();
+
+	}
+
+}
+
+
+// ── Resize ──────────────────────────────────────────────────
+
+function onResize() {
+
+	const w = window.innerWidth;
+	const h = window.innerHeight;
+
+	camera.aspect = w / h;
+	camera.updateProjectionMatrix();
+	renderer.setSize( w, h );
+	composer.setSize( w, h );
+
+}
+
+
+// ── Animation Loop ──────────────────────────────────────────
+
+function animate() {
+
+	controls.update();
+	composer.render();
+
+}
+</script>
+<script src="../shared/demo-nav.js"></script>
+</body>
+</html>

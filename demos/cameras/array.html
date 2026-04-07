@@ -1,0 +1,346 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<title>Three.js Encyclopedia - Array Camera</title>
+	<meta charset="utf-8">
+	<meta name="viewport" content="width=device-width, user-scalable=no, minimum-scale=1.0, maximum-scale=1.0">
+	<link rel="stylesheet" href="../shared/demo-base.css">
+	<style>
+		#viewport-labels {
+			position: absolute;
+			top: 0;
+			left: 0;
+			width: 100%;
+			height: 100%;
+			pointer-events: none;
+			z-index: 5;
+		}
+		.vp-label {
+			position: absolute;
+			background: rgba(10, 14, 26, 0.75);
+			backdrop-filter: blur(4px);
+			border: 1px solid rgba(74, 158, 255, 0.25);
+			border-radius: 4px;
+			padding: 3px 8px;
+			color: #4a9eff;
+			font-family: 'Inter', system-ui, sans-serif;
+			font-size: 11px;
+			pointer-events: none;
+		}
+	</style>
+</head>
+<body>
+	<a href="../index.html" id="back-btn">&larr; Hub</a>
+	<div id="info"><strong>Array Camera</strong><br>Multi-viewport grid rendering from different viewpoints</div>
+	<div id="viewport-labels"></div>
+	<div id="container"></div>
+	<script type="importmap">
+	{ "imports": { "three": "https://cdn.jsdelivr.net/npm/three@0.183.0/build/three.module.js", "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.183.0/examples/jsm/" } }
+	</script>
+	<script type="module">
+		import * as THREE from 'three';
+		import { GUI } from 'three/addons/libs/lil-gui.module.min.js';
+		import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+
+		let renderer, scene, arrayCamera;
+		let subcameras = [];
+		let sceneObjects = [];
+
+		const params = {
+			gridSize: '2x2',
+			spread: 8,
+			fov: 85,
+			showBorders: true,
+			autoRotate: true
+		};
+
+		init();
+
+		function init() {
+
+			const container = document.getElementById( 'container' );
+
+			renderer = new THREE.WebGLRenderer( { antialias: true } );
+			renderer.setPixelRatio( window.devicePixelRatio );
+			renderer.setSize( window.innerWidth, window.innerHeight );
+			renderer.toneMapping = THREE.ACESFilmicToneMapping;
+			renderer.toneMappingExposure = 1.0;
+			renderer.shadowMap.enabled = true;
+			renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+			container.appendChild( renderer.domElement );
+
+			scene = new THREE.Scene();
+			scene.background = new THREE.Color( 0x0a0e1a );
+			scene.fog = new THREE.FogExp2( 0x0a0e1a, 0.012 );
+
+			buildScene();
+			buildLighting();
+			buildArrayCamera();
+			buildGUI();
+
+			window.addEventListener( 'resize', onResize );
+			renderer.setAnimationLoop( animate );
+
+		}
+
+		function buildScene() {
+
+			// Ground
+			const groundGeo = new THREE.PlaneGeometry( 40, 40 );
+			const groundMat = new THREE.MeshStandardMaterial( { color: 0x111522, roughness: 0.12, metalness: 0.85 } );
+			const ground = new THREE.Mesh( groundGeo, groundMat );
+			ground.rotation.x = - Math.PI / 2;
+			ground.position.y = - 1;
+			ground.receiveShadow = true;
+			scene.add( ground );
+
+			const grid = new THREE.GridHelper( 30, 30, 0x1a2540, 0x101830 );
+			grid.position.y = - 0.99;
+			scene.add( grid );
+
+			// Central torus knot
+			const knotGeo = new THREE.TorusKnotGeometry( 1.2, 0.4, 128, 32 );
+			const knotMat = new THREE.MeshStandardMaterial( {
+				color: 0xff3366,
+				emissive: 0xff3366,
+				emissiveIntensity: 0.5,
+				roughness: 0.2,
+				metalness: 0.9
+			} );
+			const knot = new THREE.Mesh( knotGeo, knotMat );
+			knot.position.y = 1.5;
+			knot.castShadow = true;
+			scene.add( knot );
+			sceneObjects.push( knot );
+
+			// Surrounding objects
+			const shapes = [
+				{ geo: new THREE.BoxGeometry( 1, 1, 1 ), color: 0x4a9eff, pos: [ 3, 0.5, 0 ] },
+				{ geo: new THREE.SphereGeometry( 0.6, 32, 32 ), color: 0x33ff99, pos: [ - 3, 0.6, 0 ] },
+				{ geo: new THREE.ConeGeometry( 0.5, 1.2, 8 ), color: 0xffaa22, pos: [ 0, 0.8, 3 ] },
+				{ geo: new THREE.OctahedronGeometry( 0.6 ), color: 0xaa44ff, pos: [ 0, 0.8, - 3 ] },
+				{ geo: new THREE.DodecahedronGeometry( 0.5 ), color: 0x22ccff, pos: [ 2.5, 0.7, 2.5 ] },
+				{ geo: new THREE.TorusGeometry( 0.4, 0.15, 16, 32 ), color: 0xff6633, pos: [ - 2.5, 0.7, - 2.5 ] },
+				{ geo: new THREE.TetrahedronGeometry( 0.5 ), color: 0x44ffaa, pos: [ - 2.5, 0.7, 2.5 ] },
+				{ geo: new THREE.IcosahedronGeometry( 0.5 ), color: 0xff44aa, pos: [ 2.5, 0.7, - 2.5 ] }
+			];
+
+			shapes.forEach( s => {
+
+				const mat = new THREE.MeshStandardMaterial( {
+					color: s.color,
+					emissive: s.color,
+					emissiveIntensity: 0.3,
+					roughness: 0.25,
+					metalness: 0.75
+				} );
+				const mesh = new THREE.Mesh( s.geo, mat );
+				mesh.position.set( ...s.pos );
+				mesh.castShadow = true;
+				scene.add( mesh );
+				sceneObjects.push( mesh );
+
+			} );
+
+			// Pillar ring
+			for ( let i = 0; i < 8; i ++ ) {
+
+				const angle = ( i / 8 ) * Math.PI * 2;
+				const r = 6;
+				const pillarGeo = new THREE.CylinderGeometry( 0.12, 0.12, 3.5, 8 );
+				const pillarMat = new THREE.MeshStandardMaterial( { color: 0x2a3555, roughness: 0.3, metalness: 0.7 } );
+				const pillar = new THREE.Mesh( pillarGeo, pillarMat );
+				pillar.position.set( Math.cos( angle ) * r, 0.75, Math.sin( angle ) * r );
+				pillar.castShadow = true;
+				scene.add( pillar );
+
+				const glowGeo = new THREE.SphereGeometry( 0.15, 16, 16 );
+				const glowColor = i % 2 === 0 ? 0x4a9eff : 0xff3366;
+				const glowMat = new THREE.MeshStandardMaterial( { color: glowColor, emissive: glowColor, emissiveIntensity: 3.0 } );
+				const glow = new THREE.Mesh( glowGeo, glowMat );
+				glow.position.set( Math.cos( angle ) * r, 2.6, Math.sin( angle ) * r );
+				scene.add( glow );
+
+			}
+
+		}
+
+		function buildLighting() {
+
+			scene.add( new THREE.AmbientLight( 0xffffff, 0.25 ) );
+
+			const keyLight = new THREE.DirectionalLight( 0xffffff, 2.0 );
+			keyLight.position.set( 5, 10, 4 );
+			keyLight.castShadow = true;
+			keyLight.shadow.mapSize.setScalar( 2048 );
+			keyLight.shadow.camera.near = 0.5;
+			keyLight.shadow.camera.far = 40;
+			keyLight.shadow.camera.left = - 12;
+			keyLight.shadow.camera.right = 12;
+			keyLight.shadow.camera.top = 12;
+			keyLight.shadow.camera.bottom = - 12;
+			keyLight.shadow.bias = - 0.001;
+			scene.add( keyLight );
+
+			scene.add( new THREE.DirectionalLight( 0x4488ff, 0.7 ).translateX( - 4 ).translateY( 3 ).translateZ( - 2 ) );
+			scene.add( new THREE.DirectionalLight( 0xff8844, 0.9 ).translateX( - 2 ).translateY( 5 ).translateZ( - 6 ) );
+
+			const pl1 = new THREE.PointLight( 0xff3366, 1.5, 15 );
+			pl1.position.set( - 4, 2, 3 );
+			scene.add( pl1 );
+
+			const pl2 = new THREE.PointLight( 0x33ff99, 1.5, 15 );
+			pl2.position.set( 4, 2, - 3 );
+			scene.add( pl2 );
+
+		}
+
+		function buildArrayCamera() {
+
+			const gridParts = params.gridSize.split( 'x' );
+			const cols = parseInt( gridParts[ 0 ] );
+			const rows = parseInt( gridParts[ 1 ] );
+			const w = window.innerWidth;
+			const h = window.innerHeight;
+			const vpW = Math.floor( w / cols );
+			const vpH = Math.floor( h / rows );
+
+			subcameras = [];
+			const labelsDiv = document.getElementById( 'viewport-labels' );
+			labelsDiv.innerHTML = '';
+
+			const viewNames = [
+				'Front', 'Right', 'Back', 'Left',
+				'Top', 'Front-Right', 'Front-Left', 'Top-Down',
+				'Bottom', 'High-Front', 'Far-Right', 'Far-Left',
+				'Overhead', 'Close-Up', 'Side-High', 'Wide'
+			];
+
+			const cameraAngles = [
+				[ 0, 3, 10 ], [ 10, 3, 0 ], [ 0, 3, - 10 ], [ - 10, 3, 0 ],
+				[ 0, 12, 1 ], [ 7, 4, 7 ], [ - 7, 4, 7 ], [ 0, 15, 0.1 ],
+				[ 0, - 2, 8 ], [ 0, 6, 8 ], [ 12, 2, 0 ], [ - 12, 2, 0 ],
+				[ 5, 10, 5 ], [ 2, 2, 3 ], [ 8, 6, 0 ], [ 10, 5, 10 ]
+			];
+
+			let idx = 0;
+
+			for ( let row = 0; row < rows; row ++ ) {
+
+				for ( let col = 0; col < cols; col ++ ) {
+
+					const cam = new THREE.PerspectiveCamera( params.fov, vpW / vpH, 0.1, 200 );
+					const scale = params.spread / 8;
+					const angles = cameraAngles[ idx % cameraAngles.length ];
+					cam.position.set( angles[ 0 ] * scale, angles[ 1 ], angles[ 2 ] * scale );
+					cam.lookAt( 0, 1, 0 );
+
+					cam.viewport = new THREE.Vector4(
+						col * vpW,
+						( rows - row - 1 ) * vpH,
+						vpW,
+						vpH
+					);
+
+					subcameras.push( cam );
+
+					// Create label
+					if ( params.showBorders ) {
+
+						const label = document.createElement( 'div' );
+						label.className = 'vp-label';
+						label.textContent = viewNames[ idx % viewNames.length ];
+						label.style.left = ( col * vpW + 6 ) + 'px';
+						label.style.top = ( row * vpH + 6 ) + 'px';
+						labelsDiv.appendChild( label );
+
+					}
+
+					idx ++;
+
+				}
+
+			}
+
+			arrayCamera = new THREE.ArrayCamera( subcameras );
+
+		}
+
+		function buildGUI() {
+
+			const gui = new GUI();
+
+			gui.add( params, 'gridSize', [ '2x2', '3x3', '4x4', '2x3', '3x2' ] ).name( 'Grid Size' ).onChange( () => {
+
+				buildArrayCamera();
+
+			} );
+
+			gui.add( params, 'spread', 2, 20, 0.5 ).name( 'Camera Spread' ).onChange( () => {
+
+				buildArrayCamera();
+
+			} );
+
+			gui.add( params, 'fov', 20, 120, 1 ).name( 'FOV' ).onChange( () => {
+
+				buildArrayCamera();
+
+			} );
+
+			gui.add( params, 'showBorders' ).name( 'Show Labels' ).onChange( () => {
+
+				buildArrayCamera();
+
+			} );
+
+			gui.add( params, 'autoRotate' ).name( 'Auto-Rotate' );
+
+		}
+
+		function onResize() {
+
+			renderer.setSize( window.innerWidth, window.innerHeight );
+			buildArrayCamera();
+
+		}
+
+		function animate() {
+
+			const time = performance.now() * 0.001;
+
+			// Rotate scene objects
+			sceneObjects.forEach( ( obj, i ) => {
+
+				obj.rotation.x = time * ( 0.2 + i * 0.05 );
+				obj.rotation.y = time * ( 0.3 + i * 0.08 );
+
+			} );
+
+			// Auto-rotate all subcameras around the center
+			if ( params.autoRotate ) {
+
+				subcameras.forEach( ( cam, i ) => {
+
+					const baseAngle = ( i / subcameras.length ) * Math.PI * 2;
+					const angle = baseAngle + time * 0.15;
+					const dist = cam.position.length();
+					const y = cam.position.y;
+					cam.position.x = Math.sin( angle ) * dist * 0.7;
+					cam.position.z = Math.cos( angle ) * dist * 0.7;
+					cam.position.y = y;
+					cam.lookAt( 0, 1, 0 );
+					cam.updateMatrixWorld();
+
+				} );
+
+			}
+
+			renderer.render( scene, arrayCamera );
+
+		}
+
+	</script>
+<script src="../shared/demo-nav.js"></script>
+</body>
+</html>

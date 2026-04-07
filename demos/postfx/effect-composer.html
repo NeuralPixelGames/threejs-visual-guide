@@ -1,0 +1,278 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<title>Effect Composer - Three.js Encyclopedia</title>
+	<meta charset="utf-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<link rel="stylesheet" href="../shared/demo-base.css">
+</head>
+<body>
+<a href="../index.html" id="back-btn">&larr; Hub</a>
+<div id="info">
+	<strong>Effect Composer</strong><br>
+	Post-processing pass chain. Toggle passes on/off to see each effect.
+</div>
+<div id="container"></div>
+
+<script type="importmap">
+{
+	"imports": {
+		"three": "https://cdn.jsdelivr.net/npm/three@0.183.0/build/three.module.js",
+		"three/addons/": "https://cdn.jsdelivr.net/npm/three@0.183.0/examples/jsm/"
+	}
+}
+</script>
+
+<script type="module">
+import * as THREE from 'three';
+import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+import { GUI } from 'three/addons/libs/lil-gui.module.min.js';
+import { EffectComposer } from 'three/addons/postprocessing/EffectComposer.js';
+import { RenderPass } from 'three/addons/postprocessing/RenderPass.js';
+import { UnrealBloomPass } from 'three/addons/postprocessing/UnrealBloomPass.js';
+import { FilmPass } from 'three/addons/postprocessing/FilmPass.js';
+import { DotScreenPass } from 'three/addons/postprocessing/DotScreenPass.js';
+import { OutputPass } from 'three/addons/postprocessing/OutputPass.js';
+
+// --- Scene setup ---
+const container = document.getElementById( 'container' );
+const renderer = new THREE.WebGLRenderer( { antialias: true } );
+renderer.setPixelRatio( window.devicePixelRatio );
+renderer.setSize( window.innerWidth, window.innerHeight );
+renderer.toneMapping = THREE.ACESFilmicToneMapping;
+renderer.toneMappingExposure = 1.0;
+renderer.shadowMap.enabled = true;
+renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+container.appendChild( renderer.domElement );
+
+const scene = new THREE.Scene();
+scene.background = new THREE.Color( 0x0a0e1a );
+scene.fog = new THREE.FogExp2( 0x0a0e1a, 0.012 );
+
+const camera = new THREE.PerspectiveCamera( 50, window.innerWidth / window.innerHeight, 0.1, 100 );
+camera.position.set( 6, 4, 8 );
+
+const controls = new OrbitControls( camera, renderer.domElement );
+controls.enableDamping = true;
+controls.dampingFactor = 0.05;
+controls.target.set( 0, 0.5, 0 );
+
+// --- Lights ---
+scene.add( new THREE.AmbientLight( 0x303850, 0.5 ) );
+
+const keyLight = new THREE.DirectionalLight( 0xffeedd, 2.0 );
+keyLight.position.set( 5, 8, 4 );
+keyLight.castShadow = true;
+keyLight.shadow.mapSize.setScalar( 2048 );
+keyLight.shadow.camera.near = 0.5;
+keyLight.shadow.camera.far = 50;
+keyLight.shadow.camera.left = - 10;
+keyLight.shadow.camera.right = 10;
+keyLight.shadow.camera.top = 10;
+keyLight.shadow.camera.bottom = - 10;
+keyLight.shadow.bias = - 0.001;
+scene.add( keyLight );
+
+const fillLight = new THREE.DirectionalLight( 0x4488ff, 0.8 );
+fillLight.position.set( - 4, 3, - 2 );
+scene.add( fillLight );
+
+const rimLight = new THREE.DirectionalLight( 0xff8844, 1.2 );
+rimLight.position.set( - 2, 5, - 6 );
+scene.add( rimLight );
+
+// --- Ground ---
+const groundGeo = new THREE.PlaneGeometry( 30, 30 );
+const groundMat = new THREE.MeshStandardMaterial( { color: 0x111522, roughness: 0.1, metalness: 0.8 } );
+const ground = new THREE.Mesh( groundGeo, groundMat );
+ground.rotation.x = - Math.PI / 2;
+ground.position.y = - 1;
+ground.receiveShadow = true;
+scene.add( ground );
+
+// --- Scene objects ---
+const colors = [ 0xff3366, 0x33ccff, 0xffcc00, 0x66ff66, 0xaa55ff, 0xff8833 ];
+
+const torusKnot = new THREE.Mesh(
+	new THREE.TorusKnotGeometry( 0.8, 0.3, 128, 32 ),
+	new THREE.MeshStandardMaterial( { color: 0xff3366, emissive: 0xff3366, emissiveIntensity: 0.3, roughness: 0.2, metalness: 0.7 } )
+);
+torusKnot.position.set( 0, 1.2, 0 );
+torusKnot.castShadow = true;
+scene.add( torusKnot );
+
+const sphere = new THREE.Mesh(
+	new THREE.SphereGeometry( 0.6, 32, 32 ),
+	new THREE.MeshStandardMaterial( { color: 0x33ccff, emissive: 0x33ccff, emissiveIntensity: 0.2, roughness: 0.3, metalness: 0.5 } )
+);
+sphere.position.set( - 2.5, 0.3, 1.5 );
+sphere.castShadow = true;
+scene.add( sphere );
+
+const box = new THREE.Mesh(
+	new THREE.BoxGeometry( 1, 1, 1 ),
+	new THREE.MeshStandardMaterial( { color: 0xffcc00, emissive: 0xffcc00, emissiveIntensity: 0.2, roughness: 0.3, metalness: 0.5 } )
+);
+box.position.set( 2.5, 0, - 1 );
+box.castShadow = true;
+scene.add( box );
+
+const torus = new THREE.Mesh(
+	new THREE.TorusGeometry( 0.5, 0.2, 24, 48 ),
+	new THREE.MeshStandardMaterial( { color: 0x66ff66, emissive: 0x66ff66, emissiveIntensity: 0.2, roughness: 0.2, metalness: 0.6 } )
+);
+torus.position.set( - 1.5, 0.5, - 2 );
+torus.castShadow = true;
+scene.add( torus );
+
+const cone = new THREE.Mesh(
+	new THREE.ConeGeometry( 0.5, 1.2, 32 ),
+	new THREE.MeshStandardMaterial( { color: 0xaa55ff, emissive: 0xaa55ff, emissiveIntensity: 0.2, roughness: 0.3, metalness: 0.5 } )
+);
+cone.position.set( 2, 0.2, 2 );
+cone.castShadow = true;
+scene.add( cone );
+
+// --- Post-processing ---
+const composer = new EffectComposer( renderer );
+
+const renderPass = new RenderPass( scene, camera );
+composer.addPass( renderPass );
+
+const bloomPass = new UnrealBloomPass(
+	new THREE.Vector2( window.innerWidth, window.innerHeight ),
+	0.8, 0.4, 0.85
+);
+bloomPass.enabled = true;
+composer.addPass( bloomPass );
+
+const filmPass = new FilmPass( 0.35, false );
+filmPass.enabled = false;
+composer.addPass( filmPass );
+
+const dotScreenPass = new DotScreenPass();
+dotScreenPass.enabled = false;
+composer.addPass( dotScreenPass );
+
+const outputPass = new OutputPass();
+composer.addPass( outputPass );
+
+// --- GUI ---
+const gui = new GUI();
+gui.title( 'Effect Composer' );
+
+const params = {
+	renderPass: true,
+	bloom: true,
+	filmGrain: false,
+	dotScreen: false,
+	bloomStrength: 0.8,
+	bloomRadius: 0.4,
+	bloomThreshold: 0.85,
+	filmIntensity: 0.35,
+	filmGrayscale: false,
+	dotAngle: 1.57,
+	dotScale: 1
+};
+
+const passFolder = gui.addFolder( 'Pass Chain' );
+passFolder.add( params, 'renderPass' ).name( '1. Render Pass' ).onChange( () => {
+
+	renderPass.enabled = params.renderPass;
+
+} );
+passFolder.add( params, 'bloom' ).name( '2. Bloom' ).onChange( v => {
+
+	bloomPass.enabled = v;
+
+} );
+passFolder.add( params, 'filmGrain' ).name( '3. Film Grain' ).onChange( v => {
+
+	filmPass.enabled = v;
+
+} );
+passFolder.add( params, 'dotScreen' ).name( '4. Dot Screen' ).onChange( v => {
+
+	dotScreenPass.enabled = v;
+
+} );
+
+const bloomFolder = gui.addFolder( 'Bloom Settings' );
+bloomFolder.add( params, 'bloomStrength', 0, 3, 0.05 ).name( 'Strength' ).onChange( v => {
+
+	bloomPass.strength = v;
+
+} );
+bloomFolder.add( params, 'bloomRadius', 0, 1, 0.01 ).name( 'Radius' ).onChange( v => {
+
+	bloomPass.radius = v;
+
+} );
+bloomFolder.add( params, 'bloomThreshold', 0, 1, 0.01 ).name( 'Threshold' ).onChange( v => {
+
+	bloomPass.threshold = v;
+
+} );
+
+const filmFolder = gui.addFolder( 'Film Grain Settings' );
+filmFolder.add( params, 'filmIntensity', 0, 1, 0.01 ).name( 'Intensity' ).onChange( v => {
+
+	filmPass.uniforms.intensity.value = v;
+
+} );
+filmFolder.add( params, 'filmGrayscale' ).name( 'Grayscale' ).onChange( v => {
+
+	filmPass.uniforms.grayscale.value = v;
+
+} );
+
+const dotFolder = gui.addFolder( 'Dot Screen Settings' );
+dotFolder.add( params, 'dotAngle', 0, Math.PI * 2, 0.01 ).name( 'Angle' ).onChange( v => {
+
+	dotScreenPass.uniforms.angle.value = v;
+
+} );
+dotFolder.add( params, 'dotScale', 0.1, 3, 0.05 ).name( 'Scale' ).onChange( v => {
+
+	dotScreenPass.uniforms.scale.value = v;
+
+} );
+
+// --- Animate ---
+const clock = new THREE.Clock();
+
+function animate() {
+
+	requestAnimationFrame( animate );
+
+	const t = clock.getElapsedTime();
+
+	torusKnot.rotation.y = t * 0.3;
+	torusKnot.rotation.x = t * 0.15;
+	sphere.position.y = 0.3 + Math.sin( t * 1.5 ) * 0.2;
+	box.rotation.y = t * 0.5;
+	box.rotation.x = t * 0.25;
+	torus.rotation.x = t * 0.8;
+	torus.rotation.y = t * 0.4;
+	cone.rotation.y = t * 0.6;
+
+	controls.update();
+	composer.render();
+
+}
+
+animate();
+
+// --- Resize ---
+window.addEventListener( 'resize', () => {
+
+	camera.aspect = window.innerWidth / window.innerHeight;
+	camera.updateProjectionMatrix();
+	renderer.setSize( window.innerWidth, window.innerHeight );
+	composer.setSize( window.innerWidth, window.innerHeight );
+
+} );
+</script>
+<script src="../shared/demo-nav.js"></script>
+</body>
+</html>

@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<title>Film Grain -- Three.js Encyclopedia v2</title>
+	<meta charset="utf-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<link rel="stylesheet" href="../shared/demo-base.css">
+</head>
+<body>
+
+<div id="loading-overlay" style="position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(10,14,26,0.95);display:flex;align-items:center;justify-content:center;z-index:1000;color:#4a9eff;font-family:Inter,system-ui,sans-serif;font-size:16px;">Loading model...</div>
+
+<a href="../index.html" id="back-btn">&larr; Hub</a>
+<div id="info"><strong>Film Grain</strong> -- Left: clean render | Right: FilmPass with vintage grain</div>
+
+<div class="split-divider"></div>
+<div class="split-label split-label-left"><strong>Clean</strong></div>
+<div class="split-label split-label-right"><strong>FilmPass</strong></div>
+
+<script type="importmap">
+{
+	"imports": {
+		"three": "https://cdn.jsdelivr.net/npm/three@0.183.0/build/three.module.js",
+		"three/addons/": "https://cdn.jsdelivr.net/npm/three@0.183.0/examples/jsm/"
+	}
+}
+</script>
+
+<script type="module">
+import * as THREE from 'three';
+import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+import { GUI } from 'three/addons/libs/lil-gui.module.min.js';
+import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
+import { EffectComposer } from 'three/addons/postprocessing/EffectComposer.js';
+import { RenderPass } from 'three/addons/postprocessing/RenderPass.js';
+import { FilmPass } from 'three/addons/postprocessing/FilmPass.js';
+import { OutputPass } from 'three/addons/postprocessing/OutputPass.js';
+import { buildShowroom } from '../shared/scene-builders.js';
+
+let renderer, scene, camera, controls;
+let composerFilm;
+let filmPass;
+let quadScene, quadCam, quadMesh;
+
+const params = {
+	intensity: 1.1,
+	grayscale: false
+};
+
+init();
+
+function init() {
+
+	renderer = new THREE.WebGLRenderer( { antialias: true } );
+	renderer.setPixelRatio( window.devicePixelRatio );
+	renderer.setSize( window.innerWidth, window.innerHeight );
+	renderer.toneMapping = THREE.ACESFilmicToneMapping;
+	renderer.toneMappingExposure = 0.75;
+	renderer.shadowMap.enabled = true;
+	renderer.shadowMap.type = THREE.PCFShadowMap;
+	document.body.appendChild( renderer.domElement );
+
+	scene = new THREE.Scene();
+
+	camera = new THREE.PerspectiveCamera( 50, window.innerWidth / window.innerHeight, 0.1, 100 );
+	camera.position.set( 0, 3, 6 );
+
+	controls = new OrbitControls( camera, renderer.domElement );
+	controls.enableDamping = true;
+	controls.target.set( 0, 1, 0 );
+	controls.update();
+
+	buildShowroom( scene, renderer, { accentColor: 0xfbbf24 } );
+
+	// Load Nefertiti bust
+	new GLTFLoader().load( '../../examples/models/gltf/Nefertiti/Nefertiti.glb', function ( gltf ) {
+
+		const model = gltf.scene;
+
+		// Auto-center using bounding box
+		const box = new THREE.Box3().setFromObject( model );
+		const size = box.getSize( new THREE.Vector3() );
+		const center = box.getCenter( new THREE.Vector3() );
+
+		// Scale to fit ~3 units tall
+		const targetHeight = 3.0;
+		const scaleFactor = targetHeight / size.y;
+		model.scale.setScalar( scaleFactor );
+
+		// Re-center after scaling
+		box.setFromObject( model );
+		box.getCenter( center );
+		model.position.sub( center );
+		model.position.y = 0.15;
+
+		model.traverse( ( child ) => {
+
+			if ( child.isMesh ) {
+
+				child.castShadow = true;
+				child.receiveShadow = true;
+
+			}
+
+		} );
+
+		scene.add( model );
+
+		const overlay = document.getElementById( 'loading-overlay' );
+		if ( overlay ) overlay.style.display = 'none';
+
+	} );
+
+	setupComposer();
+	setupQuadBlit();
+	setupGUI();
+
+	window.addEventListener( 'resize', onResize );
+	renderer.setAnimationLoop( animate );
+
+}
+
+
+function setupComposer() {
+
+	composerFilm = new EffectComposer( renderer );
+	composerFilm.renderToScreen = false;
+	composerFilm.addPass( new RenderPass( scene, camera ) );
+
+	filmPass = new FilmPass( params.intensity, params.grayscale );
+	composerFilm.addPass( filmPass );
+	composerFilm.addPass( new OutputPass() );
+
+}
+
+function setupQuadBlit() {
+
+	quadScene = new THREE.Scene();
+	quadCam = new THREE.OrthographicCamera( - 1, 1, 1, - 1, 0, 1 );
+	quadMesh = new THREE.Mesh(
+		new THREE.PlaneGeometry( 2, 2 ),
+		new THREE.MeshBasicMaterial()
+	);
+	quadScene.add( quadMesh );
+
+}
+
+function setupGUI() {
+
+	const gui = new GUI();
+	gui.add( params, 'intensity', 0, 2, 0.01 ).name( 'Grain Intensity' ).onChange( v => {
+
+		filmPass.uniforms.intensity.value = v;
+
+	} );
+	gui.add( params, 'grayscale' ).name( 'Grayscale' ).onChange( v => {
+
+		filmPass.uniforms.grayscale.value = v;
+
+	} );
+
+}
+
+function onResize() {
+
+	const w = window.innerWidth;
+	const h = window.innerHeight;
+	const halfW = Math.floor( w / 2 );
+	camera.aspect = halfW / h;
+	camera.updateProjectionMatrix();
+	renderer.setSize( w, h );
+	composerFilm.setSize( halfW, h );
+
+}
+
+function animate() {
+
+	controls.update();
+
+	const w = window.innerWidth;
+	const h = window.innerHeight;
+	const halfW = Math.floor( w / 2 );
+
+	camera.aspect = halfW / h;
+	camera.updateProjectionMatrix();
+
+	renderer.setScissorTest( true );
+	renderer.setViewport( 0, 0, halfW, h );
+	renderer.setScissor( 0, 0, halfW, h );
+	renderer.render( scene, camera );
+
+	renderer.setScissorTest( false );
+	composerFilm.setSize( halfW, h );
+	composerFilm.render();
+
+	renderer.setScissorTest( true );
+	renderer.setViewport( halfW, 0, w - halfW, h );
+	renderer.setScissor( halfW, 0, w - halfW, h );
+	renderer.setRenderTarget( null );
+
+	quadMesh.material.map = composerFilm.readBuffer.texture;
+	renderer.render( quadScene, quadCam );
+
+	renderer.setScissorTest( false );
+
+}
+</script>
+<script src="../shared/demo-nav.js"></script>
+</body>
+</html>

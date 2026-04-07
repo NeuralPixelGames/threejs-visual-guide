@@ -128,11 +128,11 @@ a:hover {
 
 .lil-gui .children {
 	scrollbar-width: thin;
-	scrollbar-color: rgba(74, 158, 255, 0.3) transparent;
+	scrollbar-color: rgba(74, 158, 255, 0.45) transparent;
 }
 
 .lil-gui .children::-webkit-scrollbar {
-	width: 4px;
+	width: 6px;
 }
 
 .lil-gui .children::-webkit-scrollbar-track {
@@ -140,9 +140,12 @@ a:hover {
 }
 
 .lil-gui .children::-webkit-scrollbar-thumb {
-	background: rgba(74, 158, 255, 0.3);
-	border-radius: 2px;
+	background: rgba(74, 158, 255, 0.45);
+	border-radius: 3px;
 }
+
+.lil-gui .controller .widget input[type="range"] { min-width: 0; flex: 1; }
+.lil-gui .controller .widget { min-width: 45%; }
 
 #container {
 	width: 100%;

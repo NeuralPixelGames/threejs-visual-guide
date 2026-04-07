@@ -1,0 +1,509 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<title>Compute Shaders — Three.js Encyclopedia</title>
+	<meta charset="utf-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<link rel="stylesheet" href="../shared/demo-base.css">
+	<style>
+		#info-panel {
+			position: fixed;
+			top: 50px;
+			right: 16px;
+			width: 360px;
+			max-height: calc(100vh - 80px);
+			overflow-y: auto;
+			background: rgba(10, 14, 26, 0.92);
+			backdrop-filter: blur(12px);
+			border: 1px solid rgba(74, 158, 255, 0.25);
+			border-radius: 12px;
+			padding: 20px;
+			z-index: 50;
+			font-family: 'Inter', system-ui, sans-serif;
+			scrollbar-width: thin;
+			scrollbar-color: #1e2740 transparent;
+		}
+		#info-panel h2 {
+			font-size: 16px;
+			color: #fff;
+			margin: 0 0 4px 0;
+			font-weight: 600;
+		}
+		#info-panel .subtitle {
+			font-size: 11px;
+			color: #6b7394;
+			margin-bottom: 16px;
+		}
+		.comparison-row {
+			display: flex;
+			gap: 12px;
+			margin-bottom: 16px;
+		}
+		.comparison-card {
+			flex: 1;
+			background: rgba(20, 24, 40, 0.8);
+			border: 1px solid rgba(74, 158, 255, 0.15);
+			border-radius: 8px;
+			padding: 12px;
+		}
+		.comparison-card h3 {
+			font-size: 12px;
+			color: #4a9eff;
+			margin: 0 0 8px 0;
+			text-transform: uppercase;
+			letter-spacing: 1px;
+		}
+		.comparison-card .count {
+			font-size: 24px;
+			font-weight: 700;
+			color: #fff;
+			margin-bottom: 4px;
+		}
+		.comparison-card .detail {
+			font-size: 11px;
+			color: #6b7394;
+			line-height: 1.4;
+		}
+		.card-cpu { border-color: rgba(251, 191, 36, 0.3); }
+		.card-cpu h3 { color: #fbbf24; }
+		.card-gpu { border-color: rgba(34, 197, 94, 0.3); }
+		.card-gpu h3 { color: #22c55e; }
+		.pipeline-section {
+			margin-top: 16px;
+		}
+		.pipeline-section h3 {
+			font-size: 12px;
+			color: #e0e5f0;
+			margin: 0 0 8px 0;
+			font-weight: 600;
+		}
+		.pipeline-step {
+			display: flex;
+			align-items: center;
+			gap: 8px;
+			padding: 6px 0;
+			font-size: 12px;
+			color: #b0b8cc;
+		}
+		.pipeline-step .step-icon {
+			width: 24px;
+			height: 24px;
+			border-radius: 6px;
+			display: flex;
+			align-items: center;
+			justify-content: center;
+			font-size: 11px;
+			font-weight: 600;
+			flex-shrink: 0;
+		}
+		.step-cpu { background: rgba(251, 191, 36, 0.2); color: #fbbf24; }
+		.step-gpu { background: rgba(34, 197, 94, 0.2); color: #22c55e; }
+		.code-block {
+			margin-top: 12px;
+			background: rgba(10, 14, 26, 0.9);
+			border: 1px solid rgba(74, 158, 255, 0.15);
+			border-radius: 8px;
+			padding: 10px 12px;
+			font-family: 'Consolas', 'Monaco', monospace;
+			font-size: 11px;
+			color: #b0b8cc;
+			line-height: 1.5;
+			overflow-x: auto;
+			white-space: pre;
+		}
+		.code-block .keyword { color: #c792ea; }
+		.code-block .fn { color: #82aaff; }
+		.code-block .comment { color: #546e7a; }
+		.note-box {
+			margin-top: 16px;
+			background: rgba(74, 158, 255, 0.08);
+			border: 1px solid rgba(74, 158, 255, 0.2);
+			border-radius: 8px;
+			padding: 10px 12px;
+			font-size: 11px;
+			color: #8899bb;
+			line-height: 1.5;
+		}
+		.note-box strong { color: #4a9eff; }
+		#particle-label {
+			position: fixed;
+			bottom: 20px;
+			left: 20px;
+			background: rgba(10, 14, 26, 0.85);
+			backdrop-filter: blur(8px);
+			border: 1px solid rgba(34, 197, 94, 0.3);
+			border-radius: 8px;
+			padding: 8px 16px;
+			color: #e0e5f0;
+			font-family: 'Inter', system-ui, sans-serif;
+			font-size: 13px;
+			z-index: 50;
+		}
+		#particle-label strong { color: #22c55e; }
+		@media (max-width: 800px) {
+			#info-panel {
+				position: fixed;
+				top: auto;
+				bottom: 0;
+				left: 0;
+				right: 0;
+				width: 100%;
+				max-height: 45vh;
+				border-radius: 12px 12px 0 0;
+			}
+		}
+	</style>
+	<script type="importmap">
+	{
+		"imports": {
+			"three": "https://cdn.jsdelivr.net/npm/three@0.183.0/build/three.webgpu.js",
+			"three/webgpu": "https://cdn.jsdelivr.net/npm/three@0.183.0/build/three.webgpu.js",
+			"three/tsl": "https://cdn.jsdelivr.net/npm/three@0.183.0/build/three.tsl.js",
+			"three/addons/": "https://cdn.jsdelivr.net/npm/three@0.183.0/examples/jsm/"
+		}
+	}
+	</script>
+</head>
+<body>
+
+<a href="../index.html" id="back-btn">&larr; Hub</a>
+
+<div id="particle-label"><strong>GPU Compute Particles</strong> — 200,000 particles driven by compute shaders</div>
+
+<div id="info-panel">
+	<h2>Compute Shaders</h2>
+	<div class="subtitle">CPU vs GPU Particle Simulation</div>
+
+	<div class="comparison-row">
+		<div class="comparison-card card-cpu">
+			<h3>CPU (JavaScript)</h3>
+			<div class="count">~1,000</div>
+			<div class="detail">Particles practical limit. Each particle position updated per frame on CPU. Transfers data to GPU every frame.</div>
+		</div>
+		<div class="comparison-card card-gpu">
+			<h3>GPU (Compute)</h3>
+			<div class="count">1,000,000+</div>
+			<div class="detail">Particles with compute shaders. Position, velocity, forces all computed in parallel on GPU. No CPU transfer needed.</div>
+		</div>
+	</div>
+
+	<div class="pipeline-section">
+		<h3>CPU Pipeline (Traditional)</h3>
+		<div class="pipeline-step">
+			<div class="step-icon step-cpu">1</div>
+			JS loop: update positions
+		</div>
+		<div class="pipeline-step">
+			<div class="step-icon step-cpu">2</div>
+			Write to Float32Array
+		</div>
+		<div class="pipeline-step">
+			<div class="step-icon step-cpu">3</div>
+			Upload buffer to GPU
+		</div>
+		<div class="pipeline-step">
+			<div class="step-icon step-gpu">4</div>
+			GPU renders points
+		</div>
+	</div>
+
+	<div class="pipeline-section">
+		<h3>GPU Compute Pipeline (This Demo)</h3>
+		<div class="pipeline-step">
+			<div class="step-icon step-gpu">1</div>
+			Compute shader: update positions
+		</div>
+		<div class="pipeline-step">
+			<div class="step-icon step-gpu">2</div>
+			Storage buffer stays on GPU
+		</div>
+		<div class="pipeline-step">
+			<div class="step-icon step-gpu">3</div>
+			GPU renders points directly
+		</div>
+	</div>
+
+	<div class="code-block"><span class="comment">// GPU compute shader (TSL)</span>
+<span class="keyword">const</span> computeFn = <span class="fn">Fn</span>(() => {
+  <span class="keyword">const</span> pos = positions.<span class="fn">element</span>(instanceIndex);
+  <span class="keyword">const</span> vel = velocities.<span class="fn">element</span>(instanceIndex);
+  pos.<span class="fn">addAssign</span>(vel.mul(speed));
+  vel.<span class="fn">addAssign</span>(vec3(0, gravity, 0));
+});</div>
+
+	<div class="note-box">
+		<strong>Why compute shaders matter:</strong> GPUs have thousands of cores
+		that can process particles in parallel. A CPU processes them one at a time
+		(or a few with SIMD). With WebGPU compute shaders, particle physics,
+		fluid simulation, and other massively parallel tasks run 100-1000x faster.
+	</div>
+</div>
+
+<script type="module">
+import * as THREE from 'three';
+import { Fn, If, uniform, float, vec3, hash,
+	instancedArray, instanceIndex, sin, cos, shapeCircle } from 'three/tsl';
+import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+import { GUI } from 'three/addons/libs/lil-gui.module.min.js';
+
+if ( ! navigator.gpu ) {
+
+	document.getElementById( 'particle-label' ).style.display = 'none';
+	document.getElementById( 'info-panel' ).style.display = 'none';
+	document.body.insertAdjacentHTML( 'afterbegin',
+		'<div id="notSupported">WebGPU is not supported in this browser.<br>' +
+		'<small>Use Chrome 113+, Edge 113+, or another browser with WebGPU enabled.</small></div>'
+	);
+	throw new Error( 'WebGPU not supported' );
+
+}
+
+const PARTICLE_COUNT = 200000;
+
+const gravity = uniform( - 0.00098 );
+const bounce = uniform( 0.8 );
+const speed = uniform( 1.0 );
+const trailLength = uniform( 0.92 );
+const attractorStrength = uniform( 0.0003 );
+const particleSize = uniform( 0.06 );
+
+let camera, scene, renderer, controls;
+let computeInit, computeUpdate;
+
+const clickPosition = uniform( new THREE.Vector3() );
+
+async function init() {
+
+	camera = new THREE.PerspectiveCamera( 50, window.innerWidth / window.innerHeight, 0.1, 1000 );
+	camera.position.set( 0, 12, 35 );
+
+	scene = new THREE.Scene();
+	scene.background = new THREE.Color( 0x0a0e1a );
+
+	const helper = new THREE.GridHelper( 60, 30, 0x1a2540, 0x111a2e );
+	scene.add( helper );
+
+	// Attractor visual
+	const attractorGeo = new THREE.IcosahedronGeometry( 0.3, 2 );
+	const attractorMat = new THREE.MeshBasicMaterial( { color: 0x4a9eff } );
+	const attractorMesh = new THREE.Mesh( attractorGeo, attractorMat );
+	attractorMesh.position.set( 0, 5, 0 );
+	scene.add( attractorMesh );
+
+	const ringGeo = new THREE.TorusGeometry( 0.6, 0.02, 8, 64 );
+	const ringMat = new THREE.MeshBasicMaterial( { color: 0x4a9eff, transparent: true, opacity: 0.5 } );
+	const ring1 = new THREE.Mesh( ringGeo, ringMat );
+	ring1.position.copy( attractorMesh.position );
+	scene.add( ring1 );
+
+	const ring2 = ring1.clone();
+	ring2.rotation.x = Math.PI / 2;
+	ring2.position.copy( attractorMesh.position );
+	scene.add( ring2 );
+
+	// -- Compute storage buffers --
+	const positions = instancedArray( PARTICLE_COUNT, 'vec3' );
+	const velocities = instancedArray( PARTICLE_COUNT, 'vec3' );
+	const colors = instancedArray( PARTICLE_COUNT, 'vec3' );
+
+	// -- Compute Init --
+	computeInit = Fn( () => {
+
+		const position = positions.element( instanceIndex );
+		const velocity = velocities.element( instanceIndex );
+		const color = colors.element( instanceIndex );
+
+		// Spherical distribution
+		const phi = hash( instanceIndex ).mul( Math.PI * 2 );
+		const cosTheta = hash( instanceIndex.add( 1 ) ).mul( 2 ).sub( 1 );
+		const sinTheta = cosTheta.mul( cosTheta ).oneMinus().sqrt();
+		const r = hash( instanceIndex.add( 2 ) ).pow( float( 1 / 3 ) ).mul( 15 );
+
+		position.x = sinTheta.mul( cos( phi ) ).mul( r );
+		position.y = sinTheta.mul( sin( phi ) ).mul( r ).abs().add( 0.5 );
+		position.z = cosTheta.mul( r );
+
+		velocity.x = hash( instanceIndex.add( 3 ) ).sub( 0.5 ).mul( 0.02 );
+		velocity.y = hash( instanceIndex.add( 4 ) ).mul( 0.02 );
+		velocity.z = hash( instanceIndex.add( 5 ) ).sub( 0.5 ).mul( 0.02 );
+
+		// HSL-like coloring based on index
+		const hue = hash( instanceIndex.add( 6 ) );
+		color.x = hue.mul( 6 ).sub( 3 ).abs().sub( 1 ).clamp( 0, 1 );
+		color.y = float( 2 ).sub( hue.mul( 6 ).sub( 2 ).abs() ).clamp( 0, 1 );
+		color.z = float( 2 ).sub( hue.mul( 6 ).sub( 4 ).abs() ).clamp( 0, 1 );
+
+	} )().compute( PARTICLE_COUNT );
+
+	// -- Compute Update --
+	computeUpdate = Fn( () => {
+
+		const position = positions.element( instanceIndex );
+		const velocity = velocities.element( instanceIndex );
+
+		// Gravity
+		velocity.addAssign( vec3( 0, gravity.mul( speed ), 0 ) );
+
+		// Central attractor
+		const toCenter = vec3( 0, 5, 0 ).sub( position );
+		const dist = toCenter.length().max( 0.5 );
+		const attract = toCenter.normalize().mul( attractorStrength.mul( speed ).div( dist ) );
+		velocity.addAssign( attract );
+
+		// Tangential swirl
+		const tangent = vec3( toCenter.z.negate(), float( 0 ), toCenter.x ).normalize();
+		velocity.addAssign( tangent.mul( 0.00005 ).mul( speed ) );
+
+		// Apply velocity
+		position.addAssign( velocity.mul( speed ) );
+
+		// Damping
+		velocity.mulAssign( trailLength );
+
+		// Floor bounce
+		If( position.y.lessThan( 0 ), () => {
+
+			position.y = float( 0 );
+			velocity.y = velocity.y.negate().mul( bounce );
+			velocity.x = velocity.x.mul( 0.9 );
+			velocity.z = velocity.z.mul( 0.9 );
+
+		} );
+
+		// Ceiling
+		If( position.y.greaterThan( 40 ), () => {
+
+			position.y = float( 40 );
+			velocity.y = velocity.y.negate().mul( 0.5 );
+
+		} );
+
+	} )().compute( PARTICLE_COUNT );
+
+	// -- Particle rendering with SpriteNodeMaterial --
+	const material = new THREE.SpriteNodeMaterial();
+	material.colorNode = colors.element( instanceIndex ).mul( vec3( 1.2, 1.2, 1.2 ) );
+	material.positionNode = positions.toAttribute();
+	material.scaleNode = particleSize;
+	material.opacityNode = shapeCircle().mul( 0.8 );
+	material.transparent = true;
+	material.depthWrite = false;
+	material.blending = THREE.AdditiveBlending;
+
+	const particleMesh = new THREE.Sprite( material );
+	particleMesh.count = PARTICLE_COUNT;
+	particleMesh.frustumCulled = false;
+	scene.add( particleMesh );
+
+	// Hidden plane for click raycasting
+	const planeGeo = new THREE.PlaneGeometry( 200, 200 );
+	planeGeo.rotateX( - Math.PI / 2 );
+	const plane = new THREE.Mesh( planeGeo, new THREE.MeshBasicMaterial( { visible: false } ) );
+	scene.add( plane );
+
+	// Renderer
+	renderer = new THREE.WebGPURenderer( { antialias: true } );
+	renderer.setPixelRatio( window.devicePixelRatio );
+	renderer.setSize( window.innerWidth, window.innerHeight );
+	renderer.setAnimationLoop( animate );
+	document.body.appendChild( renderer.domElement );
+
+	await renderer.init();
+
+	// Initialize particles on GPU
+	renderer.compute( computeInit );
+
+	// Controls
+	controls = new OrbitControls( camera, renderer.domElement );
+	controls.enableDamping = true;
+	controls.dampingFactor = 0.08;
+	controls.target.set( 0, 5, 0 );
+	controls.update();
+
+	// Click interaction -- explosion force via compute
+	const raycaster = new THREE.Raycaster();
+	const pointer = new THREE.Vector2();
+
+	const computeHit = Fn( () => {
+
+		const position = positions.element( instanceIndex );
+		const velocity = velocities.element( instanceIndex );
+		const dist = position.distance( clickPosition );
+		const direction = position.sub( clickPosition ).normalize();
+		const power = float( 5 ).sub( dist ).max( 0 ).mul( 0.015 );
+		const jitter = hash( instanceIndex ).mul( 1.5 ).add( 0.5 );
+		velocity.addAssign( direction.mul( power.mul( jitter ) ) );
+
+	} )().compute( PARTICLE_COUNT );
+
+	renderer.domElement.addEventListener( 'pointerdown', event => {
+
+		pointer.set(
+			( event.clientX / window.innerWidth ) * 2 - 1,
+			- ( event.clientY / window.innerHeight ) * 2 + 1
+		);
+		raycaster.setFromCamera( pointer, camera );
+		const hits = raycaster.intersectObject( plane, false );
+		if ( hits.length > 0 ) {
+
+			clickPosition.value.copy( hits[ 0 ].point );
+			renderer.compute( computeHit );
+
+		}
+
+	} );
+
+	// GUI
+	const gui = new GUI();
+	gui.title( 'Compute Particles' );
+	gui.add( { count: PARTICLE_COUNT }, 'count' ).name( 'Particles' ).disable();
+	gui.add( speed, 'value', 0.1, 3.0, 0.05 ).name( 'Speed' );
+	gui.add( trailLength, 'value', 0.8, 0.999, 0.001 ).name( 'Trail Length' );
+	gui.add( gravity, 'value', - 0.005, 0, 0.0001 ).name( 'Gravity' );
+	gui.add( bounce, 'value', 0.1, 1, 0.05 ).name( 'Bounce' );
+	gui.add( attractorStrength, 'value', 0, 0.002, 0.0001 ).name( 'Attractor' );
+	gui.add( particleSize, 'value', 0.02, 0.3, 0.01 ).name( 'Size' );
+
+	// Resize
+	window.addEventListener( 'resize', () => {
+
+		camera.aspect = window.innerWidth / window.innerHeight;
+		camera.updateProjectionMatrix();
+		renderer.setSize( window.innerWidth, window.innerHeight );
+
+	} );
+
+	// Store refs for animation
+	window._attractorMesh = attractorMesh;
+	window._ring1 = ring1;
+	window._ring2 = ring2;
+
+}
+
+function animate() {
+
+	controls.update();
+
+	// Spin attractor rings
+	const t = performance.now() * 0.001;
+	if ( window._ring1 ) {
+
+		window._ring1.rotation.z = t * 0.5;
+		window._ring2.rotation.y = t * 0.3;
+		window._attractorMesh.position.y = 5 + Math.sin( t * 0.8 ) * 1.5;
+		window._ring1.position.y = window._attractorMesh.position.y;
+		window._ring2.position.y = window._attractorMesh.position.y;
+
+	}
+
+	renderer.compute( computeUpdate );
+	renderer.render( scene, camera );
+
+}
+
+await init();
+</script>
+
+<script src="../shared/demo-nav.js"></script>
+</body>
+</html>

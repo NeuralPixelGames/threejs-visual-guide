@@ -1,0 +1,252 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="utf-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1">
+	<title>Motion Blur (Afterimage) - Three.js Demo</title>
+	<link rel="stylesheet" href="../shared/demo-base.css">
+</head>
+<body>
+	<a id="back-btn" href="../index.html">Back</a>
+	<div id="info">
+		<strong>Motion Blur / Afterimage</strong><br>
+		Moving objects leave ghostly trails. Adjust the damping factor to control trail persistence.
+	</div>
+	<div id="loading-overlay" style="position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(10,14,26,0.95);display:flex;align-items:center;justify-content:center;z-index:1000;color:#4a9eff;font-family:Inter,system-ui,sans-serif;font-size:16px;">Loading model...</div>
+	<div id="container"></div>
+
+	<script type="importmap">
+	{
+		"imports": {
+			"three": "https://cdn.jsdelivr.net/npm/three@0.183.0/build/three.module.js",
+			"three/addons/": "https://cdn.jsdelivr.net/npm/three@0.183.0/examples/jsm/"
+		}
+	}
+	</script>
+
+	<script type="module">
+		import * as THREE from 'three';
+		import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+		import { EffectComposer } from 'three/addons/postprocessing/EffectComposer.js';
+		import { RenderPass } from 'three/addons/postprocessing/RenderPass.js';
+		import { AfterimagePass } from 'three/addons/postprocessing/AfterimagePass.js';
+		import { OutputPass } from 'three/addons/postprocessing/OutputPass.js';
+		import { GUI } from 'three/addons/libs/lil-gui.module.min.js';
+		import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
+		import { DRACOLoader } from 'three/addons/loaders/DRACOLoader.js';
+
+		// -- Renderer --
+		const renderer = new THREE.WebGLRenderer( { antialias: true } );
+		renderer.setPixelRatio( window.devicePixelRatio );
+		renderer.setSize( window.innerWidth, window.innerHeight );
+		renderer.toneMapping = THREE.ACESFilmicToneMapping;
+		renderer.toneMappingExposure = 1.0;
+		document.getElementById( 'container' ).appendChild( renderer.domElement );
+
+		// -- Scene --
+		const scene = new THREE.Scene();
+		scene.background = new THREE.Color( 0x0a0e1a );
+
+		// -- Camera --
+		const camera = new THREE.PerspectiveCamera( 50, window.innerWidth / window.innerHeight, 0.1, 200 );
+		camera.position.set( 8, 6, 12 );
+
+		// -- Controls --
+		const controls = new OrbitControls( camera, renderer.domElement );
+		controls.target.set( 0, 1.5, 0 );
+		controls.enableDamping = true;
+		controls.dampingFactor = 0.05;
+		controls.update();
+
+		// -- Lights --
+		scene.add( new THREE.AmbientLight( 0x404060, 0.5 ) );
+
+		const dirLight = new THREE.DirectionalLight( 0xffeedd, 2.0 );
+		dirLight.position.set( 6, 10, 4 );
+		scene.add( dirLight );
+
+		const pointLight1 = new THREE.PointLight( 0xff4488, 3.0, 20 );
+		pointLight1.position.set( -4, 5, 2 );
+		scene.add( pointLight1 );
+
+		const pointLight2 = new THREE.PointLight( 0x44aaff, 3.0, 20 );
+		pointLight2.position.set( 4, 3, -3 );
+		scene.add( pointLight2 );
+
+		// -- Ground --
+		const ground = new THREE.Mesh(
+			new THREE.PlaneGeometry( 30, 30 ),
+			new THREE.MeshStandardMaterial( { color: 0x1a1f2e, roughness: 0.85, metalness: 0.1 } )
+		);
+		ground.rotation.x = -Math.PI / 2;
+		scene.add( ground );
+
+		// -- Animated objects --
+		const matRed = new THREE.MeshStandardMaterial( { color: 0xff3355, roughness: 0.2, metalness: 0.7, emissive: 0x220011, emissiveIntensity: 0.3 } );
+		const matBlue = new THREE.MeshStandardMaterial( { color: 0x3377ff, roughness: 0.2, metalness: 0.7, emissive: 0x001122, emissiveIntensity: 0.3 } );
+		const matGreen = new THREE.MeshStandardMaterial( { color: 0x33ff77, roughness: 0.2, metalness: 0.7, emissive: 0x002211, emissiveIntensity: 0.3 } );
+		const matYellow = new THREE.MeshStandardMaterial( { color: 0xffcc22, roughness: 0.2, metalness: 0.7, emissive: 0x221100, emissiveIntensity: 0.3 } );
+		const matPurple = new THREE.MeshStandardMaterial( { color: 0xaa44ff, roughness: 0.2, metalness: 0.7, emissive: 0x110022, emissiveIntensity: 0.3 } );
+
+		// Orbiting spheres
+		const orbitSpheres = [];
+		const orbitMats = [ matRed, matBlue, matGreen, matYellow, matPurple ];
+
+		for ( let i = 0; i < 5; i++ ) {
+
+			const sphere = new THREE.Mesh( new THREE.SphereGeometry( 0.4, 32, 32 ), orbitMats[ i ] );
+			scene.add( sphere );
+			orbitSpheres.push( sphere );
+
+		}
+
+		// Central spinning torus knot
+		const torusKnot = new THREE.Mesh(
+			new THREE.TorusKnotGeometry( 1.0, 0.35, 128, 32 ),
+			new THREE.MeshStandardMaterial( { color: 0xee66ff, roughness: 0.15, metalness: 0.8, emissive: 0x330033, emissiveIntensity: 0.4 } )
+		);
+		torusKnot.position.set( 0, 2.5, 0 );
+		scene.add( torusKnot );
+
+		// Bouncing cubes
+		const cubes = [];
+
+		for ( let i = 0; i < 3; i++ ) {
+
+			const cube = new THREE.Mesh(
+				new THREE.BoxGeometry( 0.6, 0.6, 0.6 ),
+				new THREE.MeshStandardMaterial( {
+					color: new THREE.Color().setHSL( i / 3, 0.8, 0.5 ),
+					roughness: 0.2,
+					metalness: 0.6,
+					emissive: new THREE.Color().setHSL( i / 3, 0.5, 0.15 )
+				} )
+			);
+			scene.add( cube );
+			cubes.push( cube );
+
+		}
+
+		// -- Load Ferrari for spinning motion blur --
+		let ferrariModel = null;
+		const ferrariPivot = new THREE.Group();
+		ferrariPivot.position.set( 0, 0, 0 );
+		scene.add( ferrariPivot );
+
+		const dracoLoader = new DRACOLoader();
+		dracoLoader.setDecoderPath( '../../examples/jsm/libs/draco/gltf/' );
+		const gltfLoader = new GLTFLoader();
+		gltfLoader.setDRACOLoader( dracoLoader );
+
+		gltfLoader.load( '../../examples/models/gltf/ferrari.glb', ( gltf ) => {
+
+			ferrariModel = gltf.scene;
+			ferrariModel.position.set( 0, 0.5, 0 );
+			ferrariModel.scale.setScalar( 1.0 );
+			ferrariModel.traverse( ( child ) => {
+
+				if ( child.isMesh ) {
+
+					child.castShadow = true;
+					child.receiveShadow = true;
+
+				}
+
+			} );
+			ferrariPivot.add( ferrariModel );
+
+			const overlay = document.getElementById( 'loading-overlay' );
+			if ( overlay ) overlay.style.display = 'none';
+
+		} );
+
+		// -- Post-processing --
+		const composer = new EffectComposer( renderer );
+		composer.addPass( new RenderPass( scene, camera ) );
+
+		const afterimagePass = new AfterimagePass( 0.92 );
+		composer.addPass( afterimagePass );
+
+		composer.addPass( new OutputPass() );
+
+		// -- GUI --
+		const gui = new GUI( { title: 'Motion Blur' } );
+
+		const params = {
+			damp: 0.92,
+			enabled: true,
+			speed: 1.0
+		};
+
+		gui.add( params, 'enabled' ).name( 'Enable' ).onChange( v => {
+			afterimagePass.enabled = v;
+		} );
+		gui.add( params, 'damp', 0.0, 0.99, 0.01 ).name( 'Trail Persistence' ).onChange( v => {
+			afterimagePass.uniforms[ 'damp' ].value = v;
+		} );
+		gui.add( params, 'speed', 0.1, 3.0, 0.1 ).name( 'Animation Speed' );
+
+		// -- Animation --
+		const clock = new THREE.Clock();
+
+		function animate() {
+
+			requestAnimationFrame( animate );
+			const t = clock.getElapsedTime() * params.speed;
+
+			// Orbiting spheres at different heights and radii
+			for ( let i = 0; i < orbitSpheres.length; i++ ) {
+
+				const angle = t * ( 0.8 + i * 0.3 ) + ( i * Math.PI * 2 ) / orbitSpheres.length;
+				const radius = 3.0 + i * 0.5;
+				const height = 1.5 + Math.sin( t * 1.2 + i ) * 1.5;
+				orbitSpheres[ i ].position.set(
+					Math.cos( angle ) * radius,
+					height,
+					Math.sin( angle ) * radius
+				);
+
+			}
+
+			// Spin the ferrari on its pivot
+			ferrariPivot.rotation.y = t * 1.2;
+
+			// Central torus knot spinning
+			torusKnot.rotation.x = t * 0.5;
+			torusKnot.rotation.y = t * 0.7;
+			torusKnot.rotation.z = t * 0.3;
+
+			// Bouncing cubes
+			for ( let i = 0; i < cubes.length; i++ ) {
+
+				const offset = ( i * Math.PI * 2 ) / cubes.length;
+				cubes[ i ].position.set(
+					Math.sin( t * 1.5 + offset ) * 4,
+					Math.abs( Math.sin( t * 2.0 + offset ) ) * 3 + 0.3,
+					Math.cos( t * 1.5 + offset ) * 4
+				);
+				cubes[ i ].rotation.x = t * 2;
+				cubes[ i ].rotation.y = t * 1.5;
+
+			}
+
+			controls.update();
+			composer.render();
+
+		}
+
+		animate();
+
+		// -- Resize --
+		window.addEventListener( 'resize', () => {
+
+			camera.aspect = window.innerWidth / window.innerHeight;
+			camera.updateProjectionMatrix();
+			renderer.setSize( window.innerWidth, window.innerHeight );
+			composer.setSize( window.innerWidth, window.innerHeight );
+
+		} );
+	</script>
+<script src="../shared/demo-nav.js"></script>
+</body>
+</html>
