@@ -221,7 +221,7 @@ function buildScene() {
 		const pl = new THREE.PointLight( pointColors[ i ], 2.0, 20 );
 		const angle = ( i / 8 ) * Math.PI * 2;
 		pl.position.set( Math.cos( angle ) * 8, 3 + Math.sin( i ) * 2, Math.sin( angle ) * 8 );
-		pl.castShadow = params.shadows;
+		pl.castShadow = false;
 		scene.add( pl );
 
 	}
@@ -360,11 +360,8 @@ async function createRenderer( backend ) {
 	renderer.setSize( window.innerWidth, window.innerHeight );
 	renderer.toneMapping = THREE.ACESFilmicToneMapping;
 	renderer.toneMappingExposure = 1.0;
-	if ( params.shadows ) {
-
-		renderer.shadowMap = { enabled: true };
-
-	}
+	renderer.shadowMap.enabled = params.shadows;
+	renderer.shadowMap.type = THREE.BasicShadowMap;
 	container.appendChild( renderer.domElement );
 
 	camera = new THREE.PerspectiveCamera( 50, window.innerWidth / window.innerHeight, 0.1, 500 );
@@ -417,7 +414,7 @@ function animate() {
 
 	controls.autoRotate = params.autoRotate;
 	controls.update();
-	renderer.renderAsync( scene, camera );
+	renderer.render( scene, camera );
 
 	frames++;
 	const now = performance.now();
