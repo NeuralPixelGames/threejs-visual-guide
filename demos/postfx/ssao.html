@@ -227,7 +227,7 @@ dracoLoader.setDecoderPath( 'https://cdn.jsdelivr.net/npm/three@0.183.0/examples
 const gltfLoader = new GLTFLoader();
 gltfLoader.setDRACOLoader( dracoLoader );
 
-gltfLoader.load( 'https://cdn.jsdelivr.net/npm/three@0.183.0/examples/models/gltf/minimalistic_modern_bedroom.glb', ( gltf ) => {
+gltfLoader.load( '../assets/models/minimalistic_modern_bedroom.glb', ( gltf ) => {
 
 	const model = gltf.scene;
 

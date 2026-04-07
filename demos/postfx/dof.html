@@ -274,7 +274,7 @@ function loadEnvironment() {
 	const pmremGenerator = new THREE.PMREMGenerator( renderer );
 	pmremGenerator.compileEquirectangularShader();
 
-	new HDRLoader().load( 'https://cdn.jsdelivr.net/npm/three@0.183.0/examples/textures/equirectangular/venice_sunset_1k.hdr', function ( hdrTexture ) {
+	new HDRLoader().load( '../assets/textures/equirectangular/venice_sunset_1k.hdr', function ( hdrTexture ) {
 
 		const envMap = pmremGenerator.fromEquirectangular( hdrTexture ).texture;
 		scene.environment = envMap;
