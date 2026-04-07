@@ -30,14 +30,15 @@
 		.hud-best .gpu-best { color: #22c55e; }
 
 		#backend-panel {
-			position: fixed; top: 52px; left: 10px; z-index: 20;
+			position: fixed; bottom: 90px; left: 50%; transform: translateX(-50%); z-index: 20;
 			background: rgba(10, 14, 26, 0.88); backdrop-filter: blur(10px);
 			border: 1px solid rgba(74, 158, 255, 0.25); border-radius: 10px;
-			padding: 14px 16px; font-family: 'Inter', system-ui, sans-serif;
+			padding: 10px 16px; font-family: 'Inter', system-ui, sans-serif;
+			display: flex; align-items: center; gap: 12px;
 		}
 		#backend-panel .panel-title {
 			font-size: 10px; font-weight: 700; text-transform: uppercase;
-			letter-spacing: 0.12em; color: #4a9eff; margin-bottom: 10px;
+			letter-spacing: 0.12em; color: #4a9eff; margin-bottom: 0; white-space: nowrap;
 		}
 		#backend-panel label {
 			display: flex; align-items: center; gap: 8px;
