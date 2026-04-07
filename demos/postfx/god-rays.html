@@ -33,8 +33,7 @@
 		import { OutputPass } from 'three/addons/postprocessing/OutputPass.js';
 		import { Pass, FullScreenQuad } from 'three/addons/postprocessing/Pass.js';
 		import { GUI } from 'three/addons/libs/lil-gui.module.min.js';
-		import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
-		import { DRACOLoader } from 'three/addons/loaders/DRACOLoader.js';
+
 
 		// Volumetric scattering shader (screen-space radial blur)
 		const VolumetricLightShader = {
@@ -377,53 +376,49 @@
 		occCrossGroup.position.set( 0, 5, -6 );
 		occlusionScene.add( occCrossGroup );
 
-		// -- Load God Rays Demo Model --
-		const dracoLoader = new DRACOLoader();
-		dracoLoader.setDecoderPath( 'https://cdn.jsdelivr.net/npm/three@0.183.0/examples/jsm/libs/draco/gltf/' );
-		const gltfLoader = new GLTFLoader();
-		gltfLoader.setDRACOLoader( dracoLoader );
+		// -- Procedural ruin arch (replaces GLTF model) --
+		const ruinMat = new THREE.MeshStandardMaterial( { color: 0x1a1a2a, roughness: 0.85 } );
 
-		gltfLoader.load( 'https://cdn.jsdelivr.net/npm/three@0.183.0/examples/models/gltf/godrays_demo.glb', ( gltf ) => {
+		function addRuinPiece( geo, pos ) {
 
-			const model = gltf.scene;
+			const mesh = new THREE.Mesh( geo, ruinMat );
+			mesh.position.copy( pos );
+			mesh.castShadow = true;
+			mesh.receiveShadow = true;
+			scene.add( mesh );
 
-			const box = new THREE.Box3().setFromObject( model );
-			const size = box.getSize( new THREE.Vector3() );
-			const center = box.getCenter( new THREE.Vector3() );
-			const maxDim = Math.max( size.x, size.y, size.z );
-			const scale = 6 / maxDim;
-			model.scale.setScalar( scale );
-			model.position.set( - center.x * scale, - box.min.y * scale, - center.z * scale - 2 );
+			const occ = new THREE.Mesh( geo, blackMat );
+			occ.position.copy( pos );
+			occlusionScene.add( occ );
 
-			model.traverse( ( child ) => {
+		}
 
-				if ( child.isMesh ) {
+		// Two pillars
+		addRuinPiece( new THREE.CylinderGeometry( 0.5, 0.6, 8, 12 ), new THREE.Vector3( -3, 4, -4 ) );
+		addRuinPiece( new THREE.CylinderGeometry( 0.5, 0.6, 8, 12 ), new THREE.Vector3( 3, 4, -4 ) );
 
-					child.castShadow = true;
-					child.receiveShadow = true;
+		// Arch connecting them
+		const archShape = new THREE.TorusGeometry( 3, 0.4, 8, 16, Math.PI );
+		addRuinPiece( archShape, new THREE.Vector3( 0, 8, -4 ) );
 
-				}
+		// Broken wall segments
+		addRuinPiece( new THREE.BoxGeometry( 1.5, 5, 0.5 ), new THREE.Vector3( -5, 2.5, -5 ) );
+		addRuinPiece( new THREE.BoxGeometry( 1.2, 3.5, 0.5 ), new THREE.Vector3( 5.5, 1.75, -5 ) );
 
-			} );
-			scene.add( model );
+		// Fallen column on ground
+		const fallenCol = new THREE.CylinderGeometry( 0.35, 0.35, 4, 10 );
+		const fallenMesh = new THREE.Mesh( fallenCol, ruinMat );
+		fallenMesh.rotation.z = Math.PI / 2;
+		fallenMesh.position.set( -1, 0.35, -2 );
+		fallenMesh.castShadow = true;
+		scene.add( fallenMesh );
+		const fallenOcc = new THREE.Mesh( fallenCol, blackMat );
+		fallenOcc.rotation.z = Math.PI / 2;
+		fallenOcc.position.set( -1, 0.35, -2 );
+		occlusionScene.add( fallenOcc );
 
-			// Also add a black silhouette version to the occlusion scene
-			const occModel = model.clone( true );
-			occModel.traverse( ( child ) => {
-
-				if ( child.isMesh ) {
-
-					child.material = blackMat;
-
-				}
-
-			} );
-			occlusionScene.add( occModel );
-
-			const overlay = document.getElementById( 'loading-overlay' );
-			if ( overlay ) overlay.style.display = 'none';
-
-		} );
+		const overlay = document.getElementById( 'loading-overlay' );
+		if ( overlay ) overlay.style.display = 'none';
 
 		// -- Floating dust particles --
 		const dustCount = 500;
