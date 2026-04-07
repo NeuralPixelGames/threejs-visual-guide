@@ -55,6 +55,43 @@
 			box-shadow: inset 0 0 0 2px rgba(10, 14, 26, 0.9);
 		}
 
+		#table-toggle {
+			position: fixed; top: 52px; right: 10px; z-index: 20;
+			background: rgba(10, 14, 26, 0.88); backdrop-filter: blur(10px);
+			border: 1px solid rgba(74, 158, 255, 0.3); border-radius: 8px;
+			padding: 7px 14px; color: #4a9eff; font-size: 11px; font-weight: 600;
+			cursor: pointer; font-family: 'Inter', system-ui, sans-serif;
+		}
+		#table-toggle:hover { background: rgba(74, 158, 255, 0.15); }
+
+		#feature-table {
+			position: fixed; top: 84px; right: 10px; z-index: 20;
+			background: rgba(8, 12, 22, 0.94); backdrop-filter: blur(12px);
+			border: 1px solid rgba(74, 158, 255, 0.2); border-radius: 10px;
+			padding: 12px; display: none; font-family: 'Inter', system-ui, sans-serif;
+			max-height: calc(100vh - 120px); overflow-y: auto;
+		}
+		#feature-table.visible { display: block; }
+		#feature-table table { border-collapse: collapse; width: 100%; }
+		#feature-table th {
+			font-size: 10px; text-transform: uppercase; letter-spacing: 0.08em;
+			color: #6b7394; padding: 6px 8px; text-align: left;
+			border-bottom: 1px solid rgba(74, 158, 255, 0.15);
+		}
+		#feature-table td {
+			padding: 5px 8px; font-size: 11px; color: #b0b8cc;
+			border-bottom: 1px solid rgba(255, 255, 255, 0.03);
+		}
+		#feature-table td:first-child { color: #e0e5f0; font-weight: 500; }
+		#feature-table .y { color: #22c55e; font-weight: 700; }
+		#feature-table .n { color: #ef4444; font-weight: 700; }
+		#feature-table .p { color: #fbbf24; font-weight: 700; }
+		#feature-table tr.diff {
+			background: rgba(74, 158, 255, 0.06);
+			border-left: 2px solid rgba(74, 158, 255, 0.4);
+		}
+		#feature-table tr.diff td:first-child { color: #4a9eff; }
+
 		#switching-overlay {
 			position: fixed; inset: 0; z-index: 100;
 			background: rgba(5, 8, 16, 0.85);
@@ -107,6 +144,26 @@
 			<span>WebGPU: </span><span class="gpu-best" id="best-gpu">--</span>
 		</div>
 	</div>
+</div>
+
+<button id="table-toggle" onclick="document.getElementById('feature-table').classList.toggle('visible')">Feature Table</button>
+
+<div id="feature-table">
+	<table>
+		<tr><th>Feature</th><th>WebGL</th><th>WebGPU</th></tr>
+		<tr><td>Standard Materials</td><td class="y">&#10003;</td><td class="y">&#10003;</td></tr>
+		<tr><td>PBR / Shadows</td><td class="y">&#10003;</td><td class="y">&#10003;</td></tr>
+		<tr><td>Post-Processing</td><td class="y">&#10003;</td><td class="y">&#10003;</td></tr>
+		<tr><td>Instancing</td><td class="y">&#10003;</td><td class="y">&#10003;</td></tr>
+		<tr class="diff"><td>Compute Shaders</td><td class="n">&#10007;</td><td class="y">&#10003;</td></tr>
+		<tr class="diff"><td>Storage Buffers</td><td class="n">&#10007;</td><td class="y">&#10003;</td></tr>
+		<tr class="diff"><td>Indirect Draw</td><td class="n">&#10007;</td><td class="y">&#10003;</td></tr>
+		<tr class="diff"><td>Pipeline Caching</td><td class="n">&#10007;</td><td class="y">&#10003;</td></tr>
+		<tr class="diff"><td>TSL (Node Material)</td><td class="p">~</td><td class="y">&#10003;</td></tr>
+		<tr class="diff"><td>Reduced CPU Overhead</td><td class="p">~</td><td class="y">&#10003;</td></tr>
+		<tr class="diff"><td>Multi-Draw Batching</td><td class="p">~</td><td class="y">&#10003;</td></tr>
+		<tr><td>Browser Support</td><td class="y">99%</td><td class="p">~70%</td></tr>
+	</table>
 </div>
 
 <div id="switching-overlay">Switching backend...</div>
