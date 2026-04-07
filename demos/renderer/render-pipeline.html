@@ -300,7 +300,7 @@ radioPanel.innerHTML = '<div class="panel-title">Pipeline Stage</div>' + stages.
 const radioCss = document.createElement( 'style' );
 radioCss.textContent = `
 	#stage-radio-panel {
-		position: fixed; top: 52px; left: 10px; z-index: 10;
+		position: fixed; top: 50%; right: 10px; transform: translateY(-50%); z-index: 10;
 		background: rgba(10, 14, 26, 0.88); backdrop-filter: blur(10px);
 		border: 1px solid rgba(74, 158, 255, 0.25); border-radius: 10px;
 		padding: 14px 16px; font-family: 'Inter', system-ui, sans-serif;
