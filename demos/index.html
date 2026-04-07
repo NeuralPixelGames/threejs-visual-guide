@@ -226,6 +226,19 @@ nav a.active { color: var(--cyan); box-shadow: inset 0 -2px 0 var(--cyan); }
   text-transform: uppercase;
   z-index: 2;
 }
+.card-new {
+  position: absolute; top: 0.75rem; right: 0.75rem;
+  padding: 0.2rem 0.55rem; border-radius: 6px;
+  font-size: 0.6rem; font-weight: 800; letter-spacing: 0.08em;
+  text-transform: uppercase; z-index: 2;
+  background: rgba(0, 255, 136, 0.15); color: #00ff88;
+  border: 1px solid rgba(0, 255, 136, 0.3);
+  animation: pulse-new 2s ease-in-out infinite;
+}
+@keyframes pulse-new {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.6; }
+}
 .card-file {
   position: absolute; bottom: 0.5rem; right: 0.75rem;
   font-size: 0.65rem; font-weight: 500;
@@ -388,11 +401,11 @@ footer p { color:var(--muted); font-size:0.78rem; }
   <p class="hero-sub">Hands-on 3D demos for every concept. Click, drag, and tweak parameters in real-time.</p>
   <div class="hero-stats">
     <div class="hero-stat">
-      <div class="hero-stat-num clr-cyan">19</div>
+      <div class="hero-stat-num clr-cyan">37</div>
       <div class="hero-stat-label">Live Demos</div>
     </div>
     <div class="hero-stat">
-      <div class="hero-stat-num clr-amber">77</div>
+      <div class="hero-stat-num clr-amber">57</div>
       <div class="hero-stat-label">Coming Soon</div>
     </div>
   </div>
@@ -715,23 +728,23 @@ footer p { color:var(--muted); font-size:0.78rem; }
       </div>
     </a>
     <a href="renderer/anti-aliasing.html" class="demo-card card-green">
-      <div class="card-preview preview-green"><span class="card-badge badge-green">Renderer</span><span class="card-file">anti-aliasing.html</span></div>
+      <div class="card-preview preview-green"><span class="card-badge badge-green">Renderer</span><span class="card-new">NEW</span><span class="card-file">anti-aliasing.html</span></div>
       <div class="card-body"><div class="card-title">Anti-Aliasing</div><div class="card-desc">Compare aliased vs anti-aliased rendering. Zoom in to see edge quality differences.</div><div class="card-arrow arrow-green">Open demo &#8594;</div></div>
     </a>
     <a href="renderer/render-targets.html" class="demo-card card-green">
-      <div class="card-preview preview-green"><span class="card-badge badge-green">Renderer</span><span class="card-file">render-targets.html</span></div>
+      <div class="card-preview preview-green"><span class="card-badge badge-green">Renderer</span><span class="card-new">NEW</span><span class="card-file">render-targets.html</span></div>
       <div class="card-body"><div class="card-title">Render Targets</div><div class="card-desc">Render a scene to a texture and display it on a screen in another scene.</div><div class="card-arrow arrow-green">Open demo &#8594;</div></div>
     </a>
     <a href="renderer/webgl-vs-webgpu.html" class="demo-card card-green">
-      <div class="card-preview preview-green"><span class="card-badge badge-green">Renderer</span><span class="card-file">webgl-vs-webgpu.html</span></div>
+      <div class="card-preview preview-green"><span class="card-badge badge-green">Renderer</span><span class="card-new">NEW</span><span class="card-file">webgl-vs-webgpu.html</span></div>
       <div class="card-body"><div class="card-title">WebGL vs WebGPU</div><div class="card-desc">Side-by-side comparison of WebGL 2 and WebGPU renderers with identical scenes.</div><div class="card-arrow arrow-green">Open demo &#8594;</div></div>
     </a>
     <a href="renderer/compute-shaders.html" class="demo-card card-green">
-      <div class="card-preview preview-green"><span class="card-badge badge-green">Renderer</span><span class="card-file">compute-shaders.html</span></div>
+      <div class="card-preview preview-green"><span class="card-badge badge-green">Renderer</span><span class="card-new">NEW</span><span class="card-file">compute-shaders.html</span></div>
       <div class="card-body"><div class="card-title">Compute Shaders</div><div class="card-desc">200K GPU-driven particles via TSL compute shaders. Requires WebGPU.</div><div class="card-arrow arrow-green">Open demo &#8594;</div></div>
     </a>
     <a href="renderer/render-pipeline.html" class="demo-card card-green">
-      <div class="card-preview preview-green"><span class="card-badge badge-green">Renderer</span><span class="card-file">render-pipeline.html</span></div>
+      <div class="card-preview preview-green"><span class="card-badge badge-green">Renderer</span><span class="card-new">NEW</span><span class="card-file">render-pipeline.html</span></div>
       <div class="card-body"><div class="card-title">Render Pipeline</div><div class="card-desc">Step through the GPU render pipeline: vertices, wireframe, rasterized, shaded, final.</div><div class="card-arrow arrow-green">Open demo &#8594;</div></div>
     </a>
   </div>
@@ -741,7 +754,7 @@ footer p { color:var(--muted); font-size:0.78rem; }
 <div class="category-section" id="cameras-2" data-accent="var(--cyan)">
   <div class="demo-grid">
     <a href="cameras/array.html" class="demo-card card-cyan">
-      <div class="card-preview preview-cyan"><span class="card-badge badge-cyan">Cameras</span><span class="card-file">array.html</span></div>
+      <div class="card-preview preview-cyan"><span class="card-badge badge-cyan">Cameras</span><span class="card-new">NEW</span><span class="card-file">array.html</span></div>
       <div class="card-body"><div class="card-title">Array Camera</div><div class="card-desc">Multi-viewport grid rendering with configurable FOV and camera spread.</div><div class="card-arrow arrow-cyan">Open demo &#8594;</div></div>
     </a>
   </div>
@@ -756,51 +769,51 @@ footer p { color:var(--muted); font-size:0.78rem; }
   </div>
   <div class="demo-grid">
     <a href="postfx/effect-composer.html" class="demo-card card-magenta">
-      <div class="card-preview preview-magenta"><span class="card-badge badge-magenta">Post-FX</span><span class="card-file">effect-composer.html</span></div>
+      <div class="card-preview preview-magenta"><span class="card-badge badge-magenta">Post-FX</span><span class="card-new">NEW</span><span class="card-file">effect-composer.html</span></div>
       <div class="card-body"><div class="card-title">Effect Composer</div><div class="card-desc">Chain multiple post-processing passes: bloom, film grain, and dot screen with toggles.</div><div class="card-arrow arrow-magenta">Open demo &#8594;</div></div>
     </a>
     <a href="postfx/bloom.html" class="demo-card card-magenta">
-      <div class="card-preview preview-magenta"><span class="card-badge badge-magenta">Post-FX</span><span class="card-file">bloom.html</span></div>
+      <div class="card-preview preview-magenta"><span class="card-badge badge-magenta">Post-FX</span><span class="card-new">NEW</span><span class="card-file">bloom.html</span></div>
       <div class="card-body"><div class="card-title">Bloom</div><div class="card-desc">Selective bloom with emissive materials. Tune threshold, strength, and radius.</div><div class="card-arrow arrow-magenta">Open demo &#8594;</div></div>
     </a>
     <a href="postfx/ssao.html" class="demo-card card-magenta">
-      <div class="card-preview preview-magenta"><span class="card-badge badge-magenta">Post-FX</span><span class="card-file">ssao.html</span></div>
+      <div class="card-preview preview-magenta"><span class="card-badge badge-magenta">Post-FX</span><span class="card-new">NEW</span><span class="card-file">ssao.html</span></div>
       <div class="card-body"><div class="card-title">SSAO</div><div class="card-desc">Screen-space ambient occlusion. Toggle output modes and adjust radius.</div><div class="card-arrow arrow-magenta">Open demo &#8594;</div></div>
     </a>
     <a href="postfx/dof.html" class="demo-card card-magenta">
-      <div class="card-preview preview-magenta"><span class="card-badge badge-magenta">Post-FX</span><span class="card-file">dof.html</span></div>
+      <div class="card-preview preview-magenta"><span class="card-badge badge-magenta">Post-FX</span><span class="card-new">NEW</span><span class="card-file">dof.html</span></div>
       <div class="card-body"><div class="card-title">Depth of Field</div><div class="card-desc">Cinematic bokeh blur with focus depth indicator and fine-grained aperture control.</div><div class="card-arrow arrow-magenta">Open demo &#8594;</div></div>
     </a>
     <a href="postfx/film-grain.html" class="demo-card card-magenta">
-      <div class="card-preview preview-magenta"><span class="card-badge badge-magenta">Post-FX</span><span class="card-file">film-grain.html</span></div>
+      <div class="card-preview preview-magenta"><span class="card-badge badge-magenta">Post-FX</span><span class="card-new">NEW</span><span class="card-file">film-grain.html</span></div>
       <div class="card-body"><div class="card-title">Film Grain</div><div class="card-desc">Analog film grain noise overlay with adjustable intensity.</div><div class="card-arrow arrow-magenta">Open demo &#8594;</div></div>
     </a>
     <a href="postfx/glitch.html" class="demo-card card-magenta">
-      <div class="card-preview preview-magenta"><span class="card-badge badge-magenta">Post-FX</span><span class="card-file">glitch.html</span></div>
+      <div class="card-preview preview-magenta"><span class="card-badge badge-magenta">Post-FX</span><span class="card-new">NEW</span><span class="card-file">glitch.html</span></div>
       <div class="card-body"><div class="card-title">Glitch</div><div class="card-desc">Digital glitch effects with per-effect toggles and parameter sliders.</div><div class="card-arrow arrow-magenta">Open demo &#8594;</div></div>
     </a>
     <a href="postfx/outline.html" class="demo-card card-magenta">
-      <div class="card-preview preview-magenta"><span class="card-badge badge-magenta">Post-FX</span><span class="card-file">outline.html</span></div>
+      <div class="card-preview preview-magenta"><span class="card-badge badge-magenta">Post-FX</span><span class="card-new">NEW</span><span class="card-file">outline.html</span></div>
       <div class="card-body"><div class="card-title">Outline</div><div class="card-desc">Object outline highlighting with hover and click interaction.</div><div class="card-arrow arrow-magenta">Open demo &#8594;</div></div>
     </a>
     <a href="postfx/color-grading.html" class="demo-card card-magenta">
-      <div class="card-preview preview-magenta"><span class="card-badge badge-magenta">Post-FX</span><span class="card-file">color-grading.html</span></div>
+      <div class="card-preview preview-magenta"><span class="card-badge badge-magenta">Post-FX</span><span class="card-new">NEW</span><span class="card-file">color-grading.html</span></div>
       <div class="card-body"><div class="card-title">Color Grading</div><div class="card-desc">Cinematic color grading with presets: None, Cinematic, Warm, Cool, Vintage.</div><div class="card-arrow arrow-magenta">Open demo &#8594;</div></div>
     </a>
     <a href="postfx/motion-blur.html" class="demo-card card-magenta">
-      <div class="card-preview preview-magenta"><span class="card-badge badge-magenta">Post-FX</span><span class="card-file">motion-blur.html</span></div>
+      <div class="card-preview preview-magenta"><span class="card-badge badge-magenta">Post-FX</span><span class="card-new">NEW</span><span class="card-file">motion-blur.html</span></div>
       <div class="card-body"><div class="card-title">Motion Blur</div><div class="card-desc">Per-object motion blur based on velocity vectors.</div><div class="card-arrow arrow-magenta">Open demo &#8594;</div></div>
     </a>
     <a href="postfx/god-rays.html" class="demo-card card-magenta">
-      <div class="card-preview preview-magenta"><span class="card-badge badge-magenta">Post-FX</span><span class="card-file">god-rays.html</span></div>
+      <div class="card-preview preview-magenta"><span class="card-badge badge-magenta">Post-FX</span><span class="card-new">NEW</span><span class="card-file">god-rays.html</span></div>
       <div class="card-body"><div class="card-title">God Rays</div><div class="card-desc">Volumetric light shafts with atmospheric haze and floating dust particles.</div><div class="card-arrow arrow-magenta">Open demo &#8594;</div></div>
     </a>
     <a href="postfx/chromatic-aberration.html" class="demo-card card-magenta">
-      <div class="card-preview preview-magenta"><span class="card-badge badge-magenta">Post-FX</span><span class="card-file">chromatic-aberration.html</span></div>
+      <div class="card-preview preview-magenta"><span class="card-badge badge-magenta">Post-FX</span><span class="card-new">NEW</span><span class="card-file">chromatic-aberration.html</span></div>
       <div class="card-body"><div class="card-title">Chromatic Aberration</div><div class="card-desc">RGB channel separation simulating lens imperfection.</div><div class="card-arrow arrow-magenta">Open demo &#8594;</div></div>
     </a>
     <a href="postfx/pixel-retro.html" class="demo-card card-magenta">
-      <div class="card-preview preview-magenta"><span class="card-badge badge-magenta">Post-FX</span><span class="card-file">pixel-retro.html</span></div>
+      <div class="card-preview preview-magenta"><span class="card-badge badge-magenta">Post-FX</span><span class="card-new">NEW</span><span class="card-file">pixel-retro.html</span></div>
       <div class="card-body"><div class="card-title">Pixel / Retro</div><div class="card-desc">Quad split: clean, pixelated, scanlines, and full CRT effect comparison.</div><div class="card-arrow arrow-magenta">Open demo &#8594;</div></div>
     </a>
   </div>
