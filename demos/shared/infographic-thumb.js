@@ -19,7 +19,25 @@
 		'textures/compressed.html': '../../images/encyclopedia/08h_compressed_textures.webp',
 		'renderer/shadow-types.html': '../../images/encyclopedia/09a_shadow_types.webp',
 		'renderer/env-mapping.html': '../../images/encyclopedia/09b_environment_mapping.webp',
-		'renderer/tone-mapping.html': '../../images/encyclopedia/09c_tone_mapping.webp'
+		'renderer/tone-mapping.html': '../../images/encyclopedia/09c_tone_mapping.webp',
+		'cameras/array.html': '../../images/encyclopedia/07d_array_camera.webp',
+		'renderer/anti-aliasing.html': '../../images/encyclopedia/09d_anti_aliasing.webp',
+		'renderer/render-targets.html': '../../images/encyclopedia/09e_render_targets.webp',
+		'renderer/webgl-vs-webgpu.html': '../../images/encyclopedia/09f_webgl_vs_webgpu.webp',
+		'renderer/compute-shaders.html': '../../images/encyclopedia/09g_compute_shaders.webp',
+		'renderer/render-pipeline.html': '../../images/encyclopedia/09h_render_pipeline.webp',
+		'postfx/effect-composer.html': '../../images/encyclopedia/10a_effect_composer.webp',
+		'postfx/bloom.html': '../../images/encyclopedia/10b_bloom.webp',
+		'postfx/ssao.html': '../../images/encyclopedia/10c_ssao.webp',
+		'postfx/dof.html': '../../images/encyclopedia/10d_depth_of_field.webp',
+		'postfx/film-grain.html': '../../images/encyclopedia/10e_film_grain.webp',
+		'postfx/glitch.html': '../../images/encyclopedia/10f_glitch.webp',
+		'postfx/outline.html': '../../images/encyclopedia/10g_outline.webp',
+		'postfx/color-grading.html': '../../images/encyclopedia/10h_color_grading.webp',
+		'postfx/motion-blur.html': '../../images/encyclopedia/10i_motion_blur.webp',
+		'postfx/god-rays.html': '../../images/encyclopedia/10j_god_rays.webp',
+		'postfx/chromatic-aberration.html': '../../images/encyclopedia/10k_chromatic_aberration.webp',
+		'postfx/pixel-retro.html': '../../images/encyclopedia/10l_pixel_retro.webp'
 	};
 
 	function detectDemoKey() {
