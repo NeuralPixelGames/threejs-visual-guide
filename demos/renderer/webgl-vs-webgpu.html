@@ -7,604 +7,422 @@
 	<link rel="stylesheet" href="../shared/demo-base.css">
 	<style>
 		body { overflow: hidden; }
+		#container { width: 100%; height: 100vh; }
 
-		#split-container {
-			display: flex;
-			width: 100%;
-			height: 100vh;
-			position: relative;
-		}
-
-		.pane {
-			flex: 1;
-			position: relative;
-			overflow: hidden;
-		}
-
-		.pane canvas {
-			display: block;
-			width: 100%;
-			height: 100%;
-		}
-
-		#webgpu-fallback {
-			display: none;
-			position: absolute;
-			inset: 0;
-			background: #0a0e1a;
-			align-items: center;
-			justify-content: center;
-			flex-direction: column;
-			gap: 16px;
-			color: #e0e5f0;
+		#hud {
+			position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); z-index: 20;
+			background: rgba(6, 10, 20, 0.92); backdrop-filter: blur(12px);
+			border: 1px solid rgba(74, 158, 255, 0.25); border-radius: 12px;
+			padding: 16px 28px; display: flex; gap: 36px; align-items: center;
 			font-family: 'Inter', system-ui, sans-serif;
-			text-align: center;
-			padding: 32px;
+		}
+		.hud-block { text-align: center; }
+		.hud-label { font-size: 9px; text-transform: uppercase; letter-spacing: 0.12em; color: #6b7394; margin-bottom: 2px; }
+		.hud-value { font-size: 32px; font-weight: 800; font-variant-numeric: tabular-nums; }
+		.hud-value.fps { color: #22c55e; }
+		.hud-value.backend { font-size: 18px; font-weight: 700; }
+		.hud-value.backend.webgpu { color: #22c55e; }
+		.hud-value.backend.webgl { color: #fbbf24; }
+		.hud-sub { font-size: 10px; color: #6b7394; margin-top: 2px; }
+		.hud-best { font-size: 10px; color: #8899bb; margin-top: 4px; }
+		.hud-best span { font-weight: 700; }
+		.hud-best .gl-best { color: #fbbf24; }
+		.hud-best .gpu-best { color: #22c55e; }
+
+		#backend-panel {
+			position: fixed; top: 52px; left: 10px; z-index: 20;
+			background: rgba(10, 14, 26, 0.88); backdrop-filter: blur(10px);
+			border: 1px solid rgba(74, 158, 255, 0.25); border-radius: 10px;
+			padding: 14px 16px; font-family: 'Inter', system-ui, sans-serif;
+		}
+		#backend-panel .panel-title {
+			font-size: 10px; font-weight: 700; text-transform: uppercase;
+			letter-spacing: 0.12em; color: #4a9eff; margin-bottom: 10px;
+		}
+		#backend-panel label {
+			display: flex; align-items: center; gap: 8px;
+			padding: 6px 10px; border-radius: 6px; cursor: pointer;
+			font-size: 13px; color: #aab7d2; transition: all 0.15s;
+		}
+		#backend-panel label:hover { background: rgba(74, 158, 255, 0.08); color: #e0e5f0; }
+		#backend-panel label.active { background: rgba(74, 158, 255, 0.15); color: #fff; }
+		#backend-panel input[type="radio"] {
+			appearance: none; width: 14px; height: 14px; border-radius: 50%;
+			border: 2px solid #4a6a9a; background: transparent; cursor: pointer; flex-shrink: 0;
+		}
+		#backend-panel input[type="radio"]:checked {
+			border-color: #4a9eff; background: #4a9eff;
+			box-shadow: inset 0 0 0 2px rgba(10, 14, 26, 0.9);
 		}
 
-		#webgpu-fallback.visible {
-			display: flex;
-		}
-
-		#webgpu-fallback .fallback-icon {
-			font-size: 48px;
-			opacity: 0.5;
-		}
-
-		#webgpu-fallback h3 {
-			font-size: 18px;
-			font-weight: 600;
-			color: #ef4444;
-			margin: 0;
-		}
-
-		#webgpu-fallback p {
-			font-size: 13px;
-			color: #8899bb;
-			max-width: 320px;
-			line-height: 1.6;
-			margin: 0;
-		}
-
-		#webgpu-fallback code {
-			background: rgba(74, 158, 255, 0.1);
-			border: 1px solid rgba(74, 158, 255, 0.2);
-			border-radius: 4px;
-			padding: 2px 6px;
-			font-size: 12px;
-			color: #4a9eff;
-		}
-
-		#comparison-panel {
-			position: fixed;
-			top: 50px;
-			right: 16px;
-			width: 380px;
-			max-height: calc(100vh - 80px);
-			overflow-y: auto;
-			background: rgba(10, 14, 26, 0.92);
-			backdrop-filter: blur(12px);
-			border: 1px solid rgba(74, 158, 255, 0.25);
-			border-radius: 12px;
-			padding: 20px;
-			z-index: 50;
+		#switching-overlay {
+			position: fixed; inset: 0; z-index: 100;
+			background: rgba(5, 8, 16, 0.85);
+			display: none; align-items: center; justify-content: center;
 			font-family: 'Inter', system-ui, sans-serif;
-			scrollbar-width: thin;
-			scrollbar-color: #1e2740 transparent;
+			font-size: 16px; color: #4a9eff; font-weight: 600;
 		}
-		#comparison-panel h2 {
-			font-size: 16px;
-			color: #fff;
-			margin: 0 0 4px 0;
-			font-weight: 600;
-		}
-		#comparison-panel .subtitle {
-			font-size: 11px;
-			color: #6b7394;
-			margin-bottom: 16px;
-		}
-		.feature-table {
-			width: 100%;
-			border-collapse: collapse;
-		}
-		.feature-table th {
-			text-align: left;
-			font-size: 11px;
-			text-transform: uppercase;
-			letter-spacing: 1px;
-			color: #6b7394;
-			padding: 8px 6px;
-			border-bottom: 1px solid rgba(74, 158, 255, 0.15);
-		}
-		.feature-table td {
-			padding: 7px 6px;
-			font-size: 12px;
-			color: #b0b8cc;
-			border-bottom: 1px solid rgba(255, 255, 255, 0.04);
-		}
-		.feature-table tr:last-child td {
-			border-bottom: none;
-		}
-		.feature-table td:first-child {
-			color: #e0e5f0;
-			font-weight: 500;
-		}
-		.check { color: #22c55e; font-weight: bold; }
-		.cross { color: #ef4444; font-weight: bold; }
-		.partial { color: #fbbf24; font-weight: bold; }
-		.section-label {
-			font-size: 10px;
-			text-transform: uppercase;
-			letter-spacing: 1.5px;
-			color: #4a9eff;
-			font-weight: 600;
-			padding: 12px 6px 4px;
-		}
-		.note-box {
-			margin-top: 16px;
-			background: rgba(74, 158, 255, 0.08);
-			border: 1px solid rgba(74, 158, 255, 0.2);
-			border-radius: 8px;
-			padding: 10px 12px;
-			font-size: 11px;
-			color: #8899bb;
-			line-height: 1.5;
-		}
-		.note-box strong { color: #4a9eff; }
-
-		@media (max-width: 800px) {
-			#split-container {
-				flex-direction: column;
-			}
-			#comparison-panel {
-				position: fixed;
-				top: auto;
-				bottom: 0;
-				left: 0;
-				right: 0;
-				width: 100%;
-				max-height: 50vh;
-				border-radius: 12px 12px 0 0;
-			}
-		}
+		#switching-overlay.visible { display: flex; }
 	</style>
 	<script type="importmap">
 	{
 		"imports": {
-			"three": "https://cdn.jsdelivr.net/npm/three@0.183.0/build/three.module.js",
-			"three/addons/": "https://cdn.jsdelivr.net/npm/three@0.183.0/examples/jsm/",
-			"three/webgpu": "https://cdn.jsdelivr.net/npm/three@0.183.0/build/three.webgpu.js"
+			"three": "https://cdn.jsdelivr.net/npm/three@0.183.0/build/three.webgpu.js",
+			"three/addons/": "https://cdn.jsdelivr.net/npm/three@0.183.0/examples/jsm/"
 		}
 	}
 	</script>
 </head>
 <body>
-
 <a href="../index.html" id="back-btn">&larr; Hub</a>
+<div id="info">
+	<strong>WebGL vs WebGPU</strong> &mdash; Toggle backend, crank up objects, see the FPS difference
+</div>
+<div id="container"></div>
 
-<div id="split-container">
-	<div class="pane" id="pane-left">
-		<div class="split-label split-label-left"><strong>WebGL 2</strong></div>
+<div id="backend-panel">
+	<div class="panel-title">Renderer Backend</div>
+	<label class="active"><input type="radio" name="backend" value="webgpu" checked><span>WebGPU</span></label>
+	<label><input type="radio" name="backend" value="webgl"><span>WebGL 2</span></label>
+</div>
+
+<div id="hud">
+	<div class="hud-block">
+		<div class="hud-label">Backend</div>
+		<div class="hud-value backend webgpu" id="hud-backend">WebGPU</div>
 	</div>
-	<div class="split-divider"></div>
-	<div class="pane" id="pane-right">
-		<div class="split-label split-label-right"><strong>WebGPU</strong></div>
-		<div id="webgpu-fallback">
-			<div class="fallback-icon">&#9888;</div>
-			<h3>WebGPU Not Available</h3>
-			<p>Your browser does not support WebGPU. Try Chrome 113+, Edge 113+, or Firefox Nightly with <code>dom.webgpu.enabled</code> flag.</p>
+	<div class="hud-block">
+		<div class="hud-label">FPS</div>
+		<div class="hud-value fps" id="hud-fps">--</div>
+	</div>
+	<div class="hud-block">
+		<div class="hud-label">Objects</div>
+		<div class="hud-value" id="hud-objects" style="font-size:20px;color:#e0e5f0;">2,000</div>
+	</div>
+	<div class="hud-block">
+		<div class="hud-label">Best Recorded</div>
+		<div class="hud-best">
+			<span>WebGL: </span><span class="gl-best" id="best-gl">--</span>
+			&nbsp;|&nbsp;
+			<span>WebGPU: </span><span class="gpu-best" id="best-gpu">--</span>
 		</div>
 	</div>
 </div>
 
-<div id="comparison-panel">
-	<h2>WebGL vs WebGPU</h2>
-	<div class="subtitle">Feature Comparison for Three.js</div>
-
-	<table class="feature-table">
-		<tr>
-			<th>Feature</th>
-			<th>WebGL</th>
-			<th>WebGPU</th>
-		</tr>
-
-		<tr><td colspan="3" class="section-label">Rendering</td></tr>
-		<tr>
-			<td>Standard Materials</td>
-			<td class="check">&#10003;</td>
-			<td class="check">&#10003;</td>
-		</tr>
-		<tr>
-			<td>PBR Rendering</td>
-			<td class="check">&#10003;</td>
-			<td class="check">&#10003;</td>
-		</tr>
-		<tr>
-			<td>Shadow Maps</td>
-			<td class="check">&#10003;</td>
-			<td class="check">&#10003;</td>
-		</tr>
-		<tr>
-			<td>Post-Processing</td>
-			<td class="check">&#10003;</td>
-			<td class="check">&#10003;</td>
-		</tr>
-		<tr>
-			<td>Instanced Rendering</td>
-			<td class="check">&#10003;</td>
-			<td class="check">&#10003;</td>
-		</tr>
-
-		<tr><td colspan="3" class="section-label">GPU Compute</td></tr>
-		<tr>
-			<td>Compute Shaders</td>
-			<td class="cross">&#10007;</td>
-			<td class="check">&#10003;</td>
-		</tr>
-		<tr>
-			<td>GPGPU (Native)</td>
-			<td class="partial">~</td>
-			<td class="check">&#10003;</td>
-		</tr>
-		<tr>
-			<td>Storage Buffers</td>
-			<td class="cross">&#10007;</td>
-			<td class="check">&#10003;</td>
-		</tr>
-		<tr>
-			<td>Indirect Draw</td>
-			<td class="cross">&#10007;</td>
-			<td class="check">&#10003;</td>
-		</tr>
-
-		<tr><td colspan="3" class="section-label">Shading</td></tr>
-		<tr>
-			<td>TSL (Node Material)</td>
-			<td class="partial">~</td>
-			<td class="check">&#10003;</td>
-		</tr>
-		<tr>
-			<td>Custom GLSL</td>
-			<td class="check">&#10003;</td>
-			<td class="cross">&#10007;</td>
-		</tr>
-		<tr>
-			<td>Custom WGSL</td>
-			<td class="cross">&#10007;</td>
-			<td class="check">&#10003;</td>
-		</tr>
-		<tr>
-			<td>Bindless Textures</td>
-			<td class="cross">&#10007;</td>
-			<td class="check">&#10003;</td>
-		</tr>
-
-		<tr><td colspan="3" class="section-label">Performance</td></tr>
-		<tr>
-			<td>Pipeline Caching</td>
-			<td class="cross">&#10007;</td>
-			<td class="check">&#10003;</td>
-		</tr>
-		<tr>
-			<td>Reduced CPU Overhead</td>
-			<td class="partial">~</td>
-			<td class="check">&#10003;</td>
-		</tr>
-		<tr>
-			<td>Multi-Draw</td>
-			<td class="partial">~</td>
-			<td class="check">&#10003;</td>
-		</tr>
-
-		<tr><td colspan="3" class="section-label">Compatibility</td></tr>
-		<tr>
-			<td>Browser Support</td>
-			<td class="check">99%</td>
-			<td class="partial">~70%</td>
-		</tr>
-		<tr>
-			<td>Mobile Support</td>
-			<td class="check">&#10003;</td>
-			<td class="partial">Android</td>
-		</tr>
-		<tr>
-			<td>iOS / Safari</td>
-			<td class="check">&#10003;</td>
-			<td class="partial">Preview</td>
-		</tr>
-	</table>
-
-	<div class="note-box">
-		<strong>Note:</strong> Three.js r170+ supports both backends.
-		Use <code>three.webgpu.js</code> for WebGPU with automatic
-		WebGL fallback. The WebGPU renderer unlocks compute shaders,
-		TSL node materials, and better draw call batching.
-	</div>
-</div>
+<div id="switching-overlay">Switching backend...</div>
 
 <script type="module">
 import * as THREE from 'three';
-import { WebGPURenderer } from 'three/webgpu';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+import { GUI } from 'three/addons/libs/lil-gui.module.min.js';
 
-const paneLeft = document.getElementById( 'pane-left' );
-const paneRight = document.getElementById( 'pane-right' );
-const fallbackEl = document.getElementById( 'webgpu-fallback' );
+const container = document.getElementById( 'container' );
+const hudBackend = document.getElementById( 'hud-backend' );
+const hudFps = document.getElementById( 'hud-fps' );
+const hudObjects = document.getElementById( 'hud-objects' );
+const bestGlEl = document.getElementById( 'best-gl' );
+const bestGpuEl = document.getElementById( 'best-gpu' );
+const overlay = document.getElementById( 'switching-overlay' );
 
-const hasWebGPU = ( navigator.gpu !== undefined );
+const params = { instances: 5000, autoRotate: true, shadows: true };
+const colors = [ 0x4a9eff, 0x22c55e, 0xa855f7, 0xf97316, 0xf43f5e, 0x06b6d4, 0xeab308, 0x8b5cf6 ];
 
-const accentColors = [ 0x4a9eff, 0x22c55e, 0xa855f7, 0xf97316, 0xf43f5e, 0x06b6d4 ];
+let renderer, scene, camera, controls, dirLight;
+let currentBackend = 'webgpu';
+let animId = null;
+let frames = 0, lastFpsTime = 0, currentFps = 0;
+let bestGL = 0, bestGPU = 0;
+let stableFpsFrames = 0;
 
-function createScene() {
+function buildScene() {
 
-	const scene = new THREE.Scene();
+	scene = new THREE.Scene();
 	scene.background = new THREE.Color( 0x0a0e1a );
-	scene.fog = new THREE.FogExp2( 0x0a0e1a, 0.02 );
+	scene.fog = new THREE.FogExp2( 0x0a0e1a, 0.006 );
 
-	// Floor
-	const floor = new THREE.Mesh(
-		new THREE.PlaneGeometry( 30, 30 ),
-		new THREE.MeshStandardMaterial( { color: 0x080b14, roughness: 0.08, metalness: 0.92 } )
+	scene.add( new THREE.AmbientLight( 0x303850, 0.6 ) );
+
+	dirLight = new THREE.DirectionalLight( 0xffeedd, 3.0 );
+	dirLight.position.set( 10, 20, 8 );
+	dirLight.castShadow = params.shadows;
+	dirLight.shadow.mapSize.setScalar( 1024 );
+	dirLight.shadow.camera.near = 0.5;
+	dirLight.shadow.camera.far = 50;
+	dirLight.shadow.camera.left = -15;
+	dirLight.shadow.camera.right = 15;
+	dirLight.shadow.camera.top = 15;
+	dirLight.shadow.camera.bottom = -15;
+	scene.add( dirLight );
+
+	scene.add( new THREE.HemisphereLight( 0x1a2744, 0x080c16, 0.4 ) );
+
+	const ground = new THREE.Mesh(
+		new THREE.PlaneGeometry( 200, 200 ),
+		new THREE.MeshStandardMaterial( { color: 0x111825, roughness: 0.85, metalness: 0.1 } )
 	);
-	floor.rotation.x = - Math.PI / 2;
-	floor.receiveShadow = true;
-	scene.add( floor );
+	ground.rotation.x = -Math.PI / 2;
+	ground.receiveShadow = true;
+	scene.add( ground );
 
-	// Platform
-	const platform = new THREE.Mesh(
-		new THREE.CylinderGeometry( 3, 3.2, 0.15, 64 ),
-		new THREE.MeshStandardMaterial( { color: 0x1a1e2e, roughness: 0.3, metalness: 0.7 } )
-	);
-	platform.position.y = 0.075;
-	platform.receiveShadow = true;
-	scene.add( platform );
+	scene.add( new THREE.GridHelper( 80, 80, 0x1a2540, 0x111a2e ) );
 
-	// Sphere
+	// Hero objects
 	const sphere = new THREE.Mesh(
-		new THREE.SphereGeometry( 0.6, 48, 48 ),
-		new THREE.MeshStandardMaterial( { color: 0x4a9eff, roughness: 0.1, metalness: 0.9 } )
+		new THREE.SphereGeometry( 1.2, 48, 48 ),
+		new THREE.MeshStandardMaterial( { color: 0x4a9eff, roughness: 0.05, metalness: 0.95 } )
 	);
-	sphere.position.set( 0, 1.2, 0 );
+	sphere.position.set( 0, 2, 0 );
 	sphere.castShadow = true;
 	scene.add( sphere );
 
-	// Torus knot
-	const torusKnot = new THREE.Mesh(
-		new THREE.TorusKnotGeometry( 0.5, 0.15, 100, 16 ),
-		new THREE.MeshStandardMaterial( { color: 0xff6644, roughness: 0.2, metalness: 0.7 } )
+	const knot = new THREE.Mesh(
+		new THREE.TorusKnotGeometry( 0.8, 0.25, 128, 32 ),
+		new THREE.MeshStandardMaterial( { color: 0xff4466, roughness: 0.15, metalness: 0.8 } )
 	);
-	torusKnot.position.set( - 2, 1.2, - 1 );
-	torusKnot.castShadow = true;
-	scene.add( torusKnot );
+	knot.position.set( -3.5, 1.5, -1 );
+	knot.castShadow = true;
+	scene.add( knot );
 
-	// Octahedron
-	const octahedron = new THREE.Mesh(
-		new THREE.OctahedronGeometry( 0.6, 0 ),
-		new THREE.MeshStandardMaterial( { color: 0x22cc88, roughness: 0.15, metalness: 0.85 } )
+	const oct = new THREE.Mesh(
+		new THREE.OctahedronGeometry( 0.9, 2 ),
+		new THREE.MeshStandardMaterial( { color: 0x22cc88, roughness: 0.1, metalness: 0.9 } )
 	);
-	octahedron.position.set( 2, 1.0, - 0.5 );
-	octahedron.castShadow = true;
-	scene.add( octahedron );
+	oct.position.set( 3.5, 1.5, -1 );
+	oct.castShadow = true;
+	scene.add( oct );
 
-	// Dodecahedron
-	const dodecahedron = new THREE.Mesh(
-		new THREE.DodecahedronGeometry( 0.5, 0 ),
-		new THREE.MeshStandardMaterial( { color: 0xffaa22, roughness: 0.25, metalness: 0.75 } )
-	);
-	dodecahedron.position.set( 1, 1.0, 2 );
-	dodecahedron.castShadow = true;
-	scene.add( dodecahedron );
+	scene._heroObjects = [ sphere, knot, oct ];
 
-	// Cylinder
-	const cylinder = new THREE.Mesh(
-		new THREE.CylinderGeometry( 0.3, 0.3, 1.5, 16 ),
-		new THREE.MeshStandardMaterial( { color: 0xaa44ff, roughness: 0.2, metalness: 0.8 } )
-	);
-	cylinder.position.set( - 1.5, 0.95, 1.5 );
-	cylinder.castShadow = true;
-	scene.add( cylinder );
-
-	// Instanced cubes
-	const count = 200;
-	const dummy = new THREE.Object3D();
-	const instancedMesh = new THREE.InstancedMesh(
-		new THREE.BoxGeometry( 0.15, 0.15, 0.15 ),
-		new THREE.MeshStandardMaterial( { color: 0x6677ff, roughness: 0.4, metalness: 0.6 } ),
-		count
-	);
-
-	for ( let i = 0; i < count; i ++ ) {
-
-		const angle = ( i / count ) * Math.PI * 2 * 3;
-		const r = 3 + Math.sin( i * 0.1 );
-		dummy.position.set(
-			Math.cos( angle ) * r,
-			0.3 + Math.sin( i * 0.3 ) * 0.3,
-			Math.sin( angle ) * r
-		);
-		dummy.rotation.set( Math.random(), Math.random(), Math.random() );
-		dummy.updateMatrix();
-		instancedMesh.setMatrixAt( i, dummy.matrix );
-
-	}
-
-	instancedMesh.castShadow = true;
-	scene.add( instancedMesh );
-
-	// Lights
-	const dirLight = new THREE.DirectionalLight( 0xfff0d6, 3.0 );
-	dirLight.position.set( 5, 8, 6 );
-	dirLight.castShadow = true;
-	dirLight.shadow.mapSize.setScalar( 1024 );
-	dirLight.shadow.camera.near = 0.5;
-	dirLight.shadow.camera.far = 30;
-	dirLight.shadow.camera.left = - 8;
-	dirLight.shadow.camera.right = 8;
-	dirLight.shadow.camera.top = 8;
-	dirLight.shadow.camera.bottom = - 8;
-	dirLight.shadow.bias = - 0.001;
-	scene.add( dirLight );
-
-	const ambient = new THREE.AmbientLight( 0x1a1e30, 0.4 );
-	scene.add( ambient );
-
-	const hemi = new THREE.HemisphereLight( 0x1a2744, 0x080c16, 0.3 );
-	scene.add( hemi );
-
-	return { scene, sphere, torusKnot, octahedron, dodecahedron };
+	buildInstances( params.instances );
 
 }
 
-function getPaneSize( pane ) {
+function buildInstances( count ) {
 
-	return { width: pane.clientWidth, height: pane.clientHeight };
+	// Remove old
+	const old = [];
+	scene.traverse( c => { if ( c.isInstancedMesh ) old.push( c ); } );
+	old.forEach( m => { m.geometry.dispose(); m.material.dispose(); scene.remove( m ); } );
 
-}
+	// Mix of geometry types for visual variety
+	const geos = [
+		new THREE.IcosahedronGeometry( 0.3, 1 ),
+		new THREE.BoxGeometry( 0.4, 0.4, 0.4 ),
+		new THREE.ConeGeometry( 0.25, 0.5, 8 ),
+		new THREE.TorusGeometry( 0.2, 0.08, 8, 16 )
+	];
 
-// WebGL side (left) — uses WebGPURenderer with forceWebGL backend
-const glScene = createScene();
+	const perGeo = Math.ceil( count / geos.length );
 
-const glCanvas = document.createElement( 'canvas' );
-paneLeft.insertBefore( glCanvas, paneLeft.firstChild );
+	geos.forEach( ( geo, gi ) => {
 
-const glRenderer = new WebGPURenderer( { canvas: glCanvas, antialias: true, forceWebGL: true } );
-glRenderer.setPixelRatio( window.devicePixelRatio );
-glRenderer.toneMapping = THREE.ACESFilmicToneMapping;
-glRenderer.toneMappingExposure = 1.0;
+		const n = Math.min( perGeo, count - gi * perGeo );
+		if ( n <= 0 ) return;
 
-const glSize = getPaneSize( paneLeft );
-glRenderer.setSize( glSize.width, glSize.height );
+		const mat = new THREE.MeshStandardMaterial( { roughness: 0.3, metalness: 0.6 } );
+		const mesh = new THREE.InstancedMesh( geo, mat, n );
+		mesh.frustumCulled = false;
+		mesh.castShadow = true;
 
-const glCamera = new THREE.PerspectiveCamera( 50, glSize.width / glSize.height, 0.1, 100 );
-glCamera.position.set( 5, 4, 8 );
+		const dummy = new THREE.Object3D();
+		const color = new THREE.Color();
+		const spread = Math.cbrt( count ) * 1.0;
 
-const glControls = new OrbitControls( glCamera, glCanvas );
-glControls.enableDamping = true;
-glControls.dampingFactor = 0.05;
-glControls.target.set( 0, 0.5, 0 );
-glControls.autoRotate = true;
-glControls.autoRotateSpeed = 0.5;
-glControls.update();
+		for ( let i = 0; i < n; i++ ) {
 
-// WebGPU side (right) — real WebGPU renderer, or fallback message
-let gpuRenderer = null;
-let gpuCamera = null;
-let gpuScene = null;
-let gpuControls = null;
-
-if ( hasWebGPU ) {
-
-	gpuScene = createScene();
-
-	const gpuCanvas = document.createElement( 'canvas' );
-	paneRight.insertBefore( gpuCanvas, paneRight.firstChild );
-
-	gpuRenderer = new WebGPURenderer( { canvas: gpuCanvas, antialias: true } );
-	gpuRenderer.setPixelRatio( window.devicePixelRatio );
-	gpuRenderer.toneMapping = THREE.ACESFilmicToneMapping;
-	gpuRenderer.toneMappingExposure = 1.0;
-
-	const gpuSize = getPaneSize( paneRight );
-	gpuRenderer.setSize( gpuSize.width, gpuSize.height );
-
-	gpuCamera = new THREE.PerspectiveCamera( 50, gpuSize.width / gpuSize.height, 0.1, 100 );
-	gpuCamera.position.set( 5, 4, 8 );
-
-	gpuControls = new OrbitControls( gpuCamera, gpuCanvas );
-	gpuControls.enableDamping = true;
-	gpuControls.dampingFactor = 0.05;
-	gpuControls.target.set( 0, 0.5, 0 );
-	gpuControls.autoRotate = true;
-	gpuControls.autoRotateSpeed = 0.5;
-	gpuControls.update();
-
-} else {
-
-	fallbackEl.classList.add( 'visible' );
-
-}
-
-// Initialize renderers (WebGPURenderer requires async init)
-async function initRenderers() {
-
-	await glRenderer.init();
-
-	if ( gpuRenderer ) {
-
-		await gpuRenderer.init();
-
-	}
-
-	animate( 0 );
-
-}
-
-function animateObjects( sceneData, t ) {
-
-	sceneData.torusKnot.rotation.y = t * 0.5;
-	sceneData.torusKnot.rotation.x = t * 0.3;
-	sceneData.octahedron.rotation.y = t * 0.4;
-	sceneData.octahedron.rotation.z = t * 0.2;
-	sceneData.dodecahedron.rotation.x = t * 0.3;
-	sceneData.dodecahedron.rotation.y = t * 0.5;
-	sceneData.sphere.position.y = 1.2 + Math.sin( t * 1.5 ) * 0.2;
-
-}
-
-function syncCamera( source, target ) {
-
-	target.position.copy( source.position );
-	target.quaternion.copy( source.quaternion );
-
-}
-
-function animate( time ) {
-
-	requestAnimationFrame( animate );
-
-	const t = time * 0.001;
-
-	glControls.update();
-	animateObjects( glScene, t );
-	glRenderer.render( glScene.scene, glCamera );
-
-	if ( gpuRenderer && gpuCamera ) {
-
-		syncCamera( glCamera, gpuCamera );
-
-		if ( gpuControls ) {
-
-			gpuControls.target.copy( glControls.target );
-			gpuControls.update();
+			const angle = ( ( gi * perGeo + i ) / count ) * Math.PI * 2 * 5;
+			const r = 3 + ( ( gi * perGeo + i ) / count ) * spread;
+			dummy.position.set(
+				Math.cos( angle ) * r,
+				0.3 + Math.sin( ( gi * perGeo + i ) * 0.1 ) * 1.5,
+				Math.sin( angle ) * r
+			);
+			dummy.rotation.set( Math.random() * 6.28, Math.random() * 6.28, Math.random() * 6.28 );
+			dummy.scale.setScalar( 0.5 + Math.random() * 0.8 );
+			dummy.updateMatrix();
+			mesh.setMatrixAt( i, dummy.matrix );
+			color.setHex( colors[ ( gi * perGeo + i ) % colors.length ] );
+			mesh.setColorAt( i, color );
 
 		}
 
-		animateObjects( gpuScene, t );
-		gpuRenderer.render( gpuScene.scene, gpuCamera );
+		scene.add( mesh );
+
+	} );
+
+	hudObjects.textContent = count.toLocaleString();
+
+}
+
+async function createRenderer( backend ) {
+
+	overlay.classList.add( 'visible' );
+
+	if ( animId ) { cancelAnimationFrame( animId ); animId = null; }
+
+	// Save camera state
+	let camPos, camTarget;
+	if ( camera ) {
+
+		camPos = camera.position.clone();
+		camTarget = controls.target.clone();
+
+	}
+
+	if ( renderer ) {
+
+		renderer.dispose();
+		const oldCanvas = container.querySelector( 'canvas' );
+		if ( oldCanvas ) oldCanvas.remove();
+
+	}
+
+	currentBackend = backend;
+	hudBackend.textContent = backend === 'webgpu' ? 'WebGPU' : 'WebGL 2';
+	hudBackend.className = 'hud-value backend ' + ( backend === 'webgpu' ? 'webgpu' : 'webgl' );
+
+	renderer = new THREE.WebGPURenderer( {
+		antialias: true,
+		forceWebGL: backend === 'webgl'
+	} );
+
+	renderer.setPixelRatio( window.devicePixelRatio );
+	renderer.setSize( window.innerWidth, window.innerHeight );
+	renderer.toneMapping = THREE.ACESFilmicToneMapping;
+	renderer.toneMappingExposure = 1.0;
+	if ( params.shadows ) {
+
+		renderer.shadowMap = { enabled: true };
+
+	}
+	container.appendChild( renderer.domElement );
+
+	camera = new THREE.PerspectiveCamera( 50, window.innerWidth / window.innerHeight, 0.1, 500 );
+
+	if ( camPos ) {
+
+		camera.position.copy( camPos );
+
+	} else {
+
+		camera.position.set( 12, 10, 18 );
+
+	}
+
+	controls = new OrbitControls( camera, renderer.domElement );
+	controls.enableDamping = true;
+	controls.dampingFactor = 0.08;
+	controls.target.copy( camTarget || new THREE.Vector3( 0, 2, 0 ) );
+	controls.autoRotate = params.autoRotate;
+	controls.autoRotateSpeed = 0.8;
+
+	await renderer.init();
+
+	frames = 0;
+	lastFpsTime = performance.now();
+	stableFpsFrames = 0;
+
+	overlay.classList.remove( 'visible' );
+
+	animate();
+
+}
+
+function animate() {
+
+	animId = requestAnimationFrame( animate );
+
+	const t = performance.now() * 0.001;
+
+	// Animate hero objects
+	if ( scene._heroObjects ) {
+
+		scene._heroObjects[ 0 ].position.y = 2 + Math.sin( t * 1.2 ) * 0.3;
+		scene._heroObjects[ 1 ].rotation.y = t * 0.5;
+		scene._heroObjects[ 1 ].rotation.x = t * 0.3;
+		scene._heroObjects[ 2 ].rotation.y = t * 0.4;
+		scene._heroObjects[ 2 ].rotation.z = t * 0.2;
+
+	}
+
+	controls.autoRotate = params.autoRotate;
+	controls.update();
+	renderer.renderAsync( scene, camera );
+
+	frames++;
+	const now = performance.now();
+	if ( now - lastFpsTime >= 500 ) {
+
+		currentFps = Math.round( frames * 1000 / ( now - lastFpsTime ) );
+		hudFps.textContent = currentFps;
+
+		// Track best FPS (after 2 seconds to let it stabilize)
+		stableFpsFrames++;
+		if ( stableFpsFrames > 4 ) {
+
+			if ( currentBackend === 'webgl' && currentFps > bestGL ) {
+
+				bestGL = currentFps;
+				bestGlEl.textContent = bestGL + ' FPS';
+
+			} else if ( currentBackend === 'webgpu' && currentFps > bestGPU ) {
+
+				bestGPU = currentFps;
+				bestGpuEl.textContent = bestGPU + ' FPS';
+
+			}
+
+		}
+
+		frames = 0;
+		lastFpsTime = now;
 
 	}
 
 }
 
-window.addEventListener( 'resize', () => {
+// Backend toggle
+document.querySelectorAll( '#backend-panel input[name="backend"]' ).forEach( input => {
 
-	const glSize = getPaneSize( paneLeft );
-	glCamera.aspect = glSize.width / glSize.height;
-	glCamera.updateProjectionMatrix();
-	glRenderer.setSize( glSize.width, glSize.height );
+	input.addEventListener( 'change', () => {
 
-	if ( gpuRenderer && gpuCamera ) {
+		document.querySelectorAll( '#backend-panel label' ).forEach( l =>
+			l.classList.toggle( 'active', l.querySelector( 'input' ).value === input.value )
+		);
+		createRenderer( input.value );
 
-		const gpuSize = getPaneSize( paneRight );
-		gpuCamera.aspect = gpuSize.width / gpuSize.height;
-		gpuCamera.updateProjectionMatrix();
-		gpuRenderer.setSize( gpuSize.width, gpuSize.height );
-
-	}
+	} );
 
 } );
 
-initRenderers();
+// GUI
+const gui = new GUI( { width: 280 } );
+gui.add( params, 'instances', 1000, 100000, 1000 ).name( 'Object Count' ).onChange( v => {
+
+	buildInstances( v );
+
+} );
+gui.add( params, 'autoRotate' ).name( 'Auto Rotate' );
+gui.add( params, 'shadows' ).name( 'Shadows' ).onChange( v => {
+
+	if ( dirLight ) dirLight.castShadow = v;
+
+} );
+
+// Resize
+window.addEventListener( 'resize', () => {
+
+	if ( !camera || !renderer ) return;
+	camera.aspect = window.innerWidth / window.innerHeight;
+	camera.updateProjectionMatrix();
+	renderer.setSize( window.innerWidth, window.innerHeight );
+
+} );
+
+// Init
+buildScene();
+createRenderer( 'webgpu' );
+
 </script>
 
 <script src="../shared/demo-nav.js"></script>
