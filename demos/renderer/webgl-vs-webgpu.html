@@ -75,23 +75,108 @@
 			color: #4a9eff;
 		}
 
+		.fps-overlay {
+			position: absolute;
+			bottom: 40px;
+			z-index: 10;
+			background: rgba(6, 10, 20, 0.85);
+			backdrop-filter: blur(8px);
+			border: 1px solid rgba(74, 158, 255, 0.2);
+			border-radius: 8px;
+			padding: 8px 14px;
+			font-family: 'SF Mono', 'Fira Code', monospace;
+			font-size: 13px;
+			color: #e0e5f0;
+			pointer-events: none;
+		}
+		.fps-overlay .fps-value {
+			font-size: 22px;
+			font-weight: 800;
+			color: #22c55e;
+		}
+		.fps-overlay .fps-label {
+			font-size: 9px;
+			text-transform: uppercase;
+			letter-spacing: 0.1em;
+			color: #6b7394;
+		}
+		.fps-overlay .objects-count {
+			font-size: 10px;
+			color: #8899bb;
+			margin-top: 2px;
+		}
+		#pane-left .fps-overlay { left: 12px; }
+		#pane-right .fps-overlay { right: 12px; }
+
+		#stress-slider {
+			position: fixed;
+			bottom: 16px;
+			left: 50%;
+			transform: translateX(-50%);
+			z-index: 60;
+			background: rgba(10, 14, 26, 0.92);
+			backdrop-filter: blur(12px);
+			border: 1px solid rgba(74, 158, 255, 0.25);
+			border-radius: 10px;
+			padding: 10px 18px;
+			display: flex;
+			align-items: center;
+			gap: 12px;
+			font-family: 'Inter', system-ui, sans-serif;
+		}
+		#stress-slider label {
+			font-size: 11px;
+			font-weight: 600;
+			color: #e0e5f0;
+			white-space: nowrap;
+		}
+		#stress-slider input[type="range"] {
+			width: 180px;
+			accent-color: #4a9eff;
+		}
+		#stress-slider .count-display {
+			font-size: 13px;
+			font-weight: 700;
+			color: #4a9eff;
+			min-width: 50px;
+		}
+
+		#toggle-panel-btn {
+			position: fixed;
+			top: 52px;
+			right: 12px;
+			z-index: 60;
+			background: rgba(10, 14, 26, 0.88);
+			backdrop-filter: blur(10px);
+			border: 1px solid rgba(74, 158, 255, 0.3);
+			border-radius: 8px;
+			padding: 6px 12px;
+			color: #4a9eff;
+			font-size: 11px;
+			font-weight: 600;
+			cursor: pointer;
+			font-family: 'Inter', system-ui, sans-serif;
+		}
+
 		#comparison-panel {
 			position: fixed;
-			top: 50px;
-			right: 16px;
-			width: 380px;
-			max-height: calc(100vh - 80px);
+			top: 82px;
+			right: 12px;
+			width: 340px;
+			max-height: calc(100vh - 110px);
 			overflow-y: auto;
 			background: rgba(10, 14, 26, 0.92);
 			backdrop-filter: blur(12px);
 			border: 1px solid rgba(74, 158, 255, 0.25);
 			border-radius: 12px;
-			padding: 20px;
+			padding: 16px;
 			z-index: 50;
 			font-family: 'Inter', system-ui, sans-serif;
 			scrollbar-width: thin;
 			scrollbar-color: #1e2740 transparent;
+			display: none;
 		}
+		#comparison-panel.visible { display: block; }
 		#comparison-panel h2 {
 			font-size: 16px;
 			color: #fff;
@@ -185,10 +270,12 @@
 <div id="split-container">
 	<div class="pane" id="pane-left">
 		<div class="split-label split-label-left"><strong>WebGL 2</strong></div>
+		<div class="fps-overlay" id="fps-left"><div class="fps-label">WebGL 2</div><div><span class="fps-value" id="fps-val-left">--</span> FPS</div><div class="objects-count" id="obj-left">200 objects</div></div>
 	</div>
 	<div class="split-divider"></div>
 	<div class="pane" id="pane-right">
 		<div class="split-label split-label-right"><strong>WebGPU</strong></div>
+		<div class="fps-overlay" id="fps-right"><div class="fps-label">WebGPU</div><div><span class="fps-value" id="fps-val-right">--</span> FPS</div><div class="objects-count" id="obj-right">200 objects</div></div>
 		<div id="webgpu-fallback">
 			<div class="fallback-icon">&#9888;</div>
 			<h3>WebGPU Not Available</h3>
@@ -196,6 +283,14 @@
 		</div>
 	</div>
 </div>
+
+<div id="stress-slider">
+	<label>Stress Test:</label>
+	<input type="range" id="object-count" min="200" max="50000" step="200" value="200">
+	<span class="count-display" id="count-display">200</span>
+</div>
+
+<button id="toggle-panel-btn" onclick="document.getElementById('comparison-panel').classList.toggle('visible')">Feature Table</button>
 
 <div id="comparison-panel">
 	<h2>WebGL vs WebGPU</h2>
@@ -431,6 +526,8 @@ function createScene() {
 	instancedMesh.castShadow = true;
 	scene.add( instancedMesh );
 
+	const sceneData = { scene, sphere, torusKnot, octahedron, dodecahedron, instancedMesh };
+
 	// Lights
 	const dirLight = new THREE.DirectionalLight( 0xfff0d6, 3.0 );
 	dirLight.position.set( 5, 8, 6 );
@@ -451,7 +548,7 @@ function createScene() {
 	const hemi = new THREE.HemisphereLight( 0x1a2744, 0x080c16, 0.3 );
 	scene.add( hemi );
 
-	return { scene, sphere, torusKnot, octahedron, dodecahedron };
+	return sceneData;
 
 }
 
@@ -558,6 +655,64 @@ function syncCamera( source, target ) {
 
 }
 
+// FPS tracking
+const fpsLeftEl = document.getElementById( 'fps-val-left' );
+const fpsRightEl = document.getElementById( 'fps-val-right' );
+const objLeftEl = document.getElementById( 'obj-left' );
+const objRightEl = document.getElementById( 'obj-right' );
+let glFrames = 0, gpuFrames = 0, lastFpsTime = 0;
+
+// Stress test — rebuild instanced meshes
+let currentCount = 200;
+
+function rebuildInstanced( sceneData, count ) {
+
+	if ( sceneData.instancedMesh ) sceneData.scene.remove( sceneData.instancedMesh );
+
+	const dummy = new THREE.Object3D();
+	const mesh = new THREE.InstancedMesh(
+		new THREE.BoxGeometry( 0.12, 0.12, 0.12 ),
+		new THREE.MeshStandardMaterial( { color: 0x6677ff, roughness: 0.4, metalness: 0.6 } ),
+		count
+	);
+
+	for ( let i = 0; i < count; i ++ ) {
+
+		const angle = ( i / count ) * Math.PI * 2 * 7;
+		const r = 2 + ( i / count ) * 8;
+		dummy.position.set(
+			Math.cos( angle ) * r,
+			0.2 + Math.sin( i * 0.05 ) * 0.5,
+			Math.sin( angle ) * r
+		);
+		dummy.rotation.set( i * 0.1, i * 0.2, i * 0.3 );
+		dummy.scale.setScalar( 0.5 + Math.random() * 0.5 );
+		dummy.updateMatrix();
+		mesh.setMatrixAt( i, dummy.matrix );
+
+	}
+
+	mesh.castShadow = true;
+	sceneData.scene.add( mesh );
+	sceneData.instancedMesh = mesh;
+
+}
+
+// Wire up slider
+const slider = document.getElementById( 'object-count' );
+const countDisplay = document.getElementById( 'count-display' );
+
+slider.addEventListener( 'input', () => {
+
+	currentCount = Number( slider.value );
+	countDisplay.textContent = currentCount.toLocaleString();
+	rebuildInstanced( glScene, currentCount );
+	if ( gpuScene ) rebuildInstanced( gpuScene, currentCount );
+	objLeftEl.textContent = currentCount.toLocaleString() + ' objects';
+	objRightEl.textContent = currentCount.toLocaleString() + ' objects';
+
+} );
+
 function animate( time ) {
 
 	requestAnimationFrame( animate );
@@ -567,6 +722,7 @@ function animate( time ) {
 	glControls.update();
 	animateObjects( glScene, t );
 	glRenderer.render( glScene.scene, glCamera );
+	glFrames ++;
 
 	if ( gpuRenderer && gpuCamera ) {
 
@@ -581,6 +737,18 @@ function animate( time ) {
 
 		animateObjects( gpuScene, t );
 		gpuRenderer.render( gpuScene.scene, gpuCamera );
+		gpuFrames ++;
+
+	}
+
+	// Update FPS every second
+	if ( time - lastFpsTime >= 1000 ) {
+
+		fpsLeftEl.textContent = glFrames;
+		if ( gpuRenderer ) fpsRightEl.textContent = gpuFrames;
+		glFrames = 0;
+		gpuFrames = 0;
+		lastFpsTime = time;
 
 	}
 
