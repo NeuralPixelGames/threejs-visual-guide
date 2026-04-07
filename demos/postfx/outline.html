@@ -1,0 +1,927 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<title>Outline -- Three.js Encyclopedia v2</title>
+	<meta charset="utf-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<link rel="stylesheet" href="../shared/demo-base.css">
+	<style>
+		.style-panel {
+			position: fixed;
+			left: 22px;
+			bottom: 22px;
+			z-index: 50;
+			max-width: 290px;
+			background: linear-gradient(135deg, rgba(8, 4, 20, 0.92) 0%, rgba(12, 8, 28, 0.88) 100%);
+			backdrop-filter: blur(20px);
+			-webkit-backdrop-filter: blur(20px);
+			border: 1px solid rgba(0, 255, 220, 0.2);
+			border-radius: 14px;
+			padding: 18px 22px;
+			color: #e0e5f0;
+			font-family: 'Inter', system-ui, sans-serif;
+			font-size: 13px;
+			box-shadow: 0 8px 40px rgba(0, 0, 0, 0.5), 0 0 60px rgba(0, 255, 220, 0.06);
+			animation: fadeInUp 0.6s ease-out both;
+			animation-delay: 0.4s;
+		}
+
+		.style-kicker {
+			display: inline-block;
+			font-size: 10px;
+			font-weight: 600;
+			text-transform: uppercase;
+			letter-spacing: 0.12em;
+			color: #00ffdc;
+			margin-bottom: 6px;
+		}
+
+		.style-panel h3 {
+			margin: 0 0 8px;
+			font-size: 15px;
+			font-weight: 600;
+			color: #f8fbff;
+			letter-spacing: 0.01em;
+		}
+
+		.style-panel p {
+			margin: 0 0 12px;
+			color: rgba(230, 236, 245, 0.78);
+			line-height: 1.55;
+			font-size: 12px;
+		}
+
+		.style-chips {
+			display: flex;
+			flex-wrap: wrap;
+			gap: 6px;
+		}
+
+		.style-chip {
+			display: inline-block;
+			background: rgba(0, 255, 220, 0.1);
+			border: 1px solid rgba(0, 255, 220, 0.25);
+			border-radius: 100px;
+			padding: 3px 10px;
+			font-size: 10px;
+			color: #00ffdc;
+			font-family: 'Inter', system-ui, sans-serif;
+			letter-spacing: 0.03em;
+			white-space: nowrap;
+		}
+
+		.style-chip.magenta {
+			background: rgba(255, 0, 180, 0.1);
+			border-color: rgba(255, 0, 180, 0.25);
+			color: #ff6bd6;
+		}
+
+		.style-chip.blue {
+			background: rgba(80, 140, 255, 0.1);
+			border-color: rgba(80, 140, 255, 0.25);
+			color: #6ba4ff;
+		}
+
+		.style-chip.gold {
+			background: rgba(255, 200, 0, 0.08);
+			border-color: rgba(255, 200, 0, 0.25);
+			color: #ffc800;
+		}
+
+		.selection-hud {
+			position: fixed;
+			bottom: 22px;
+			right: 22px;
+			z-index: 50;
+			background: rgba(10, 14, 26, 0.88);
+			backdrop-filter: blur(16px);
+			-webkit-backdrop-filter: blur(16px);
+			border: 1px solid rgba(255, 0, 180, 0.2);
+			border-radius: 10px;
+			padding: 12px 16px;
+			color: rgba(230, 236, 245, 0.84);
+			font-family: 'Inter', system-ui, sans-serif;
+			font-size: 12px;
+			max-width: 220px;
+			line-height: 1.5;
+			box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+			animation: fadeInUp 0.5s ease-out both;
+			animation-delay: 0.6s;
+			transition: opacity 0.3s ease;
+		}
+
+		.selection-hud .hud-title {
+			font-size: 10px;
+			font-weight: 600;
+			text-transform: uppercase;
+			letter-spacing: 0.1em;
+			color: #ff6bd6;
+			margin-bottom: 6px;
+		}
+
+		.selection-hud .hud-item {
+			padding: 2px 0;
+			color: #b0b8cc;
+		}
+
+		.selection-hud .hud-item.hover-item {
+			color: #00ffdc;
+		}
+
+		.selection-hud .hud-empty {
+			color: #4a5568;
+			font-style: italic;
+		}
+
+		@media (max-width: 900px) {
+			.style-panel {
+				left: 10px;
+				right: 10px;
+				bottom: 10px;
+				max-width: none;
+				padding: 14px 16px;
+			}
+			.selection-hud {
+				display: none;
+			}
+		}
+	</style>
+</head>
+<body>
+
+<a href="../index.html" id="back-btn">&larr; Hub</a>
+<div id="info"><strong>Outline</strong> -- Hover to highlight, click to select, Shift+Click for multi-select</div>
+
+<section class="style-panel">
+	<div class="style-kicker">Post-Processing</div>
+	<h3>Outline Effect</h3>
+	<p>OutlinePass renders selected objects into a separate buffer, detects edges via Sobel, then composites a glowing contour. Raycaster drives hover &amp; click selection with distinct outline colors.</p>
+	<div class="style-chips">
+		<span class="style-chip">OutlinePass</span>
+		<span class="style-chip magenta">selection</span>
+		<span class="style-chip blue">post-processing</span>
+		<span class="style-chip gold">edge detection</span>
+	</div>
+</section>
+
+<div class="selection-hud" id="selection-hud">
+	<div class="hud-title">Selection</div>
+	<div id="hud-content"><span class="hud-empty">Click an object to select</span></div>
+</div>
+
+<script type="importmap">
+{
+	"imports": {
+		"three": "https://cdn.jsdelivr.net/npm/three@0.183.0/build/three.module.js",
+		"three/addons/": "https://cdn.jsdelivr.net/npm/three@0.183.0/examples/jsm/"
+	}
+}
+</script>
+
+<script type="module">
+import * as THREE from 'three';
+import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+import { GUI } from 'three/addons/libs/lil-gui.module.min.js';
+import { EffectComposer } from 'three/addons/postprocessing/EffectComposer.js';
+import { RenderPass } from 'three/addons/postprocessing/RenderPass.js';
+import { OutlinePass } from 'three/addons/postprocessing/OutlinePass.js';
+import { UnrealBloomPass } from 'three/addons/postprocessing/UnrealBloomPass.js';
+import { ShaderPass } from 'three/addons/postprocessing/ShaderPass.js';
+import { OutputPass } from 'three/addons/postprocessing/OutputPass.js';
+
+let renderer, scene, camera, controls, clock;
+let composer, hoverOutlinePass, selectOutlinePass, bloomPass;
+let raycaster, mouse;
+let interactiveObjects = [];
+let selectedObjects = [];
+let hoveredObject = null;
+let defaultHighlightObject = null;
+let particleSystem;
+
+const params = {
+	hoverColor: '#00ffdc',
+	selectColor: '#ff00b4',
+	edgeStrength: 6.0,
+	edgeGlow: 1.2,
+	edgeThickness: 2.5,
+	pulseSpeed: 2.0,
+	bloomStrength: 0.3,
+	bloomThreshold: 0.7,
+	bloomRadius: 0.4,
+	exposure: 1.0
+};
+
+init();
+
+function init() {
+
+	clock = new THREE.Clock();
+
+	renderer = new THREE.WebGLRenderer( { antialias: true } );
+	renderer.setPixelRatio( window.devicePixelRatio );
+	renderer.setSize( window.innerWidth, window.innerHeight );
+	renderer.toneMapping = THREE.ACESFilmicToneMapping;
+	renderer.toneMappingExposure = params.exposure;
+	renderer.shadowMap.enabled = true;
+	renderer.shadowMap.type = THREE.PCFShadowMap;
+	document.body.appendChild( renderer.domElement );
+
+	scene = new THREE.Scene();
+	scene.background = new THREE.Color( 0x060810 );
+	scene.fog = new THREE.FogExp2( 0x060810, 0.03 );
+
+	camera = new THREE.PerspectiveCamera( 50, window.innerWidth / window.innerHeight, 0.1, 100 );
+	camera.position.set( 0, 5, 12 );
+
+	controls = new OrbitControls( camera, renderer.domElement );
+	controls.enableDamping = true;
+	controls.dampingFactor = 0.06;
+	controls.target.set( 0, 2.2, 0 );
+	controls.maxPolarAngle = Math.PI * 0.6;
+	controls.minDistance = 5;
+	controls.maxDistance = 22;
+	controls.update();
+
+	raycaster = new THREE.Raycaster();
+	mouse = new THREE.Vector2();
+
+	buildEnvironment();
+	buildGalleryObjects();
+	buildParticles();
+	setupComposer();
+	setupGUI();
+
+	// Default highlight: pick the Torus Knot (index 2) as the most visually prominent
+	defaultHighlightObject = interactiveObjects[ 2 ];
+	hoverOutlinePass.selectedObjects = [ defaultHighlightObject ];
+
+	window.addEventListener( 'resize', onResize );
+	window.addEventListener( 'pointermove', onPointerMove );
+	window.addEventListener( 'click', onClick );
+	renderer.setAnimationLoop( animate );
+
+}
+
+
+// ---- Gallery Environment ------------------------------------------------
+
+function buildEnvironment() {
+
+	// HDR-style ambient via hemisphere
+	const hemi = new THREE.HemisphereLight( 0x1a1a3e, 0x0a0a14, 0.4 );
+	scene.add( hemi );
+
+	// Main gallery floor
+	const floorGeo = new THREE.PlaneGeometry( 40, 40 );
+	const floorMat = new THREE.MeshStandardMaterial( {
+		color: 0x080a12,
+		roughness: 0.08,
+		metalness: 0.95,
+		envMapIntensity: 0.5
+	} );
+	const floor = new THREE.Mesh( floorGeo, floorMat );
+	floor.rotation.x = - Math.PI / 2;
+	floor.receiveShadow = true;
+	scene.add( floor );
+
+	// Circular gallery platform
+	const platformGeo = new THREE.CylinderGeometry( 7, 7.5, 0.15, 64 );
+	const platformMat = new THREE.MeshStandardMaterial( {
+		color: 0x0c0e18,
+		roughness: 0.15,
+		metalness: 0.8
+	} );
+	const platform = new THREE.Mesh( platformGeo, platformMat );
+	platform.position.y = 0.075;
+	platform.receiveShadow = true;
+	scene.add( platform );
+
+	// Outer ring accent
+	const ringGeo = new THREE.TorusGeometry( 7.25, 0.04, 8, 128 );
+	const ringMat = new THREE.MeshBasicMaterial( {
+		color: 0x00ffdc,
+		transparent: true,
+		opacity: 0.25
+	} );
+	const ring = new THREE.Mesh( ringGeo, ringMat );
+	ring.rotation.x = - Math.PI / 2;
+	ring.position.y = 0.16;
+	scene.add( ring );
+
+	// Dome ceiling hint
+	const domeGeo = new THREE.SphereGeometry( 18, 64, 32, 0, Math.PI * 2, 0, Math.PI * 0.4 );
+	const domeMat = new THREE.MeshStandardMaterial( {
+		color: 0x04060a,
+		roughness: 0.9,
+		metalness: 0.1,
+		side: THREE.BackSide
+	} );
+	const dome = new THREE.Mesh( domeGeo, domeMat );
+	dome.position.y = - 2;
+	scene.add( dome );
+
+	// Spotlights illuminating pedestals
+	const spotColors = [ 0x4488ff, 0xff4488, 0x44ff88, 0xffaa44, 0xaa44ff ];
+	const radius = 5;
+
+	for ( let i = 0; i < 5; i ++ ) {
+
+		const angle = ( i / 5 ) * Math.PI * 2 - Math.PI / 2;
+		const x = Math.cos( angle ) * radius;
+		const z = Math.sin( angle ) * radius;
+
+		const spot = new THREE.SpotLight( spotColors[ i ], 3, 20, Math.PI / 8, 0.5, 1 );
+		spot.position.set( x * 0.6, 10, z * 0.6 );
+		spot.target.position.set( x, 0, z );
+		spot.castShadow = true;
+		spot.shadow.mapSize.set( 512, 512 );
+		spot.shadow.bias = - 0.001;
+		scene.add( spot );
+		scene.add( spot.target );
+
+	}
+
+	// Central downlight
+	const centralSpot = new THREE.SpotLight( 0xffffff, 2, 18, Math.PI / 6, 0.7, 1 );
+	centralSpot.position.set( 0, 12, 0 );
+	centralSpot.target.position.set( 0, 0, 0 );
+	centralSpot.castShadow = true;
+	centralSpot.shadow.mapSize.set( 1024, 1024 );
+	scene.add( centralSpot );
+	scene.add( centralSpot.target );
+
+	// Ambient point lights for soft fill
+	const ptFill1 = new THREE.PointLight( 0x2244aa, 0.6, 25 );
+	ptFill1.position.set( - 8, 4, - 8 );
+	scene.add( ptFill1 );
+
+	const ptFill2 = new THREE.PointLight( 0xaa2244, 0.4, 25 );
+	ptFill2.position.set( 8, 3, 6 );
+	scene.add( ptFill2 );
+
+	// Env map via CubeRenderTarget for reflections
+	const pmremGenerator = new THREE.PMREMGenerator( renderer );
+	const envScene = new THREE.Scene();
+	envScene.background = new THREE.Color( 0x060810 );
+
+	// Add some emissive elements to the env scene for reflections
+	const envSphere = new THREE.Mesh(
+		new THREE.SphereGeometry( 50, 16, 16 ),
+		new THREE.MeshBasicMaterial( { color: 0x060810, side: THREE.BackSide } )
+	);
+	envScene.add( envSphere );
+
+	for ( let i = 0; i < 30; i ++ ) {
+
+		const hue = Math.random();
+		const c = new THREE.Color().setHSL( hue, 0.8, 0.4 );
+		const mat = new THREE.MeshBasicMaterial( { color: c } );
+		const size = 0.5 + Math.random() * 2;
+		const sphere = new THREE.Mesh( new THREE.SphereGeometry( size, 8, 8 ), mat );
+		const theta = Math.random() * Math.PI * 2;
+		const phi = Math.random() * Math.PI * 0.6;
+		sphere.position.set(
+			Math.cos( theta ) * Math.sin( phi ) * 40,
+			Math.cos( phi ) * 30 + 10,
+			Math.sin( theta ) * Math.sin( phi ) * 40
+		);
+		envScene.add( sphere );
+
+	}
+
+	const envMap = pmremGenerator.fromScene( envScene, 0.04 ).texture;
+	scene.environment = envMap;
+	pmremGenerator.dispose();
+
+}
+
+
+function buildGalleryObjects() {
+
+	const shapes = [
+		{
+			geo: new THREE.SphereGeometry( 0.7, 64, 64 ),
+			name: 'Sphere',
+			color: 0x2266ff,
+			emissive: 0x0a1a44
+		},
+		{
+			geo: new THREE.TorusGeometry( 0.55, 0.22, 32, 64 ),
+			name: 'Torus',
+			color: 0xff2266,
+			emissive: 0x440a1a
+		},
+		{
+			geo: new THREE.TorusKnotGeometry( 0.45, 0.16, 128, 32 ),
+			name: 'Torus Knot',
+			color: 0x22ff88,
+			emissive: 0x0a441a
+		},
+		{
+			geo: new THREE.DodecahedronGeometry( 0.65, 0 ),
+			name: 'Dodecahedron',
+			color: 0xffaa22,
+			emissive: 0x44330a
+		},
+		{
+			geo: new THREE.BoxGeometry( 0.9, 0.9, 0.9 ),
+			name: 'Box',
+			color: 0xaa22ff,
+			emissive: 0x220a44
+		}
+	];
+
+	const radius = 5;
+
+	for ( let i = 0; i < shapes.length; i ++ ) {
+
+		const angle = ( i / shapes.length ) * Math.PI * 2 - Math.PI / 2;
+		const x = Math.cos( angle ) * radius;
+		const z = Math.sin( angle ) * radius;
+
+		// Pedestal
+		const pedestalGroup = new THREE.Group();
+
+		const pedestalBase = new THREE.Mesh(
+			new THREE.CylinderGeometry( 0.6, 0.7, 0.12, 32 ),
+			new THREE.MeshStandardMaterial( {
+				color: 0x0e1020,
+				roughness: 0.2,
+				metalness: 0.9
+			} )
+		);
+		pedestalBase.position.y = 0.06;
+		pedestalBase.receiveShadow = true;
+		pedestalGroup.add( pedestalBase );
+
+		const pedestalPillar = new THREE.Mesh(
+			new THREE.CylinderGeometry( 0.35, 0.45, 1.5, 32 ),
+			new THREE.MeshStandardMaterial( {
+				color: 0x0c0e18,
+				roughness: 0.15,
+				metalness: 0.85
+			} )
+		);
+		pedestalPillar.position.y = 0.87;
+		pedestalPillar.receiveShadow = true;
+		pedestalPillar.castShadow = true;
+		pedestalGroup.add( pedestalPillar );
+
+		const pedestalTop = new THREE.Mesh(
+			new THREE.CylinderGeometry( 0.5, 0.38, 0.1, 32 ),
+			new THREE.MeshStandardMaterial( {
+				color: 0x10141e,
+				roughness: 0.1,
+				metalness: 0.9
+			} )
+		);
+		pedestalTop.position.y = 1.67;
+		pedestalTop.receiveShadow = true;
+		pedestalGroup.add( pedestalTop );
+
+		// Glowing accent ring on pedestal
+		const accentRing = new THREE.Mesh(
+			new THREE.TorusGeometry( 0.42, 0.015, 8, 64 ),
+			new THREE.MeshBasicMaterial( {
+				color: shapes[ i ].color,
+				transparent: true,
+				opacity: 0.3
+			} )
+		);
+		accentRing.rotation.x = - Math.PI / 2;
+		accentRing.position.y = 1.73;
+		pedestalGroup.add( accentRing );
+
+		pedestalGroup.position.set( x, 0.15, z );
+		scene.add( pedestalGroup );
+
+		// Object on pedestal
+		const mat = new THREE.MeshPhysicalMaterial( {
+			color: shapes[ i ].color,
+			emissive: shapes[ i ].emissive,
+			emissiveIntensity: 0.3,
+			roughness: 0.15,
+			metalness: 0.4,
+			clearcoat: 1.0,
+			clearcoatRoughness: 0.08,
+			reflectivity: 0.9,
+			envMapIntensity: 1.5
+		} );
+		const mesh = new THREE.Mesh( shapes[ i ].geo, mat );
+		mesh.position.set( x, 2.7, z );
+		mesh.castShadow = true;
+		mesh.receiveShadow = true;
+		mesh.userData.name = shapes[ i ].name;
+		mesh.userData.baseY = 2.7;
+		mesh.userData.index = i;
+		scene.add( mesh );
+		interactiveObjects.push( mesh );
+
+	}
+
+}
+
+
+function buildParticles() {
+
+	const count = 600;
+	const positions = new Float32Array( count * 3 );
+	const velocities = new Float32Array( count * 3 );
+	const lifetimes = new Float32Array( count );
+	const maxLifetimes = new Float32Array( count );
+
+	for ( let i = 0; i < count; i ++ ) {
+
+		resetParticle( i, positions, velocities, lifetimes, maxLifetimes, true );
+
+	}
+
+	const geo = new THREE.BufferGeometry();
+	geo.setAttribute( 'position', new THREE.BufferAttribute( positions, 3 ) );
+
+	const mat = new THREE.PointsMaterial( {
+		color: 0x6688cc,
+		size: 0.04,
+		transparent: true,
+		opacity: 0.35,
+		depthWrite: false,
+		blending: THREE.AdditiveBlending
+	} );
+
+	particleSystem = new THREE.Points( geo, mat );
+	particleSystem.userData.velocities = velocities;
+	particleSystem.userData.lifetimes = lifetimes;
+	particleSystem.userData.maxLifetimes = maxLifetimes;
+	scene.add( particleSystem );
+
+}
+
+function resetParticle( i, positions, velocities, lifetimes, maxLifetimes, randomStart ) {
+
+	const theta = Math.random() * Math.PI * 2;
+	const r = 2 + Math.random() * 10;
+	positions[ i * 3 ] = Math.cos( theta ) * r;
+	positions[ i * 3 + 1 ] = randomStart ? Math.random() * 12 : 0;
+	positions[ i * 3 + 2 ] = Math.sin( theta ) * r;
+
+	velocities[ i * 3 ] = ( Math.random() - 0.5 ) * 0.08;
+	velocities[ i * 3 + 1 ] = 0.15 + Math.random() * 0.35;
+	velocities[ i * 3 + 2 ] = ( Math.random() - 0.5 ) * 0.08;
+
+	maxLifetimes[ i ] = 4 + Math.random() * 8;
+	lifetimes[ i ] = randomStart ? Math.random() * maxLifetimes[ i ] : 0;
+
+}
+
+
+function updateParticles( dt ) {
+
+	if ( ! particleSystem ) return;
+
+	const positions = particleSystem.geometry.attributes.position.array;
+	const velocities = particleSystem.userData.velocities;
+	const lifetimes = particleSystem.userData.lifetimes;
+	const maxLifetimes = particleSystem.userData.maxLifetimes;
+	const count = positions.length / 3;
+
+	for ( let i = 0; i < count; i ++ ) {
+
+		lifetimes[ i ] += dt;
+
+		if ( lifetimes[ i ] >= maxLifetimes[ i ] ) {
+
+			resetParticle( i, positions, velocities, lifetimes, maxLifetimes, false );
+			continue;
+
+		}
+
+		positions[ i * 3 ] += velocities[ i * 3 ] * dt;
+		positions[ i * 3 + 1 ] += velocities[ i * 3 + 1 ] * dt;
+		positions[ i * 3 + 2 ] += velocities[ i * 3 + 2 ] * dt;
+
+		velocities[ i * 3 ] += ( Math.random() - 0.5 ) * 0.02 * dt;
+		velocities[ i * 3 + 2 ] += ( Math.random() - 0.5 ) * 0.02 * dt;
+
+	}
+
+	particleSystem.geometry.attributes.position.needsUpdate = true;
+
+}
+
+
+// ---- Post-Processing Composer -------------------------------------------
+
+function setupComposer() {
+
+	const res = new THREE.Vector2( window.innerWidth, window.innerHeight );
+
+	composer = new EffectComposer( renderer );
+	composer.addPass( new RenderPass( scene, camera ) );
+
+	// Hover outline (cyan)
+	hoverOutlinePass = new OutlinePass( res, scene, camera );
+	hoverOutlinePass.edgeStrength = params.edgeStrength;
+	hoverOutlinePass.edgeGlow = params.edgeGlow;
+	hoverOutlinePass.edgeThickness = params.edgeThickness;
+	hoverOutlinePass.pulsePeriod = params.pulseSpeed;
+	hoverOutlinePass.visibleEdgeColor.set( params.hoverColor );
+	hoverOutlinePass.hiddenEdgeColor.set( 0x003322 );
+	composer.addPass( hoverOutlinePass );
+
+	// Selection outline (magenta)
+	selectOutlinePass = new OutlinePass( res, scene, camera );
+	selectOutlinePass.edgeStrength = params.edgeStrength * 0.9;
+	selectOutlinePass.edgeGlow = params.edgeGlow * 0.8;
+	selectOutlinePass.edgeThickness = params.edgeThickness * 0.9;
+	selectOutlinePass.pulsePeriod = params.pulseSpeed * 1.5;
+	selectOutlinePass.visibleEdgeColor.set( params.selectColor );
+	selectOutlinePass.hiddenEdgeColor.set( 0x330022 );
+	composer.addPass( selectOutlinePass );
+
+	// Bloom
+	bloomPass = new UnrealBloomPass( res, params.bloomStrength, params.bloomRadius, params.bloomThreshold );
+	composer.addPass( bloomPass );
+
+	composer.addPass( new OutputPass() );
+
+}
+
+
+// ---- GUI ----------------------------------------------------------------
+
+function setupGUI() {
+
+	const gui = new GUI();
+
+	const outlineFolder = gui.addFolder( 'Outline' );
+	outlineFolder.addColor( params, 'hoverColor' ).name( 'Hover Color' ).onChange( v => {
+
+		hoverOutlinePass.visibleEdgeColor.set( v );
+
+	} );
+	outlineFolder.addColor( params, 'selectColor' ).name( 'Select Color' ).onChange( v => {
+
+		selectOutlinePass.visibleEdgeColor.set( v );
+
+	} );
+	outlineFolder.add( params, 'edgeStrength', 1, 12, 0.1 ).name( 'Edge Strength' ).onChange( v => {
+
+		hoverOutlinePass.edgeStrength = v;
+		selectOutlinePass.edgeStrength = v * 0.9;
+
+	} );
+	outlineFolder.add( params, 'edgeThickness', 0.5, 6, 0.1 ).name( 'Thickness' ).onChange( v => {
+
+		hoverOutlinePass.edgeThickness = v;
+		selectOutlinePass.edgeThickness = v * 0.9;
+
+	} );
+	outlineFolder.add( params, 'edgeGlow', 0, 3, 0.1 ).name( 'Glow Strength' ).onChange( v => {
+
+		hoverOutlinePass.edgeGlow = v;
+		selectOutlinePass.edgeGlow = v * 0.8;
+
+	} );
+	outlineFolder.add( params, 'pulseSpeed', 0, 5, 0.1 ).name( 'Pulse Speed' ).onChange( v => {
+
+		hoverOutlinePass.pulsePeriod = v;
+		selectOutlinePass.pulsePeriod = v * 1.5;
+
+	} );
+	outlineFolder.open();
+
+	const bloomFolder = gui.addFolder( 'Bloom' );
+	bloomFolder.add( params, 'bloomStrength', 0, 2, 0.01 ).name( 'Strength' ).onChange( v => {
+
+		bloomPass.strength = v;
+
+	} );
+	bloomFolder.add( params, 'bloomThreshold', 0, 1, 0.01 ).name( 'Threshold' ).onChange( v => {
+
+		bloomPass.threshold = v;
+
+	} );
+	bloomFolder.add( params, 'bloomRadius', 0, 2, 0.01 ).name( 'Radius' ).onChange( v => {
+
+		bloomPass.radius = v;
+
+	} );
+
+	const sceneFolder = gui.addFolder( 'Scene' );
+	sceneFolder.add( params, 'exposure', 0.3, 2.5, 0.01 ).name( 'Exposure' ).onChange( v => {
+
+		renderer.toneMappingExposure = v;
+
+	} );
+
+}
+
+
+// ---- Interaction --------------------------------------------------------
+
+function onPointerMove( event ) {
+
+	mouse.x = ( event.clientX / window.innerWidth ) * 2 - 1;
+	mouse.y = - ( event.clientY / window.innerHeight ) * 2 + 1;
+
+	raycaster.setFromCamera( mouse, camera );
+	const intersects = raycaster.intersectObjects( interactiveObjects );
+
+	if ( intersects.length > 0 ) {
+
+		const obj = intersects[ 0 ].object;
+
+		if ( hoveredObject !== obj ) {
+
+			hoveredObject = obj;
+
+			// Only show hover outline if not already selected
+			if ( selectedObjects.indexOf( obj ) === - 1 ) {
+
+				hoverOutlinePass.selectedObjects = [ obj ];
+
+			} else {
+
+				hoverOutlinePass.selectedObjects = [];
+
+			}
+
+		}
+
+		document.body.style.cursor = 'pointer';
+
+	} else {
+
+		hoveredObject = null;
+
+		// Revert to default highlight when not hovering anything
+		if ( defaultHighlightObject && selectedObjects.indexOf( defaultHighlightObject ) === - 1 ) {
+
+			hoverOutlinePass.selectedObjects = [ defaultHighlightObject ];
+
+		} else {
+
+			hoverOutlinePass.selectedObjects = [];
+
+		}
+
+		document.body.style.cursor = 'default';
+
+	}
+
+	updateHUD();
+
+}
+
+
+function onClick( event ) {
+
+	if ( event.target.tagName === 'INPUT' || event.target.tagName === 'BUTTON' || event.target.tagName === 'SELECT' ) return;
+
+	raycaster.setFromCamera( mouse, camera );
+	const intersects = raycaster.intersectObjects( interactiveObjects );
+
+	if ( intersects.length > 0 ) {
+
+		const obj = intersects[ 0 ].object;
+
+		if ( event.shiftKey ) {
+
+			// Toggle selection
+			const idx = selectedObjects.indexOf( obj );
+			if ( idx > - 1 ) {
+
+				selectedObjects.splice( idx, 1 );
+
+			} else {
+
+				selectedObjects.push( obj );
+
+			}
+
+		} else {
+
+			// Single select / deselect
+			if ( selectedObjects.length === 1 && selectedObjects[ 0 ] === obj ) {
+
+				selectedObjects = [];
+
+			} else {
+
+				selectedObjects = [ obj ];
+
+			}
+
+		}
+
+	} else {
+
+		// Click on empty space: clear selection
+		if ( ! event.shiftKey ) {
+
+			selectedObjects = [];
+
+		}
+
+	}
+
+	selectOutlinePass.selectedObjects = selectedObjects;
+
+	// Clear hover for newly selected objects
+	if ( hoveredObject && selectedObjects.indexOf( hoveredObject ) !== - 1 ) {
+
+		hoverOutlinePass.selectedObjects = [];
+
+	}
+
+	updateHUD();
+
+}
+
+
+function updateHUD() {
+
+	const content = document.getElementById( 'hud-content' );
+	if ( ! content ) return;
+
+	let html = '';
+
+	if ( hoveredObject && selectedObjects.indexOf( hoveredObject ) === - 1 ) {
+
+		html += '<div class="hud-item hover-item">&#9656; ' + hoveredObject.userData.name + ' (hover)</div>';
+
+	}
+
+	if ( selectedObjects.length > 0 ) {
+
+		for ( let i = 0; i < selectedObjects.length; i ++ ) {
+
+			html += '<div class="hud-item">&#10003; ' + selectedObjects[ i ].userData.name + '</div>';
+
+		}
+
+	}
+
+	if ( html === '' ) {
+
+		html = '<span class="hud-empty">Click an object to select</span>';
+
+	}
+
+	content.innerHTML = html;
+
+}
+
+
+// ---- Resize -------------------------------------------------------------
+
+function onResize() {
+
+	const w = window.innerWidth;
+	const h = window.innerHeight;
+	camera.aspect = w / h;
+	camera.updateProjectionMatrix();
+	renderer.setSize( w, h );
+	composer.setSize( w, h );
+
+}
+
+
+// ---- Animation Loop -----------------------------------------------------
+
+function animate() {
+
+	const dt = clock.getDelta();
+	const t = clock.getElapsedTime();
+
+	controls.update();
+
+	// Gentle object rotation and float
+	for ( let i = 0; i < interactiveObjects.length; i ++ ) {
+
+		const mesh = interactiveObjects[ i ];
+		const idx = mesh.userData.index;
+		mesh.rotation.y = t * ( 0.15 + idx * 0.06 );
+		mesh.rotation.x = Math.sin( t * 0.4 + idx * 1.2 ) * 0.15;
+		mesh.position.y = mesh.userData.baseY + Math.sin( t * 0.6 + idx * 1.3 ) * 0.12;
+
+	}
+
+	// Animate outline pulse via edgeStrength modulation for visual interest
+	const pulseAmount = 0.15;
+	const pulse = 1 + Math.sin( t * params.pulseSpeed * 1.5 ) * pulseAmount;
+	hoverOutlinePass.edgeStrength = params.edgeStrength * pulse;
+
+	const selectPulse = 1 + Math.sin( t * params.pulseSpeed ) * pulseAmount * 0.7;
+	selectOutlinePass.edgeStrength = params.edgeStrength * 0.9 * selectPulse;
+
+	// Update atmospheric particles
+	updateParticles( dt );
+
+	composer.render();
+
+}
+</script>
+<script src="../shared/demo-nav.js"></script>
+</body>
+</html>

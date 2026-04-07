@@ -1,0 +1,663 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<title>Chromatic Aberration -- Three.js Encyclopedia v2</title>
+	<meta charset="utf-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<link rel="stylesheet" href="../shared/demo-base.css">
+	<style>
+		.style-panel {
+			position: fixed;
+			left: 22px;
+			bottom: 22px;
+			z-index: 50;
+			max-width: 290px;
+			background: linear-gradient(135deg, rgba(8, 4, 20, 0.92) 0%, rgba(15, 8, 28, 0.88) 100%);
+			backdrop-filter: blur(20px);
+			-webkit-backdrop-filter: blur(20px);
+			border: 1px solid rgba(168, 85, 247, 0.22);
+			border-radius: 14px;
+			padding: 18px 22px;
+			color: #e0e5f0;
+			font-family: 'Inter', system-ui, sans-serif;
+			font-size: 13px;
+			box-shadow: 0 8px 40px rgba(0, 0, 0, 0.5), 0 0 60px rgba(168, 85, 247, 0.06);
+			animation: fadeInUp 0.6s ease-out both;
+			animation-delay: 0.4s;
+		}
+
+		.style-kicker {
+			display: inline-block;
+			font-size: 10px;
+			font-weight: 600;
+			text-transform: uppercase;
+			letter-spacing: 0.12em;
+			color: #a855f7;
+			margin-bottom: 6px;
+		}
+
+		.style-panel h3 {
+			margin: 0 0 8px;
+			font-size: 15px;
+			font-weight: 600;
+			color: #f8fbff;
+			letter-spacing: 0.01em;
+		}
+
+		.style-panel p {
+			margin: 0 0 12px;
+			color: rgba(230, 236, 245, 0.78);
+			line-height: 1.55;
+			font-size: 12px;
+		}
+
+		.style-chips {
+			display: flex;
+			flex-wrap: wrap;
+			gap: 6px;
+		}
+
+		.style-chip {
+			display: inline-block;
+			background: rgba(168, 85, 247, 0.1);
+			border: 1px solid rgba(168, 85, 247, 0.25);
+			border-radius: 100px;
+			padding: 3px 10px;
+			font-size: 10px;
+			color: #c084fc;
+			font-family: 'Inter', system-ui, sans-serif;
+			letter-spacing: 0.03em;
+			white-space: nowrap;
+		}
+
+		.style-chip.red {
+			background: rgba(239, 68, 68, 0.1);
+			border-color: rgba(239, 68, 68, 0.25);
+			color: #f87171;
+		}
+
+		.style-chip.cyan {
+			background: rgba(0, 255, 255, 0.08);
+			border-color: rgba(0, 255, 255, 0.25);
+			color: #00e5ff;
+		}
+
+		@media (max-width: 900px) {
+			.style-panel {
+				left: 10px;
+				right: 10px;
+				bottom: 10px;
+				max-width: none;
+				padding: 14px 16px;
+			}
+		}
+	</style>
+</head>
+<body>
+
+<a href="../index.html" id="back-btn">&larr; Hub</a>
+<div id="info"><strong>Chromatic Aberration</strong> -- Left: clean render | Right: RGB channel offset via custom ShaderPass</div>
+
+<div class="split-divider"></div>
+<div class="split-label split-label-left"><strong>Clean</strong></div>
+<div class="split-label split-label-right"><strong>Chromatic Aberration</strong></div>
+
+<section class="style-panel">
+	<div class="style-kicker">Post-Processing</div>
+	<h3>Chromatic Aberration</h3>
+	<p>Samples R, G, B channels at slightly offset UV coordinates, mimicking how real lenses refract different wavelengths at different angles. The offset increases radially from center for realistic barrel distortion.</p>
+	<div class="style-chips">
+		<span class="style-chip red">RGB fringing</span>
+		<span class="style-chip">lens distortion</span>
+		<span class="style-chip cyan">radial offset</span>
+	</div>
+</section>
+
+<script type="importmap">
+{
+	"imports": {
+		"three": "https://cdn.jsdelivr.net/npm/three@0.183.0/build/three.module.js",
+		"three/addons/": "https://cdn.jsdelivr.net/npm/three@0.183.0/examples/jsm/"
+	}
+}
+</script>
+
+<script type="module">
+import * as THREE from 'three';
+import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+import { GUI } from 'three/addons/libs/lil-gui.module.min.js';
+import { EffectComposer } from 'three/addons/postprocessing/EffectComposer.js';
+import { RenderPass } from 'three/addons/postprocessing/RenderPass.js';
+import { ShaderPass } from 'three/addons/postprocessing/ShaderPass.js';
+import { OutputPass } from 'three/addons/postprocessing/OutputPass.js';
+
+let renderer, scene, camera, controls;
+let composerCA;
+let caPass;
+let clock;
+let quadScene, quadCam, quadMesh;
+let spheres = [];
+let boxes = [];
+
+const params = {
+	strength: 0.015,
+	radialMode: true,
+	offsetR: 1.0,
+	offsetG: 0.0,
+	offsetB: 1.0,
+	exposure: 1.0
+};
+
+const ChromaticAberrationShader = {
+	name: 'ChromaticAberrationShader',
+	uniforms: {
+		tDiffuse: { value: null },
+		strength: { value: 0.015 },
+		radialMode: { value: 1.0 },
+		offsetR: { value: 1.0 },
+		offsetG: { value: 0.0 },
+		offsetB: { value: 1.0 }
+	},
+	vertexShader: /* glsl */`
+		varying vec2 vUv;
+		void main() {
+			vUv = uv;
+			gl_Position = projectionMatrix * modelViewMatrix * vec4( position, 1.0 );
+		}
+	`,
+	fragmentShader: /* glsl */`
+		uniform sampler2D tDiffuse;
+		uniform float strength;
+		uniform float radialMode;
+		uniform float offsetR;
+		uniform float offsetG;
+		uniform float offsetB;
+		varying vec2 vUv;
+
+		void main() {
+			vec2 center = vec2( 0.5 );
+			vec2 dir = vUv - center;
+			float dist = length( dir );
+			vec2 normDir = normalize( dir );
+
+			// Radial: offset scales with distance from center (lens distortion)
+			// Uniform: constant offset across entire image
+			float radialFactor = radialMode > 0.5 ? dist * 2.0 : 1.0;
+			float baseOffset = strength * radialFactor;
+
+			// Per-channel directional offset along radial direction
+			vec2 rOffset = normDir * baseOffset * offsetR;
+			vec2 gOffset = normDir * baseOffset * offsetG;
+			vec2 bOffset = normDir * baseOffset * offsetB;
+
+			float r = texture2D( tDiffuse, vUv + rOffset ).r;
+			float g = texture2D( tDiffuse, vUv - gOffset ).g;
+			float b = texture2D( tDiffuse, vUv - bOffset ).b;
+			float a = texture2D( tDiffuse, vUv ).a;
+
+			gl_FragColor = vec4( r, g, b, a );
+		}
+	`
+};
+
+init();
+
+function init() {
+
+	clock = new THREE.Clock();
+
+	renderer = new THREE.WebGLRenderer( { antialias: true } );
+	renderer.setPixelRatio( window.devicePixelRatio );
+	renderer.setSize( window.innerWidth, window.innerHeight );
+	renderer.toneMapping = THREE.ACESFilmicToneMapping;
+	renderer.toneMappingExposure = params.exposure;
+	renderer.shadowMap.enabled = true;
+	renderer.shadowMap.type = THREE.PCFShadowMap;
+	document.body.appendChild( renderer.domElement );
+
+	scene = new THREE.Scene();
+	scene.background = new THREE.Color( 0x030308 );
+
+	camera = new THREE.PerspectiveCamera( 50, window.innerWidth / window.innerHeight, 0.1, 100 );
+	camera.position.set( 0, 5, 14 );
+
+	controls = new OrbitControls( camera, renderer.domElement );
+	controls.enableDamping = true;
+	controls.dampingFactor = 0.06;
+	controls.target.set( 0, 2.5, 0 );
+	controls.maxPolarAngle = Math.PI * 0.6;
+	controls.minDistance = 5;
+	controls.maxDistance = 25;
+	controls.update();
+
+	buildScene();
+	setupComposer();
+	setupGUI();
+	setupQuadBlit();
+
+	window.addEventListener( 'resize', onResize );
+	renderer.setAnimationLoop( animate );
+
+}
+
+
+// ---- Scene: high contrast chrome spheres & sharp boxes ----
+
+function buildScene() {
+
+	// Ground plane - dark, reflective
+	const groundGeo = new THREE.PlaneGeometry( 40, 40 );
+	const groundMat = new THREE.MeshPhysicalMaterial( {
+		color: 0x060610,
+		roughness: 0.1,
+		metalness: 0.95,
+		reflectivity: 1.0
+	} );
+	const ground = new THREE.Mesh( groundGeo, groundMat );
+	ground.rotation.x = - Math.PI / 2;
+	ground.receiveShadow = true;
+	scene.add( ground );
+
+	// Back wall for contrast
+	const wallMat = new THREE.MeshPhysicalMaterial( {
+		color: 0x080812,
+		roughness: 0.6,
+		metalness: 0.3
+	} );
+	const backWall = new THREE.Mesh( new THREE.BoxGeometry( 30, 16, 0.3 ), wallMat );
+	backWall.position.set( 0, 8, - 8 );
+	backWall.receiveShadow = true;
+	scene.add( backWall );
+
+	// ---- Grid of chrome spheres ----
+	const sphereGeo = new THREE.SphereGeometry( 0.55, 64, 64 );
+
+	const chromeColors = [
+		0xffffff, 0xe8e8ff, 0xffe8e8, 0xe8fff0,
+		0xf0e8ff, 0xfff8e0, 0xf0f0ff, 0xfff0f0,
+		0xe0fff8
+	];
+
+	const gridCols = 5;
+	const gridRows = 3;
+	const spacingX = 2.4;
+	const spacingY = 2.4;
+	const startX = - ( gridCols - 1 ) * spacingX / 2;
+	const startY = 1.5;
+
+	for ( let row = 0; row < gridRows; row ++ ) {
+
+		for ( let col = 0; col < gridCols; col ++ ) {
+
+			const idx = row * gridCols + col;
+			const colorIdx = idx % chromeColors.length;
+			const roughness = 0.02 + ( col / ( gridCols - 1 ) ) * 0.15;
+
+			const mat = new THREE.MeshPhysicalMaterial( {
+				color: chromeColors[ colorIdx ],
+				metalness: 1.0,
+				roughness: roughness,
+				reflectivity: 1.0,
+				clearcoat: 0.8,
+				clearcoatRoughness: 0.05,
+				envMapIntensity: 2.0
+			} );
+
+			const sphere = new THREE.Mesh( sphereGeo, mat );
+			sphere.position.set(
+				startX + col * spacingX,
+				startY + row * spacingY,
+				0
+			);
+			sphere.castShadow = true;
+			sphere.receiveShadow = true;
+			scene.add( sphere );
+			spheres.push( sphere );
+
+		}
+
+	}
+
+	// ---- Sharp-edged boxes between spheres ----
+	const boxGeo = new THREE.BoxGeometry( 0.6, 0.6, 0.6 );
+
+	for ( let row = 0; row < gridRows - 1; row ++ ) {
+
+		for ( let col = 0; col < gridCols - 1; col ++ ) {
+
+			const hue = ( ( row * ( gridCols - 1 ) + col ) / ( ( gridRows - 1 ) * ( gridCols - 1 ) ) );
+			const boxColor = new THREE.Color().setHSL( hue, 0.1, 0.9 );
+
+			const mat = new THREE.MeshPhysicalMaterial( {
+				color: boxColor,
+				metalness: 0.95,
+				roughness: 0.05,
+				reflectivity: 1.0,
+				clearcoat: 1.0,
+				clearcoatRoughness: 0.02
+			} );
+
+			const box = new THREE.Mesh( boxGeo, mat );
+			box.position.set(
+				startX + col * spacingX + spacingX / 2,
+				startY + row * spacingY + spacingY / 2,
+				0.5
+			);
+			box.rotation.set(
+				Math.PI / 6,
+				Math.PI / 4,
+				Math.PI / 8
+			);
+			box.castShadow = true;
+			box.receiveShadow = true;
+			scene.add( box );
+			boxes.push( box );
+
+		}
+
+	}
+
+	// ---- Bright emissive accent bars (to create strong highlight edges) ----
+	const barColors = [ 0xffffff, 0xaaccff, 0xffaacc, 0xaaffcc ];
+	for ( let i = 0; i < 4; i ++ ) {
+
+		const barGeo = new THREE.CylinderGeometry( 0.04, 0.04, 8, 8 );
+		const barMat = new THREE.MeshBasicMaterial( { color: barColors[ i ] } );
+		const bar = new THREE.Mesh( barGeo, barMat );
+		bar.position.set(
+			- 6 + i * 4,
+			4,
+			- 3
+		);
+		bar.rotation.z = Math.PI / 2;
+		scene.add( bar );
+
+	}
+
+	// ---- Central large hero sphere ----
+	const heroMat = new THREE.MeshPhysicalMaterial( {
+		color: 0xffffff,
+		metalness: 1.0,
+		roughness: 0.0,
+		reflectivity: 1.0,
+		clearcoat: 1.0,
+		clearcoatRoughness: 0.0,
+		envMapIntensity: 3.0
+	} );
+	const heroGeo = new THREE.SphereGeometry( 1.2, 128, 128 );
+	const heroSphere = new THREE.Mesh( heroGeo, heroMat );
+	heroSphere.position.set( 0, 3.5, 3 );
+	heroSphere.castShadow = true;
+	scene.add( heroSphere );
+	spheres.push( heroSphere );
+
+	// ---- Thin wireframe grid behind objects (high-contrast edges) ----
+	const gridHelper = new THREE.GridHelper( 20, 40, 0x1a1a40, 0x0a0a20 );
+	gridHelper.position.y = 0.01;
+	scene.add( gridHelper );
+
+	// ---- Environment: procedural cubemap for reflections ----
+	buildEnvironment();
+
+	// ---- Lighting ----
+	const ambient = new THREE.AmbientLight( 0x101025, 0.5 );
+	scene.add( ambient );
+
+	// Key light - strong white from top-right
+	const keyLight = new THREE.DirectionalLight( 0xffffff, 3.0 );
+	keyLight.position.set( 5, 10, 5 );
+	keyLight.castShadow = true;
+	keyLight.shadow.mapSize.set( 2048, 2048 );
+	keyLight.shadow.camera.left = - 10;
+	keyLight.shadow.camera.right = 10;
+	keyLight.shadow.camera.top = 10;
+	keyLight.shadow.camera.bottom = - 2;
+	keyLight.shadow.camera.near = 0.1;
+	keyLight.shadow.camera.far = 30;
+	keyLight.shadow.bias = - 0.001;
+	scene.add( keyLight );
+
+	// Fill light - cool blue from left
+	const fillLight = new THREE.DirectionalLight( 0x6688ff, 1.2 );
+	fillLight.position.set( - 6, 6, 3 );
+	scene.add( fillLight );
+
+	// Rim light - warm from behind
+	const rimLight = new THREE.DirectionalLight( 0xffaa66, 1.5 );
+	rimLight.position.set( 0, 4, - 6 );
+	scene.add( rimLight );
+
+	// Spot accent
+	const spotAccent = new THREE.SpotLight( 0xffffff, 5, 20, Math.PI / 6, 0.5, 1 );
+	spotAccent.position.set( 0, 12, 6 );
+	spotAccent.target.position.set( 0, 3, 0 );
+	spotAccent.castShadow = true;
+	spotAccent.shadow.mapSize.set( 1024, 1024 );
+	scene.add( spotAccent );
+	scene.add( spotAccent.target );
+
+	// Point lights for chrome reflections
+	const ptWhite = new THREE.PointLight( 0xffffff, 2, 15 );
+	ptWhite.position.set( 3, 6, 4 );
+	scene.add( ptWhite );
+
+	const ptBlue = new THREE.PointLight( 0x4488ff, 1.5, 12 );
+	ptBlue.position.set( - 4, 3, 2 );
+	scene.add( ptBlue );
+
+	const ptWarm = new THREE.PointLight( 0xff8844, 1.0, 10 );
+	ptWarm.position.set( 2, 1, 5 );
+	scene.add( ptWarm );
+
+}
+
+
+function buildEnvironment() {
+
+	// Procedural gradient cubemap for chrome reflections
+	const cubeRT = new THREE.WebGLCubeRenderTarget( 256 );
+	const cubeScene = new THREE.Scene();
+
+	// Gradient background sphere
+	const envGeo = new THREE.SphereGeometry( 50, 32, 32 );
+	const envMat = new THREE.ShaderMaterial( {
+		side: THREE.BackSide,
+		uniforms: {},
+		vertexShader: `
+			varying vec3 vWorldPos;
+			void main() {
+				vWorldPos = position;
+				gl_Position = projectionMatrix * modelViewMatrix * vec4( position, 1.0 );
+			}
+		`,
+		fragmentShader: `
+			varying vec3 vWorldPos;
+			void main() {
+				vec3 dir = normalize( vWorldPos );
+				float y = dir.y * 0.5 + 0.5;
+
+				// Dark with some color gradients for interesting reflections
+				vec3 bottom = vec3( 0.01, 0.01, 0.03 );
+				vec3 mid = vec3( 0.05, 0.03, 0.08 );
+				vec3 top = vec3( 0.02, 0.04, 0.1 );
+
+				vec3 color = mix( bottom, mid, smoothstep( 0.0, 0.4, y ) );
+				color = mix( color, top, smoothstep( 0.4, 1.0, y ) );
+
+				// Bright spots for reflection highlights
+				float spot1 = smoothstep( 0.98, 1.0, dot( dir, normalize( vec3( 1.0, 0.5, 0.3 ) ) ) );
+				float spot2 = smoothstep( 0.97, 1.0, dot( dir, normalize( vec3( -0.5, 0.8, -0.2 ) ) ) );
+				float spot3 = smoothstep( 0.96, 1.0, dot( dir, normalize( vec3( 0.0, 0.3, 1.0 ) ) ) );
+
+				color += vec3( 1.0, 0.95, 0.9 ) * spot1 * 3.0;
+				color += vec3( 0.7, 0.85, 1.0 ) * spot2 * 2.5;
+				color += vec3( 1.0, 0.8, 0.6 ) * spot3 * 2.0;
+
+				gl_FragColor = vec4( color, 1.0 );
+			}
+		`
+	} );
+	cubeScene.add( new THREE.Mesh( envGeo, envMat ) );
+
+	const cubeCamera = new THREE.CubeCamera( 0.1, 100, cubeRT );
+	cubeCamera.update( renderer, cubeScene );
+
+	scene.environment = cubeRT.texture;
+
+}
+
+
+// ---- Composer ----
+
+function setupComposer() {
+
+	composerCA = new EffectComposer( renderer );
+	composerCA.renderToScreen = false;
+	composerCA.addPass( new RenderPass( scene, camera ) );
+
+	caPass = new ShaderPass( ChromaticAberrationShader );
+	caPass.uniforms.strength.value = params.strength;
+	caPass.uniforms.radialMode.value = params.radialMode ? 1.0 : 0.0;
+	caPass.uniforms.offsetR.value = params.offsetR;
+	caPass.uniforms.offsetG.value = params.offsetG;
+	caPass.uniforms.offsetB.value = params.offsetB;
+	composerCA.addPass( caPass );
+	composerCA.addPass( new OutputPass() );
+
+}
+
+
+function setupQuadBlit() {
+
+	quadScene = new THREE.Scene();
+	quadCam = new THREE.OrthographicCamera( - 1, 1, 1, - 1, 0, 1 );
+	quadMesh = new THREE.Mesh(
+		new THREE.PlaneGeometry( 2, 2 ),
+		new THREE.MeshBasicMaterial()
+	);
+	quadScene.add( quadMesh );
+
+}
+
+
+// ---- GUI ----
+
+function setupGUI() {
+
+	const gui = new GUI( { width: 320 } );
+
+	const caFolder = gui.addFolder( 'Aberration' );
+	caFolder.add( params, 'strength', 0, 0.04, 0.001 ).name( 'Strength' ).onChange( v => {
+
+		caPass.uniforms.strength.value = v;
+
+	} );
+	caFolder.add( params, 'radialMode' ).name( 'Radial Mode' ).onChange( v => {
+
+		caPass.uniforms.radialMode.value = v ? 1.0 : 0.0;
+
+	} );
+	caFolder.open();
+
+	const channelFolder = gui.addFolder( 'Per-Channel Offset' );
+	channelFolder.add( params, 'offsetR', 0, 2, 0.01 ).name( 'Red Offset' ).onChange( v => {
+
+		caPass.uniforms.offsetR.value = v;
+
+	} );
+	channelFolder.add( params, 'offsetG', 0, 2, 0.01 ).name( 'Green Offset' ).onChange( v => {
+
+		caPass.uniforms.offsetG.value = v;
+
+	} );
+	channelFolder.add( params, 'offsetB', 0, 2, 0.01 ).name( 'Blue Offset' ).onChange( v => {
+
+		caPass.uniforms.offsetB.value = v;
+
+	} );
+	channelFolder.open();
+
+	const sceneFolder = gui.addFolder( 'Scene' );
+	sceneFolder.add( params, 'exposure', 0.3, 3, 0.01 ).name( 'Exposure' ).onChange( v => {
+
+		renderer.toneMappingExposure = v;
+
+	} );
+
+}
+
+
+// ---- Resize ----
+
+function onResize() {
+
+	const w = window.innerWidth;
+	const h = window.innerHeight;
+	const halfW = Math.floor( w / 2 );
+	camera.aspect = halfW / h;
+	camera.updateProjectionMatrix();
+	renderer.setSize( w, h );
+	composerCA.setSize( halfW, h );
+
+}
+
+
+// ---- Animation Loop ----
+
+function animate() {
+
+	const elapsed = clock.getElapsedTime();
+
+	controls.update();
+
+	// Gentle rotation on boxes
+	for ( let i = 0; i < boxes.length; i ++ ) {
+
+		boxes[ i ].rotation.y = elapsed * 0.3 + i * 0.5;
+		boxes[ i ].rotation.x = Math.sin( elapsed * 0.2 + i ) * 0.3 + Math.PI / 6;
+
+	}
+
+	// Subtle bob on hero sphere
+	if ( spheres.length > 0 ) {
+
+		const hero = spheres[ spheres.length - 1 ];
+		hero.position.y = 3.5 + Math.sin( elapsed * 0.5 ) * 0.15;
+
+	}
+
+	// ---- Split-screen render ----
+	const w = window.innerWidth;
+	const h = window.innerHeight;
+	const halfW = Math.floor( w / 2 );
+
+	camera.aspect = halfW / h;
+	camera.updateProjectionMatrix();
+
+	// Left: clean render (no post-processing)
+	renderer.setScissorTest( true );
+	renderer.setViewport( 0, 0, halfW, h );
+	renderer.setScissor( 0, 0, halfW, h );
+	renderer.render( scene, camera );
+
+	// Right: chromatic aberration pass
+	renderer.setScissorTest( false );
+	composerCA.setSize( halfW, h );
+	composerCA.render();
+
+	// Blit CA result to right half
+	renderer.setScissorTest( true );
+	renderer.setViewport( halfW, 0, w - halfW, h );
+	renderer.setScissor( halfW, 0, w - halfW, h );
+	renderer.setRenderTarget( null );
+
+	quadMesh.material.map = composerCA.readBuffer.texture;
+	renderer.render( quadScene, quadCam );
+
+	renderer.setScissorTest( false );
+
+}
+</script>
+<script src="../shared/demo-nav.js"></script>
+</body>
+</html>

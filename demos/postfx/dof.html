@@ -1,0 +1,949 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<title>Depth of Field -- Three.js Encyclopedia v2</title>
+	<meta charset="utf-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<link rel="stylesheet" href="../shared/demo-base.css">
+	<style>
+		.style-panel {
+			position: fixed;
+			left: 22px;
+			bottom: 22px;
+			z-index: 50;
+			max-width: 290px;
+			background: linear-gradient(135deg, rgba(6, 10, 24, 0.92) 0%, rgba(10, 14, 30, 0.88) 100%);
+			backdrop-filter: blur(20px);
+			-webkit-backdrop-filter: blur(20px);
+			border: 1px solid rgba(100, 180, 255, 0.2);
+			border-radius: 14px;
+			padding: 18px 22px;
+			color: #e0e5f0;
+			font-family: 'Inter', system-ui, sans-serif;
+			font-size: 13px;
+			box-shadow: 0 8px 40px rgba(0, 0, 0, 0.5), 0 0 60px rgba(100, 180, 255, 0.04);
+			animation: fadeInUp 0.6s ease-out both;
+			animation-delay: 0.4s;
+		}
+
+		.style-kicker {
+			display: inline-block;
+			font-size: 10px;
+			font-weight: 600;
+			text-transform: uppercase;
+			letter-spacing: 0.12em;
+			color: #64b5f6;
+			margin-bottom: 6px;
+		}
+
+		.style-panel h3 {
+			margin: 0 0 8px;
+			font-size: 15px;
+			font-weight: 600;
+			color: #f8fbff;
+			letter-spacing: 0.01em;
+		}
+
+		.style-panel p {
+			margin: 0 0 12px;
+			color: rgba(230, 236, 245, 0.78);
+			line-height: 1.55;
+			font-size: 12px;
+		}
+
+		.style-chips {
+			display: flex;
+			flex-wrap: wrap;
+			gap: 6px;
+		}
+
+		.style-chip {
+			display: inline-block;
+			background: rgba(100, 180, 255, 0.1);
+			border: 1px solid rgba(100, 180, 255, 0.25);
+			border-radius: 100px;
+			padding: 3px 10px;
+			font-size: 10px;
+			color: #64b5f6;
+			font-family: 'Inter', system-ui, sans-serif;
+			letter-spacing: 0.03em;
+			white-space: nowrap;
+		}
+
+		.style-chip.amber {
+			background: rgba(255, 183, 77, 0.08);
+			border-color: rgba(255, 183, 77, 0.25);
+			color: #ffb74d;
+		}
+
+		.style-chip.teal {
+			background: rgba(77, 208, 225, 0.08);
+			border-color: rgba(77, 208, 225, 0.25);
+			color: #4dd0e1;
+		}
+
+		.focal-indicator {
+			position: fixed;
+			right: 22px;
+			bottom: 22px;
+			z-index: 50;
+			background: rgba(6, 10, 24, 0.88);
+			backdrop-filter: blur(16px);
+			-webkit-backdrop-filter: blur(16px);
+			border: 1px solid rgba(100, 180, 255, 0.15);
+			border-radius: 10px;
+			padding: 12px 16px;
+			color: rgba(230, 236, 245, 0.84);
+			font-family: 'Inter', system-ui, sans-serif;
+			font-size: 11px;
+			max-width: 200px;
+			line-height: 1.5;
+			box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+			animation: fadeInUp 0.5s ease-out both;
+			animation-delay: 0.6s;
+		}
+
+		.focal-indicator .fi-label {
+			font-size: 9px;
+			text-transform: uppercase;
+			letter-spacing: 0.1em;
+			color: #64b5f6;
+			margin-bottom: 4px;
+		}
+
+		.focal-indicator .fi-value {
+			font-size: 18px;
+			font-weight: 600;
+			color: #e0e5f0;
+			font-variant-numeric: tabular-nums;
+		}
+
+		.focal-indicator .fi-unit {
+			font-size: 11px;
+			color: #6b7394;
+			margin-left: 2px;
+		}
+
+		.focus-depth-canvas {
+			position: fixed;
+			right: 22px;
+			bottom: 190px;
+			z-index: 50;
+			width: 200px;
+			height: 100px;
+			background: rgba(6, 10, 24, 0.88);
+			backdrop-filter: blur(16px);
+			-webkit-backdrop-filter: blur(16px);
+			border: 1px solid rgba(100, 180, 255, 0.15);
+			border-radius: 10px;
+			box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+			animation: fadeInUp 0.5s ease-out both;
+			animation-delay: 0.5s;
+		}
+
+		@media (max-width: 900px) {
+			.style-panel {
+				left: 10px;
+				right: 10px;
+				bottom: 10px;
+				max-width: none;
+				padding: 14px 16px;
+			}
+			.focal-indicator {
+				display: none;
+			}
+			.focus-depth-canvas {
+				display: none;
+			}
+		}
+	</style>
+</head>
+<body>
+
+<a href="../index.html" id="back-btn">&larr; Hub</a>
+<div id="info"><strong>Depth of Field</strong> -- Left: everything in focus | Right: cinematic BokehPass with selective focus</div>
+
+<div class="split-divider"></div>
+<div class="split-label split-label-left"><strong>No DOF</strong> (all sharp)</div>
+<div class="split-label split-label-right"><strong>BokehPass</strong> (cinematic blur)</div>
+
+<section class="style-panel">
+	<div class="style-kicker">Post-Processing</div>
+	<h3>Depth of Field</h3>
+	<p>BokehPass renders a depth buffer then applies a physically-based circle-of-confusion blur. Objects at the focal distance stay sharp while nearer and farther objects dissolve into creamy bokeh discs, mimicking a wide-aperture camera lens.</p>
+	<div class="style-chips">
+		<span class="style-chip">bokeh</span>
+		<span class="style-chip amber">focal plane</span>
+		<span class="style-chip teal">aperture</span>
+	</div>
+</section>
+
+<div class="focal-indicator" id="focal-readout">
+	<div class="fi-label">Focus Distance</div>
+	<div><span class="fi-value" id="fi-val">8.8</span><span class="fi-unit">units</span></div>
+</div>
+
+<canvas class="focus-depth-canvas" id="focus-depth-canvas" width="400" height="200"></canvas>
+
+<script type="importmap">
+{
+	"imports": {
+		"three": "https://cdn.jsdelivr.net/npm/three@0.183.0/build/three.module.js",
+		"three/addons/": "https://cdn.jsdelivr.net/npm/three@0.183.0/examples/jsm/"
+	}
+}
+</script>
+
+<script type="module">
+import * as THREE from 'three';
+import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+import { GUI } from 'three/addons/libs/lil-gui.module.min.js';
+import { EffectComposer } from 'three/addons/postprocessing/EffectComposer.js';
+import { RenderPass } from 'three/addons/postprocessing/RenderPass.js';
+import { BokehPass } from 'three/addons/postprocessing/BokehPass.js';
+import { OutputPass } from 'three/addons/postprocessing/OutputPass.js';
+import { HDRLoader } from 'three/addons/loaders/HDRLoader.js';
+
+let renderer, scene, camera, controls;
+let composerDOF;
+let bokehPass;
+let clock;
+let quadScene, quadCam, quadMesh;
+let showcaseObjects = [];
+let dustParticles;
+const fiVal = document.getElementById( 'fi-val' );
+var focusCanvas = document.getElementById( 'focus-depth-canvas' );
+var focusCtx = focusCanvas ? focusCanvas.getContext( '2d' ) : null;
+
+const params = {
+	focus: 13.07,
+	aperture: 0.0045,
+	maxblur: 0.01,
+	exposure: 1.08
+};
+
+init();
+
+function init() {
+
+	clock = new THREE.Clock();
+
+	renderer = new THREE.WebGLRenderer( { antialias: true } );
+	renderer.setPixelRatio( Math.min( window.devicePixelRatio, 2 ) );
+	renderer.setSize( window.innerWidth, window.innerHeight );
+	renderer.toneMapping = THREE.ACESFilmicToneMapping;
+	renderer.toneMappingExposure = params.exposure;
+	renderer.shadowMap.enabled = true;
+	renderer.shadowMap.type = THREE.PCFShadowMap;
+	document.body.appendChild( renderer.domElement );
+	fiVal.textContent = params.focus.toFixed( 1 );
+
+	scene = new THREE.Scene();
+	scene.background = new THREE.Color( 0x06080f );
+	scene.fog = new THREE.Fog( 0x06080f, 8, 28 );
+
+	camera = new THREE.PerspectiveCamera( 40, window.innerWidth / window.innerHeight, 0.1, 80 );
+	camera.position.set( - 1.5, 2.8, 8.5 );
+
+	controls = new OrbitControls( camera, renderer.domElement );
+	controls.enableDamping = true;
+	controls.dampingFactor = 0.06;
+	controls.target.set( 0, 1.2, 0 );
+	controls.maxPolarAngle = Math.PI * 0.6;
+	controls.minDistance = 3;
+	controls.maxDistance = 18;
+	controls.update();
+
+	loadEnvironment();
+	buildShowcaseScene();
+	setupComposer();
+	setupQuadBlit();
+	setupGUI();
+	drawFocusIndicator( params.focus );
+
+	window.addEventListener( 'resize', onResize );
+	renderer.setAnimationLoop( animate );
+
+}
+
+
+// ─── HDR Environment ─────────────────────────────────────────
+
+function loadEnvironment() {
+
+	const pmremGenerator = new THREE.PMREMGenerator( renderer );
+	pmremGenerator.compileEquirectangularShader();
+
+	new HDRLoader().load( '../../examples/textures/equirectangular/venice_sunset_1k.hdr', function ( hdrTexture ) {
+
+		const envMap = pmremGenerator.fromEquirectangular( hdrTexture ).texture;
+		scene.environment = envMap;
+		hdrTexture.dispose();
+		pmremGenerator.dispose();
+
+	} );
+
+}
+
+
+// ─── Scene Construction ──────────────────────────────────────
+
+function buildShowcaseScene() {
+
+	// ── Ground plane with subtle grid ────────────────────────
+	const groundGeo = new THREE.PlaneGeometry( 40, 40 );
+	const groundMat = new THREE.MeshStandardMaterial( {
+		color: 0x0a0c14,
+		roughness: 0.25,
+		metalness: 0.85,
+		envMapIntensity: 0.4
+	} );
+	const ground = new THREE.Mesh( groundGeo, groundMat );
+	ground.rotation.x = - Math.PI / 2;
+	ground.receiveShadow = true;
+	scene.add( ground );
+
+	// Grid lines on ground
+	const gridGroup = new THREE.Group();
+	const gridMat = new THREE.MeshBasicMaterial( {
+		color: 0x1a2040,
+		transparent: true,
+		opacity: 0.35
+	} );
+
+	for ( let i = - 20; i <= 20; i ++ ) {
+
+		const lineGeoX = new THREE.PlaneGeometry( 40, 0.01 );
+		const lineX = new THREE.Mesh( lineGeoX, gridMat );
+		lineX.rotation.x = - Math.PI / 2;
+		lineX.position.set( 0, 0.002, i );
+		gridGroup.add( lineX );
+
+		const lineGeoZ = new THREE.PlaneGeometry( 0.01, 40 );
+		const lineZ = new THREE.Mesh( lineGeoZ, gridMat );
+		lineZ.rotation.x = - Math.PI / 2;
+		lineZ.position.set( i, 0.002, 0 );
+		gridGroup.add( lineZ );
+
+	}
+
+	scene.add( gridGroup );
+
+	// ── Product showcase pieces ──────────────────────────────
+	// Row of elegant objects receding into distance at various Z depths
+
+	const pieceData = [
+		{ z: - 8,   type: 'obelisk',  color: 0xaabbcc, scale: 1.0 },
+		{ z: - 5.5, type: 'sphere',   color: 0xd4af37, scale: 0.9 },
+		{ z: - 3,   type: 'goblet',   color: 0xc0c0c0, scale: 1.1 },
+		{ z: 0,     type: 'diamond',  color: 0xe8e0f0, scale: 1.0 },
+		{ z: 3,     type: 'torus',    color: 0xff6b4a, scale: 0.85 },
+		{ z: 6,     type: 'pedestal', color: 0x7eb8da, scale: 0.95 },
+		{ z: 9,     type: 'sphere',   color: 0xf0a0c0, scale: 0.8 },
+	];
+
+	pieceData.forEach( ( d, i ) => {
+
+		const xOffset = ( Math.sin( i * 1.7 ) * 0.6 );
+		createShowcasePiece( d.type, xOffset, d.z, d.color, d.scale );
+
+	} );
+
+	// ── Accent spheres scattered for depth variety ───────────
+	for ( let i = 0; i < 12; i ++ ) {
+
+		const radius = 0.08 + Math.random() * 0.15;
+		const hue = Math.random();
+		const color = new THREE.Color().setHSL( hue, 0.5, 0.4 );
+		const mat = new THREE.MeshPhysicalMaterial( {
+			color,
+			roughness: 0.1,
+			metalness: 0.9,
+			clearcoat: 1.0,
+			clearcoatRoughness: 0.05
+		} );
+		const sphere = new THREE.Mesh( new THREE.SphereGeometry( radius, 24, 16 ), mat );
+		sphere.position.set(
+			( Math.random() - 0.5 ) * 6,
+			radius + Math.random() * 0.3,
+			- 10 + Math.random() * 22
+		);
+		sphere.castShadow = true;
+		scene.add( sphere );
+
+	}
+
+	// ── Floating dust motes ──────────────────────────────────
+	createDustParticles();
+
+	// ── Lighting ─────────────────────────────────────────────
+
+	// Soft ambient
+	const ambient = new THREE.AmbientLight( 0x1a2040, 0.6 );
+	scene.add( ambient );
+
+	// Key light: warm spot from upper-right
+	const keyLight = new THREE.SpotLight( 0xffeedd, 8, 30, Math.PI / 6, 0.5, 1 );
+	keyLight.position.set( 4, 8, 3 );
+	keyLight.target.position.set( 0, 1, 0 );
+	keyLight.castShadow = true;
+	keyLight.shadow.mapSize.set( 2048, 2048 );
+	keyLight.shadow.bias = - 0.001;
+	keyLight.shadow.radius = 3;
+	scene.add( keyLight );
+	scene.add( keyLight.target );
+
+	// Fill light: cool from the left
+	const fillLight = new THREE.SpotLight( 0x6688cc, 3, 25, Math.PI / 5, 0.6, 1 );
+	fillLight.position.set( - 5, 6, 2 );
+	fillLight.target.position.set( 0, 1, 0 );
+	fillLight.castShadow = true;
+	fillLight.shadow.mapSize.set( 1024, 1024 );
+	scene.add( fillLight );
+	scene.add( fillLight.target );
+
+	// Rim light: accent from behind
+	const rimLight = new THREE.SpotLight( 0xffa060, 4, 20, Math.PI / 8, 0.4, 1 );
+	rimLight.position.set( 1, 5, - 6 );
+	rimLight.target.position.set( 0, 1, 0 );
+	scene.add( rimLight );
+	scene.add( rimLight.target );
+
+	// Point lights for sparkle on individual pieces
+	const pt1 = new THREE.PointLight( 0xffd700, 1.2, 8 );
+	pt1.position.set( 0, 3, - 5.5 );
+	scene.add( pt1 );
+
+	const pt2 = new THREE.PointLight( 0x4488ff, 1, 8 );
+	pt2.position.set( - 2, 2, 3 );
+	scene.add( pt2 );
+
+	const pt3 = new THREE.PointLight( 0xff6644, 0.8, 8 );
+	pt3.position.set( 2, 2, 6 );
+	scene.add( pt3 );
+
+}
+
+
+function createShowcasePiece( type, x, z, color, scale ) {
+
+	const group = new THREE.Group();
+	group.position.set( x, 0, z );
+	group.scale.setScalar( scale );
+
+	// Pedestal base for each piece
+	const baseMat = new THREE.MeshPhysicalMaterial( {
+		color: 0x1a1a2a,
+		roughness: 0.15,
+		metalness: 0.9,
+		clearcoat: 0.6,
+		clearcoatRoughness: 0.1
+	} );
+
+	const base = new THREE.Mesh(
+		new THREE.CylinderGeometry( 0.45, 0.5, 0.15, 32 ),
+		baseMat
+	);
+	base.position.y = 0.075;
+	base.receiveShadow = true;
+	base.castShadow = true;
+	group.add( base );
+
+	// Thin ring accent on base
+	const ringMat = new THREE.MeshPhysicalMaterial( {
+		color: 0xd4af37,
+		roughness: 0.05,
+		metalness: 1.0,
+		clearcoat: 1.0,
+		clearcoatRoughness: 0.0
+	} );
+	const ring = new THREE.Mesh(
+		new THREE.TorusGeometry( 0.47, 0.012, 8, 48 ),
+		ringMat
+	);
+	ring.rotation.x = Math.PI / 2;
+	ring.position.y = 0.15;
+	group.add( ring );
+
+	// Piece material
+	const pieceMat = new THREE.MeshPhysicalMaterial( {
+		color,
+		roughness: 0.08,
+		metalness: 0.7,
+		clearcoat: 1.0,
+		clearcoatRoughness: 0.03,
+		envMapIntensity: 1.5,
+		reflectivity: 1.0
+	} );
+
+	let piece;
+
+	if ( type === 'sphere' ) {
+
+		piece = new THREE.Mesh(
+			new THREE.SphereGeometry( 0.4, 48, 32 ),
+			pieceMat
+		);
+		piece.position.y = 0.55;
+
+	} else if ( type === 'diamond' ) {
+
+		// Octahedron as a "diamond" shape
+		piece = new THREE.Mesh(
+			new THREE.OctahedronGeometry( 0.4, 0 ),
+			new THREE.MeshPhysicalMaterial( {
+				color,
+				roughness: 0.0,
+				metalness: 0.1,
+				clearcoat: 1.0,
+				clearcoatRoughness: 0.0,
+				transmission: 0.5,
+				thickness: 0.8,
+				ior: 2.4,
+				envMapIntensity: 2.0,
+				reflectivity: 1.0
+			} )
+		);
+		piece.position.y = 0.6;
+		piece.rotation.y = Math.PI / 4;
+
+	} else if ( type === 'goblet' ) {
+
+		const gobletGroup = new THREE.Group();
+
+		// Stem
+		const stem = new THREE.Mesh(
+			new THREE.CylinderGeometry( 0.04, 0.06, 0.5, 16 ),
+			pieceMat
+		);
+		stem.position.y = 0.4;
+		gobletGroup.add( stem );
+
+		// Cup
+		const cupPoints = [];
+		for ( let i = 0; i <= 12; i ++ ) {
+
+			const t = i / 12;
+			const r = 0.05 + 0.3 * Math.pow( t, 0.6 );
+			cupPoints.push( new THREE.Vector2( r, t * 0.45 ) );
+
+		}
+
+		const cup = new THREE.Mesh(
+			new THREE.LatheGeometry( cupPoints, 32 ),
+			pieceMat
+		);
+		cup.position.y = 0.65;
+		gobletGroup.add( cup );
+
+		// Base disc
+		const baseDisc = new THREE.Mesh(
+			new THREE.CylinderGeometry( 0.18, 0.2, 0.04, 24 ),
+			pieceMat
+		);
+		baseDisc.position.y = 0.17;
+		gobletGroup.add( baseDisc );
+
+		piece = gobletGroup;
+
+	} else if ( type === 'obelisk' ) {
+
+		const obeliskGroup = new THREE.Group();
+
+		// Tapered tower
+		const tower = new THREE.Mesh(
+			new THREE.CylinderGeometry( 0.08, 0.18, 0.9, 4 ),
+			pieceMat
+		);
+		tower.position.y = 0.6;
+		tower.rotation.y = Math.PI / 4;
+		obeliskGroup.add( tower );
+
+		// Pyramidal tip
+		const tip = new THREE.Mesh(
+			new THREE.ConeGeometry( 0.08, 0.15, 4 ),
+			new THREE.MeshPhysicalMaterial( {
+				color: 0xffd700,
+				roughness: 0.05,
+				metalness: 1.0,
+				clearcoat: 1.0,
+				clearcoatRoughness: 0.0
+			} )
+		);
+		tip.position.y = 1.12;
+		tip.rotation.y = Math.PI / 4;
+		obeliskGroup.add( tip );
+
+		piece = obeliskGroup;
+
+	} else if ( type === 'torus' ) {
+
+		piece = new THREE.Mesh(
+			new THREE.TorusKnotGeometry( 0.25, 0.08, 100, 16 ),
+			pieceMat
+		);
+		piece.position.y = 0.55;
+
+	} else if ( type === 'pedestal' ) {
+
+		const pedGroup = new THREE.Group();
+
+		// Dodecahedron
+		const dodeca = new THREE.Mesh(
+			new THREE.DodecahedronGeometry( 0.32, 0 ),
+			pieceMat
+		);
+		dodeca.position.y = 0.5;
+		pedGroup.add( dodeca );
+
+		// Inner icosahedron (slightly transparent)
+		const innerMat = new THREE.MeshPhysicalMaterial( {
+			color: 0xffd700,
+			roughness: 0.0,
+			metalness: 0.8,
+			clearcoat: 1.0,
+			clearcoatRoughness: 0.0,
+			transparent: true,
+			opacity: 0.7
+		} );
+		const ico = new THREE.Mesh(
+			new THREE.IcosahedronGeometry( 0.15, 0 ),
+			innerMat
+		);
+		ico.position.y = 0.5;
+		pedGroup.add( ico );
+
+		piece = pedGroup;
+
+	}
+
+	if ( piece ) {
+
+		piece.castShadow = true;
+		if ( piece.isMesh ) piece.receiveShadow = true;
+		piece.traverse( c => {
+
+			if ( c.isMesh ) {
+
+				c.castShadow = true;
+				c.receiveShadow = true;
+
+			}
+
+		} );
+		group.add( piece );
+
+		showcaseObjects.push( { group, piece, baseY: piece.position ? piece.position.y : 0, z } );
+
+	}
+
+	scene.add( group );
+
+}
+
+
+function createDustParticles() {
+
+	const count = 300;
+	const positions = new Float32Array( count * 3 );
+
+	for ( let i = 0; i < count; i ++ ) {
+
+		positions[ i * 3 ] = ( Math.random() - 0.5 ) * 14;
+		positions[ i * 3 + 1 ] = 0.2 + Math.random() * 5;
+		positions[ i * 3 + 2 ] = - 12 + Math.random() * 24;
+
+	}
+
+	const geometry = new THREE.BufferGeometry();
+	geometry.setAttribute( 'position', new THREE.BufferAttribute( positions, 3 ) );
+
+	const material = new THREE.PointsMaterial( {
+		color: 0xddccaa,
+		size: 0.03,
+		transparent: true,
+		opacity: 0.4,
+		depthWrite: false,
+		blending: THREE.AdditiveBlending
+	} );
+
+	dustParticles = new THREE.Points( geometry, material );
+	scene.add( dustParticles );
+
+}
+
+
+function updateDust( elapsed ) {
+
+	if ( ! dustParticles ) return;
+
+	const positions = dustParticles.geometry.attributes.position.array;
+	const count = positions.length / 3;
+
+	for ( let i = 0; i < count; i ++ ) {
+
+		// Gentle floating drift
+		positions[ i * 3 ] += Math.sin( elapsed * 0.3 + i * 0.7 ) * 0.0005;
+		positions[ i * 3 + 1 ] += Math.sin( elapsed * 0.5 + i * 1.1 ) * 0.0003;
+		positions[ i * 3 + 2 ] += Math.cos( elapsed * 0.2 + i * 0.5 ) * 0.0004;
+
+	}
+
+	dustParticles.geometry.attributes.position.needsUpdate = true;
+
+}
+
+
+// ─── Composer Setup ──────────────────────────────────────────
+
+function setupComposer() {
+
+	composerDOF = new EffectComposer( renderer );
+	composerDOF.renderToScreen = false;
+	composerDOF.addPass( new RenderPass( scene, camera ) );
+
+	bokehPass = new BokehPass( scene, camera, {
+		focus: params.focus,
+		aperture: params.aperture,
+		maxblur: params.maxblur
+	} );
+	composerDOF.addPass( bokehPass );
+	composerDOF.addPass( new OutputPass() );
+
+}
+
+
+function setupQuadBlit() {
+
+	quadScene = new THREE.Scene();
+	quadCam = new THREE.OrthographicCamera( - 1, 1, 1, - 1, 0, 1 );
+	quadMesh = new THREE.Mesh(
+		new THREE.PlaneGeometry( 2, 2 ),
+		new THREE.MeshBasicMaterial()
+	);
+	quadScene.add( quadMesh );
+
+}
+
+
+// ─── Focus Depth Indicator ──────────────────────────────────
+
+function drawFocusIndicator( focalDist ) {
+
+	if ( ! focusCtx ) return;
+
+	const w = focusCanvas.width;
+	const h = focusCanvas.height;
+	const padL = 30;
+	const padR = 20;
+	const cy = h / 2;
+	const maxDist = 20;
+	const scaleX = ( w - padL - padR ) / maxDist;
+
+	// DoF zone: near and far focus distances based on aperture
+	// Wider aperture = narrower DoF, smaller aperture = wider DoF
+	const dofSpread = Math.max( 0.3, ( 0.02 / Math.max( params.aperture, 0.001 ) ) * 0.5 );
+	const nearFocus = Math.max( 0, focalDist - dofSpread );
+	const farFocus = Math.min( maxDist, focalDist + dofSpread );
+
+	focusCtx.clearRect( 0, 0, w, h );
+
+	// Depth axis
+	focusCtx.strokeStyle = 'rgba(230, 236, 245, 0.2)';
+	focusCtx.lineWidth = 1;
+	focusCtx.beginPath();
+	focusCtx.moveTo( padL, cy );
+	focusCtx.lineTo( w - padR, cy );
+	focusCtx.stroke();
+
+	// Tick marks
+	focusCtx.fillStyle = 'rgba(230, 236, 245, 0.3)';
+	focusCtx.font = '11px Inter, system-ui, sans-serif';
+	focusCtx.textAlign = 'center';
+
+	for ( let d = 0; d <= maxDist; d += 5 ) {
+
+		const tx = padL + d * scaleX;
+		focusCtx.beginPath();
+		focusCtx.moveTo( tx, cy - 4 );
+		focusCtx.lineTo( tx, cy + 4 );
+		focusCtx.stroke();
+		focusCtx.fillText( d, tx, cy + 16 );
+
+	}
+
+	// Camera icon
+	focusCtx.fillStyle = '#e0e5f0';
+	focusCtx.font = 'bold 11px Inter, system-ui, sans-serif';
+	focusCtx.textAlign = 'center';
+	focusCtx.fillText( 'CAM', padL, cy - 10 );
+
+	// In-focus zone fill (between near and far lines)
+	const nearX = padL + nearFocus * scaleX;
+	const farX = padL + farFocus * scaleX;
+
+	focusCtx.fillStyle = 'rgba(100, 180, 255, 0.12)';
+	focusCtx.fillRect( nearX, 8, farX - nearX, h - 28 );
+
+	// Near focus line (left boundary)
+	focusCtx.strokeStyle = 'rgba(100, 180, 255, 0.6)';
+	focusCtx.lineWidth = 2;
+	focusCtx.setLineDash( [ 4, 3 ] );
+	focusCtx.beginPath();
+	focusCtx.moveTo( nearX, 8 );
+	focusCtx.lineTo( nearX, h - 20 );
+	focusCtx.stroke();
+
+	// Far focus line (right boundary)
+	focusCtx.beginPath();
+	focusCtx.moveTo( farX, 8 );
+	focusCtx.lineTo( farX, h - 20 );
+	focusCtx.stroke();
+	focusCtx.setLineDash( [] );
+
+	// Labels for near/far
+	focusCtx.fillStyle = 'rgba(100, 180, 255, 0.7)';
+	focusCtx.font = '9px Inter, system-ui, sans-serif';
+	focusCtx.textAlign = 'center';
+	focusCtx.fillText( 'NEAR', nearX, h - 6 );
+	focusCtx.fillText( 'FAR', farX, h - 6 );
+
+	// Focal plane line (solid amber, center)
+	const focalX = padL + focalDist * scaleX;
+	focusCtx.strokeStyle = '#ffb74d';
+	focusCtx.lineWidth = 2.5;
+	focusCtx.beginPath();
+	focusCtx.moveTo( focalX, 4 );
+	focusCtx.lineTo( focalX, h - 20 );
+	focusCtx.stroke();
+
+	// Focal distance label
+	focusCtx.fillStyle = '#ffb74d';
+	focusCtx.font = 'bold 12px Inter, system-ui, sans-serif';
+	focusCtx.textAlign = 'center';
+	focusCtx.fillText( focalDist.toFixed( 1 ), focalX, h - 6 );
+
+}
+
+
+// ─── GUI ─────────────────────────────────────────────────────
+
+function setupGUI() {
+
+	const gui = new GUI();
+	const dofFolder = gui.addFolder( 'Depth of Field' );
+
+	dofFolder.add( params, 'focus', 0.5, 20, 0.01 ).name( 'Focus Distance' ).onChange( v => {
+
+		bokehPass.uniforms[ 'focus' ].value = v;
+		fiVal.textContent = v.toFixed( 1 );
+		drawFocusIndicator( v );
+
+	} );
+
+	dofFolder.add( params, 'aperture', 0, 0.1, 0.0005 ).name( 'Aperture' ).onChange( v => {
+
+		bokehPass.uniforms[ 'aperture' ].value = v;
+		drawFocusIndicator( params.focus );
+
+	} );
+
+	dofFolder.add( params, 'maxblur', 0, 0.03, 0.0005 ).name( 'Max Blur' ).onChange( v => {
+
+		bokehPass.uniforms[ 'maxblur' ].value = v;
+
+	} );
+
+	dofFolder.open();
+
+	const sceneFolder = gui.addFolder( 'Scene' );
+	sceneFolder.add( params, 'exposure', 0.3, 2.5, 0.01 ).name( 'Exposure' ).onChange( v => {
+
+		renderer.toneMappingExposure = v;
+
+	} );
+	sceneFolder.open();
+
+}
+
+
+// ─── Resize ──────────────────────────────────────────────────
+
+function onResize() {
+
+	const w = window.innerWidth;
+	const h = window.innerHeight;
+	const halfW = Math.floor( w / 2 );
+	camera.aspect = halfW / h;
+	camera.updateProjectionMatrix();
+	renderer.setSize( w, h );
+	composerDOF.setSize( halfW, h );
+
+}
+
+
+// ─── Animation Loop ─────────────────────────────────────────
+
+function animate() {
+
+	const dt = clock.getDelta();
+	const elapsed = clock.getElapsedTime();
+
+	controls.update();
+
+	// Subtle slow rotation on showcase pieces
+	for ( const obj of showcaseObjects ) {
+
+		if ( obj.piece && obj.piece.rotation ) {
+
+			obj.piece.rotation.y += dt * 0.15;
+
+		}
+
+		// Gentle hover animation
+		if ( obj.piece && obj.piece.position ) {
+
+			obj.piece.position.y = obj.baseY + Math.sin( elapsed * 0.8 + obj.z * 0.3 ) * 0.04;
+
+		}
+
+	}
+
+	// Update dust motes
+	updateDust( elapsed );
+
+	// ── Split-screen render ─────────────────────────────────
+	const w = window.innerWidth;
+	const h = window.innerHeight;
+	const halfW = Math.floor( w / 2 );
+
+	camera.aspect = halfW / h;
+	camera.updateProjectionMatrix();
+
+	// Left: raw render (no DOF)
+	renderer.setScissorTest( true );
+	renderer.setViewport( 0, 0, halfW, h );
+	renderer.setScissor( 0, 0, halfW, h );
+	renderer.render( scene, camera );
+
+	// Right: BokehPass DOF
+	renderer.setScissorTest( false );
+	composerDOF.setSize( halfW, h );
+	composerDOF.render();
+
+	// Blit DOF result to right half
+	renderer.setScissorTest( true );
+	renderer.setViewport( halfW, 0, w - halfW, h );
+	renderer.setScissor( halfW, 0, w - halfW, h );
+	renderer.setRenderTarget( null );
+
+	quadMesh.material.map = composerDOF.readBuffer.texture;
+	renderer.render( quadScene, quadCam );
+
+	renderer.setScissorTest( false );
+
+}
+</script>
+<script src="../shared/demo-nav.js"></script>
+</body>
+</html>

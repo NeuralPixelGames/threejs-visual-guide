@@ -1,0 +1,775 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<title>Glitch -- Three.js Encyclopedia v2</title>
+	<meta charset="utf-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<link rel="stylesheet" href="../shared/demo-base.css">
+	<style>
+		.style-panel {
+			position: fixed;
+			left: 22px;
+			bottom: 22px;
+			z-index: 50;
+			max-width: 290px;
+			background: linear-gradient(135deg, rgba(0, 12, 8, 0.92) 0%, rgba(8, 4, 20, 0.88) 100%);
+			backdrop-filter: blur(20px);
+			-webkit-backdrop-filter: blur(20px);
+			border: 1px solid rgba(0, 255, 200, 0.2);
+			border-radius: 14px;
+			padding: 18px 22px;
+			color: #e0e5f0;
+			font-family: 'Inter', system-ui, sans-serif;
+			font-size: 13px;
+			box-shadow: 0 8px 40px rgba(0, 0, 0, 0.5), 0 0 60px rgba(0, 255, 200, 0.06);
+			animation: fadeInUp 0.6s ease-out both;
+			animation-delay: 0.4s;
+		}
+
+		.style-kicker {
+			display: inline-block;
+			font-size: 10px;
+			font-weight: 600;
+			text-transform: uppercase;
+			letter-spacing: 0.12em;
+			color: #00ffc8;
+			margin-bottom: 6px;
+		}
+
+		.style-panel h3 {
+			margin: 0 0 8px;
+			font-size: 15px;
+			font-weight: 600;
+			color: #f8fbff;
+			letter-spacing: 0.01em;
+		}
+
+		.style-panel p {
+			margin: 0 0 12px;
+			color: rgba(230, 236, 245, 0.78);
+			line-height: 1.55;
+			font-size: 12px;
+		}
+
+		.style-chips {
+			display: flex;
+			flex-wrap: wrap;
+			gap: 6px;
+		}
+
+		.style-chip {
+			display: inline-block;
+			background: rgba(0, 255, 200, 0.1);
+			border: 1px solid rgba(0, 255, 200, 0.25);
+			border-radius: 100px;
+			padding: 3px 10px;
+			font-size: 10px;
+			color: #00ffc8;
+			font-family: 'Inter', system-ui, sans-serif;
+			letter-spacing: 0.03em;
+			white-space: nowrap;
+		}
+
+		.style-chip.magenta {
+			background: rgba(255, 0, 180, 0.1);
+			border-color: rgba(255, 0, 180, 0.25);
+			color: #ff6bd6;
+		}
+
+		.style-chip.red {
+			background: rgba(255, 50, 50, 0.1);
+			border-color: rgba(255, 50, 50, 0.25);
+			color: #ff5555;
+		}
+
+		@media (max-width: 900px) {
+			.style-panel {
+				left: 10px;
+				right: 10px;
+				bottom: 10px;
+				max-width: none;
+				padding: 14px 16px;
+			}
+		}
+	</style>
+</head>
+<body>
+
+<a href="../index.html" id="back-btn">&larr; Hub</a>
+<div id="info"><strong>Glitch</strong> -- Left: clean render | Right: GlitchPass with RGB displacement, scanlines &amp; digital corruption</div>
+
+<div class="split-divider"></div>
+<div class="split-label split-label-left"><strong>Clean</strong></div>
+<div class="split-label split-label-right"><strong>GlitchPass</strong></div>
+
+<section class="style-panel">
+	<div class="style-kicker">Post-Processing</div>
+	<h3>Glitch Effect</h3>
+	<p>GlitchPass simulates digital signal corruption by displacing RGB channels independently, injecting scanline artifacts, and randomly shifting image blocks -- creating an intentional aesthetic of broken data streams.</p>
+	<div class="style-chips">
+		<span class="style-chip">RGB shift</span>
+		<span class="style-chip magenta">scanlines</span>
+		<span class="style-chip red">digital corruption</span>
+	</div>
+</section>
+
+<script type="importmap">
+{
+	"imports": {
+		"three": "https://cdn.jsdelivr.net/npm/three@0.183.0/build/three.module.js",
+		"three/addons/": "https://cdn.jsdelivr.net/npm/three@0.183.0/examples/jsm/"
+	}
+}
+</script>
+
+<script type="module">
+import * as THREE from 'three';
+import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+import { GUI } from 'three/addons/libs/lil-gui.module.min.js';
+import { EffectComposer } from 'three/addons/postprocessing/EffectComposer.js';
+import { RenderPass } from 'three/addons/postprocessing/RenderPass.js';
+import { GlitchPass } from 'three/addons/postprocessing/GlitchPass.js';
+import { OutputPass } from 'three/addons/postprocessing/OutputPass.js';
+
+let renderer, scene, camera, controls;
+let composerGlitch;
+let glitchPass;
+let clock;
+let quadScene, quadCam, quadMesh;
+
+// Animated objects
+let headGroup, wireframeHead;
+let floatingShapes = [];
+let matrixRainSystems = [];
+
+const params = {
+	wildMode: false,
+	constantGlitch: false,
+	triggerGlitch: function () {
+
+		glitchPass._curF = 0;
+		glitchPass._randX = 1;
+
+	},
+
+	// Per-effect toggles
+	rgbShift: true,
+	blockDistortion: true,
+	noise: true,
+
+	// Numerical parameters
+	amount: 0.033,
+	distortion_x: 0.5,
+	distortion_y: 0.6,
+	col_s: 0.05
+};
+
+init();
+
+function init() {
+
+	clock = new THREE.Clock();
+
+	renderer = new THREE.WebGLRenderer( { antialias: true } );
+	renderer.setPixelRatio( window.devicePixelRatio );
+	renderer.setSize( window.innerWidth, window.innerHeight );
+	renderer.toneMapping = THREE.ACESFilmicToneMapping;
+	renderer.toneMappingExposure = 1.0;
+	document.body.appendChild( renderer.domElement );
+
+	scene = new THREE.Scene();
+	scene.background = new THREE.Color( 0x020208 );
+	scene.fog = new THREE.FogExp2( 0x020208, 0.035 );
+
+	camera = new THREE.PerspectiveCamera( 55, window.innerWidth / window.innerHeight, 0.1, 100 );
+	camera.position.set( 0, 2, 10 );
+
+	controls = new OrbitControls( camera, renderer.domElement );
+	controls.enableDamping = true;
+	controls.dampingFactor = 0.06;
+	controls.target.set( 0, 1, 0 );
+	controls.maxPolarAngle = Math.PI * 0.75;
+	controls.minDistance = 4;
+	controls.maxDistance = 20;
+	controls.update();
+
+	buildDigitalScene();
+	setupComposer();
+	setupGUI();
+	setupQuadBlit();
+
+	window.addEventListener( 'resize', onResize );
+	renderer.setAnimationLoop( animate );
+
+}
+
+
+// ─── Scene Construction ──────────────────────────────────────
+
+function buildDigitalScene() {
+
+	// ── Ground plane - dark reflective grid ──────────────────
+	const groundGeo = new THREE.PlaneGeometry( 40, 40, 40, 40 );
+	const groundMat = new THREE.MeshStandardMaterial( {
+		color: 0x050510,
+		roughness: 0.15,
+		metalness: 0.95,
+		wireframe: false
+	} );
+	const ground = new THREE.Mesh( groundGeo, groundMat );
+	ground.rotation.x = - Math.PI / 2;
+	ground.position.y = - 2;
+	scene.add( ground );
+
+	// Grid overlay on ground
+	const gridGeo = new THREE.PlaneGeometry( 40, 40, 40, 40 );
+	const gridMat = new THREE.MeshBasicMaterial( {
+		color: 0x00ffcc,
+		wireframe: true,
+		transparent: true,
+		opacity: 0.06
+	} );
+	const grid = new THREE.Mesh( gridGeo, gridMat );
+	grid.rotation.x = - Math.PI / 2;
+	grid.position.y = - 1.99;
+	scene.add( grid );
+
+	// ── Holographic Head (Icosahedron) ──────────────────────
+	headGroup = new THREE.Group();
+	headGroup.position.set( 0, 2, 0 );
+	scene.add( headGroup );
+
+	// Solid inner core
+	const headGeo = new THREE.IcosahedronGeometry( 1.5, 2 );
+	const headMat = new THREE.MeshStandardMaterial( {
+		color: 0x001520,
+		roughness: 0.2,
+		metalness: 0.9,
+		emissive: 0x003344,
+		emissiveIntensity: 0.4,
+		transparent: true,
+		opacity: 0.7
+	} );
+	const headMesh = new THREE.Mesh( headGeo, headMat );
+	headGroup.add( headMesh );
+
+	// Wireframe overlay
+	const wireGeo = new THREE.IcosahedronGeometry( 1.55, 2 );
+	const wireMat = new THREE.MeshBasicMaterial( {
+		color: 0x00ffcc,
+		wireframe: true,
+		transparent: true,
+		opacity: 0.5
+	} );
+	wireframeHead = new THREE.Mesh( wireGeo, wireMat );
+	headGroup.add( wireframeHead );
+
+	// Outer glow shell
+	const glowGeo = new THREE.IcosahedronGeometry( 1.8, 1 );
+	const glowMat = new THREE.MeshBasicMaterial( {
+		color: 0x00ffaa,
+		wireframe: true,
+		transparent: true,
+		opacity: 0.08
+	} );
+	const glowShell = new THREE.Mesh( glowGeo, glowMat );
+	headGroup.add( glowShell );
+
+	// Inner data core
+	const coreGeo = new THREE.OctahedronGeometry( 0.5, 0 );
+	const coreMat = new THREE.MeshBasicMaterial( {
+		color: 0xff00ff,
+		transparent: true,
+		opacity: 0.6
+	} );
+	const core = new THREE.Mesh( coreGeo, coreMat );
+	headGroup.add( core );
+	floatingShapes.push( { mesh: core, speed: 3.0, axis: 'y', radius: 0, bobSpeed: 0, bobAmt: 0 } );
+
+	// ── Matrix Rain / Data Streams ──────────────────────────
+	createMatrixRain( - 5, 0, - 3, 0x00ff88, 300 );
+	createMatrixRain( 5, 0, - 2, 0x00ccff, 300 );
+	createMatrixRain( - 3, 0, - 8, 0xff00cc, 200 );
+	createMatrixRain( 3, 0, - 6, 0x88ff00, 200 );
+	createMatrixRain( 0, 0, - 10, 0x00ffff, 250 );
+	createMatrixRain( - 7, 0, 2, 0xff3388, 150 );
+	createMatrixRain( 7, 0, 1, 0x33ff88, 150 );
+
+	// ── Floating Geometric Shapes ───────────────────────────
+	const shapeConfigs = [
+		{ geo: new THREE.BoxGeometry( 0.6, 0.6, 0.6 ), color: 0x00ffff, emissive: 0x004455, pos: [ 3, 3.5, - 1 ] },
+		{ geo: new THREE.BoxGeometry( 0.4, 0.4, 0.4 ), color: 0xff00ff, emissive: 0x440044, pos: [ - 3.5, 1.5, 1 ] },
+		{ geo: new THREE.OctahedronGeometry( 0.45, 0 ), color: 0x88ff00, emissive: 0x224400, pos: [ - 2.5, 4, - 2 ] },
+		{ geo: new THREE.OctahedronGeometry( 0.35, 0 ), color: 0xff3366, emissive: 0x441122, pos: [ 4, 1.2, - 3 ] },
+		{ geo: new THREE.TetrahedronGeometry( 0.4, 0 ), color: 0x00ffcc, emissive: 0x003322, pos: [ - 1, 4.5, - 4 ] },
+		{ geo: new THREE.TetrahedronGeometry( 0.3, 0 ), color: 0xff8800, emissive: 0x442200, pos: [ 2, 0.5, 2 ] },
+		{ geo: new THREE.BoxGeometry( 0.8, 0.15, 0.15 ), color: 0x00ccff, emissive: 0x002244, pos: [ - 4, 3, - 5 ] },
+		{ geo: new THREE.BoxGeometry( 0.15, 0.7, 0.15 ), color: 0xff00aa, emissive: 0x330022, pos: [ 5, 2.5, - 4 ] },
+		{ geo: new THREE.IcosahedronGeometry( 0.3, 0 ), color: 0xccff00, emissive: 0x334400, pos: [ 1.5, 5, - 3 ] },
+		{ geo: new THREE.DodecahedronGeometry( 0.35, 0 ), color: 0xff0066, emissive: 0x330011, pos: [ - 5, 2, 0 ] },
+		{ geo: new THREE.OctahedronGeometry( 0.5, 0 ), color: 0x00ffaa, emissive: 0x003322, pos: [ 0, - 0.5, 3 ] },
+		{ geo: new THREE.BoxGeometry( 0.3, 0.3, 0.3 ), color: 0xff66ff, emissive: 0x331133, pos: [ - 6, 1, - 3 ] },
+	];
+
+	for ( const cfg of shapeConfigs ) {
+
+		const mat = new THREE.MeshStandardMaterial( {
+			color: cfg.color,
+			emissive: cfg.emissive,
+			emissiveIntensity: 1.5,
+			roughness: 0.3,
+			metalness: 0.7,
+			transparent: true,
+			opacity: 0.85
+		} );
+
+		const mesh = new THREE.Mesh( cfg.geo, mat );
+		mesh.position.set( cfg.pos[ 0 ], cfg.pos[ 1 ], cfg.pos[ 2 ] );
+		mesh.rotation.set( Math.random() * Math.PI, Math.random() * Math.PI, 0 );
+		scene.add( mesh );
+
+		// Wireframe overlay for each shape
+		const wireMat2 = new THREE.MeshBasicMaterial( {
+			color: cfg.color,
+			wireframe: true,
+			transparent: true,
+			opacity: 0.3
+		} );
+		const wire = new THREE.Mesh( cfg.geo.clone(), wireMat2 );
+		wire.scale.setScalar( 1.1 );
+		mesh.add( wire );
+
+		floatingShapes.push( {
+			mesh,
+			speed: 0.3 + Math.random() * 0.6,
+			axis: [ 'x', 'y', 'z' ][ Math.floor( Math.random() * 3 ) ],
+			bobSpeed: 0.5 + Math.random() * 1.0,
+			bobAmt: 0.2 + Math.random() * 0.4,
+			baseY: cfg.pos[ 1 ],
+			phase: Math.random() * Math.PI * 2
+		} );
+
+	}
+
+	// ── Scanning Ring around head ───────────────────────────
+	const ringGeo = new THREE.TorusGeometry( 2.5, 0.02, 8, 64 );
+	const ringMat = new THREE.MeshBasicMaterial( {
+		color: 0x00ffcc,
+		transparent: true,
+		opacity: 0.4
+	} );
+	const ring1 = new THREE.Mesh( ringGeo, ringMat );
+	ring1.position.copy( headGroup.position );
+	scene.add( ring1 );
+	floatingShapes.push( { mesh: ring1, speed: 0.5, axis: 'x', bobSpeed: 0, bobAmt: 0 } );
+
+	const ring2 = new THREE.Mesh( ringGeo.clone(), ringMat.clone() );
+	ring2.material.color.set( 0xff00ff );
+	ring2.material.opacity = 0.3;
+	ring2.position.copy( headGroup.position );
+	ring2.rotation.x = Math.PI / 3;
+	scene.add( ring2 );
+	floatingShapes.push( { mesh: ring2, speed: - 0.3, axis: 'y', bobSpeed: 0, bobAmt: 0 } );
+
+	const ring3 = new THREE.Mesh( ringGeo.clone(), ringMat.clone() );
+	ring3.material.color.set( 0x88ff00 );
+	ring3.material.opacity = 0.25;
+	ring3.position.copy( headGroup.position );
+	ring3.rotation.z = Math.PI / 4;
+	scene.add( ring3 );
+	floatingShapes.push( { mesh: ring3, speed: 0.7, axis: 'z', bobSpeed: 0, bobAmt: 0 } );
+
+	// ── Horizontal data bars (like corrupted scanlines in space) ─
+	for ( let i = 0; i < 15; i ++ ) {
+
+		const w = 0.5 + Math.random() * 3;
+		const barGeo = new THREE.BoxGeometry( w, 0.02, 0.02 );
+		const hue = Math.random();
+		const barColor = new THREE.Color().setHSL( hue, 1, 0.5 );
+		const barMat = new THREE.MeshBasicMaterial( {
+			color: barColor,
+			transparent: true,
+			opacity: 0.2 + Math.random() * 0.3
+		} );
+		const bar = new THREE.Mesh( barGeo, barMat );
+		bar.position.set(
+			( Math.random() - 0.5 ) * 12,
+			- 1 + Math.random() * 8,
+			- 2 - Math.random() * 10
+		);
+		scene.add( bar );
+
+	}
+
+	// ── Lighting ─────────────────────────────────────────────
+	const ambient = new THREE.AmbientLight( 0x101020, 0.4 );
+	scene.add( ambient );
+
+	// Cyan key light
+	const spotCyan = new THREE.SpotLight( 0x00ccff, 5, 30, Math.PI / 5, 0.6, 1 );
+	spotCyan.position.set( 5, 8, 5 );
+	spotCyan.target.position.set( 0, 2, 0 );
+	scene.add( spotCyan );
+	scene.add( spotCyan.target );
+
+	// Magenta fill light
+	const spotMagenta = new THREE.SpotLight( 0xff00aa, 3, 25, Math.PI / 4, 0.5, 1 );
+	spotMagenta.position.set( - 5, 6, 3 );
+	spotMagenta.target.position.set( 0, 2, 0 );
+	scene.add( spotMagenta );
+	scene.add( spotMagenta.target );
+
+	// Lime accent from behind
+	const spotLime = new THREE.SpotLight( 0x88ff00, 2, 20, Math.PI / 5, 0.6, 1 );
+	spotLime.position.set( 0, 4, - 8 );
+	spotLime.target.position.set( 0, 2, 0 );
+	scene.add( spotLime );
+	scene.add( spotLime.target );
+
+	// Point lights for neon glow
+	const ptCyan = new THREE.PointLight( 0x00ffcc, 2, 12 );
+	ptCyan.position.set( 0, 3, 2 );
+	scene.add( ptCyan );
+
+	const ptMagenta = new THREE.PointLight( 0xff00ff, 1.5, 10 );
+	ptMagenta.position.set( - 3, 1, - 2 );
+	scene.add( ptMagenta );
+
+	const ptLime = new THREE.PointLight( 0x88ff00, 1, 8 );
+	ptLime.position.set( 3, 5, - 4 );
+	scene.add( ptLime );
+
+}
+
+
+// ─── Matrix Rain System ──────────────────────────────────────
+
+function createMatrixRain( x, y, z, color, count ) {
+
+	const positions = new Float32Array( count * 3 );
+	const velocities = new Float32Array( count );
+	const spread = 1.5;
+	const height = 12;
+
+	for ( let i = 0; i < count; i ++ ) {
+
+		positions[ i * 3 ] = x + ( Math.random() - 0.5 ) * spread;
+		positions[ i * 3 + 1 ] = - 2 + Math.random() * height;
+		positions[ i * 3 + 2 ] = z + ( Math.random() - 0.5 ) * spread;
+		velocities[ i ] = 2 + Math.random() * 5;
+
+	}
+
+	const geometry = new THREE.BufferGeometry();
+	geometry.setAttribute( 'position', new THREE.BufferAttribute( positions, 3 ) );
+
+	const material = new THREE.PointsMaterial( {
+		color: color,
+		size: 0.06,
+		transparent: true,
+		opacity: 0.6,
+		depthWrite: false,
+		blending: THREE.AdditiveBlending
+	} );
+
+	const points = new THREE.Points( geometry, material );
+	scene.add( points );
+
+	matrixRainSystems.push( {
+		points,
+		velocities,
+		baseX: x,
+		baseZ: z,
+		spread,
+		height,
+		floorY: - 2
+	} );
+
+}
+
+
+function updateMatrixRain( dt ) {
+
+	for ( const sys of matrixRainSystems ) {
+
+		const positions = sys.points.geometry.attributes.position.array;
+		const count = positions.length / 3;
+
+		for ( let i = 0; i < count; i ++ ) {
+
+			positions[ i * 3 + 1 ] -= sys.velocities[ i ] * dt;
+
+			if ( positions[ i * 3 + 1 ] < sys.floorY ) {
+
+				positions[ i * 3 ] = sys.baseX + ( Math.random() - 0.5 ) * sys.spread;
+				positions[ i * 3 + 1 ] = sys.floorY + sys.height + Math.random() * 2;
+				positions[ i * 3 + 2 ] = sys.baseZ + ( Math.random() - 0.5 ) * sys.spread;
+				sys.velocities[ i ] = 2 + Math.random() * 5;
+
+			}
+
+		}
+
+		sys.points.geometry.attributes.position.needsUpdate = true;
+
+	}
+
+}
+
+
+// ─── Composer Setup ──────────────────────────────────────────
+
+function setupComposer() {
+
+	composerGlitch = new EffectComposer( renderer );
+	composerGlitch.renderToScreen = false;
+	composerGlitch.addPass( new RenderPass( scene, camera ) );
+
+	glitchPass = new GlitchPass();
+	composerGlitch.addPass( glitchPass );
+	composerGlitch.addPass( new OutputPass() );
+
+	// Override render to apply per-effect toggles and slider values.
+	// The original render() randomises uniforms then draws in one call,
+	// so we replicate its logic with our params wired in.
+	glitchPass.render = function ( renderer, writeBuffer, readBuffer ) {
+
+		const u = this.uniforms;
+		u[ 'tDiffuse' ].value = readBuffer.texture;
+		u[ 'seed' ].value = Math.random();
+		u[ 'byp' ].value = 0;
+
+		if ( this._curF % this._randX === 0 || this.goWild === true ) {
+
+			u[ 'amount' ].value = Math.random() / 30;
+			u[ 'angle' ].value = THREE.MathUtils.randFloat( - Math.PI, Math.PI );
+			u[ 'seed_x' ].value = THREE.MathUtils.randFloat( - 1, 1 );
+			u[ 'seed_y' ].value = THREE.MathUtils.randFloat( - 1, 1 );
+			u[ 'distortion_x' ].value = THREE.MathUtils.randFloat( 0, 1 );
+			u[ 'distortion_y' ].value = THREE.MathUtils.randFloat( 0, 1 );
+			this._curF = 0;
+			this._generateTrigger();
+
+		} else if ( this._curF % this._randX < this._randX / 5 ) {
+
+			u[ 'amount' ].value = Math.random() / 90;
+			u[ 'angle' ].value = THREE.MathUtils.randFloat( - Math.PI, Math.PI );
+			u[ 'distortion_x' ].value = THREE.MathUtils.randFloat( 0, 1 );
+			u[ 'distortion_y' ].value = THREE.MathUtils.randFloat( 0, 1 );
+			u[ 'seed_x' ].value = THREE.MathUtils.randFloat( - 0.3, 0.3 );
+			u[ 'seed_y' ].value = THREE.MathUtils.randFloat( - 0.3, 0.3 );
+
+		} else if ( this.goWild === false ) {
+
+			u[ 'byp' ].value = 1;
+
+		}
+
+		this._curF ++;
+
+		// Apply slider overrides on top of the randomised values
+		if ( u[ 'byp' ].value === 0 ) {
+
+			u[ 'amount' ].value *= ( params.amount / 0.033 );
+			u[ 'col_s' ].value = params.col_s;
+			u[ 'distortion_x' ].value *= params.distortion_x / 0.5;
+			u[ 'distortion_y' ].value *= params.distortion_y / 0.6;
+
+			// Per-effect toggles
+			if ( ! params.rgbShift ) {
+
+				u[ 'amount' ].value = 0;
+				u[ 'angle' ].value = 0;
+
+			}
+
+			if ( ! params.blockDistortion ) {
+
+				u[ 'distortion_x' ].value = 0;
+				u[ 'distortion_y' ].value = 0;
+				u[ 'col_s' ].value = 0;
+				u[ 'seed_x' ].value = 0;
+				u[ 'seed_y' ].value = 0;
+
+			}
+
+			if ( ! params.noise ) {
+
+				u[ 'seed' ].value = 0;
+
+			}
+
+		}
+
+		if ( this.renderToScreen ) {
+
+			renderer.setRenderTarget( null );
+			this._fsQuad.render( renderer );
+
+		} else {
+
+			renderer.setRenderTarget( writeBuffer );
+			if ( this.clear ) renderer.clear();
+			this._fsQuad.render( renderer );
+
+		}
+
+	};
+
+}
+
+
+function setupQuadBlit() {
+
+	quadScene = new THREE.Scene();
+	quadCam = new THREE.OrthographicCamera( - 1, 1, 1, - 1, 0, 1 );
+	quadMesh = new THREE.Mesh(
+		new THREE.PlaneGeometry( 2, 2 ),
+		new THREE.MeshBasicMaterial()
+	);
+	quadScene.add( quadMesh );
+
+}
+
+
+// ─── GUI ─────────────────────────────────────────────────────
+
+function setupGUI() {
+
+	const gui = new GUI();
+
+	gui.add( params, 'wildMode' ).name( 'Wild Mode' ).onChange( v => {
+
+		glitchPass.goWild = v;
+
+	} );
+
+	gui.add( params, 'constantGlitch' ).name( 'Constant Glitch' ).onChange( v => {
+
+		if ( v ) {
+
+			glitchPass.goWild = true;
+
+		} else {
+
+			glitchPass.goWild = params.wildMode;
+
+		}
+
+	} );
+
+	gui.add( params, 'triggerGlitch' ).name( 'Trigger Glitch' );
+
+	// Per-effect toggles
+	const toggleFolder = gui.addFolder( 'Effect Toggles' );
+	toggleFolder.add( params, 'rgbShift' ).name( 'RGB Shift' );
+	toggleFolder.add( params, 'blockDistortion' ).name( 'Block Distortion' );
+	toggleFolder.add( params, 'noise' ).name( 'Noise / Snow' );
+
+	// Numerical parameter sliders
+	const sliderFolder = gui.addFolder( 'Parameters' );
+	sliderFolder.add( params, 'amount', 0, 0.2 ).name( 'Amount' );
+	sliderFolder.add( params, 'col_s', 0, 0.5 ).name( 'Scanline Size' );
+	sliderFolder.add( params, 'distortion_x', 0, 1 ).name( 'Distortion X' );
+	sliderFolder.add( params, 'distortion_y', 0, 1 ).name( 'Distortion Y' );
+
+}
+
+
+// ─── Resize ──────────────────────────────────────────────────
+
+function onResize() {
+
+	const w = window.innerWidth;
+	const h = window.innerHeight;
+	const halfW = Math.floor( w / 2 );
+	camera.aspect = halfW / h;
+	camera.updateProjectionMatrix();
+	renderer.setSize( w, h );
+	composerGlitch.setSize( halfW, h );
+
+}
+
+
+// ─── Animation Loop ─────────────────────────────────────────
+
+function animate() {
+
+	const dt = clock.getDelta();
+	const elapsed = clock.getElapsedTime();
+
+	controls.update();
+
+	// Rotate holographic head
+	headGroup.rotation.y = elapsed * 0.3;
+	headGroup.rotation.x = Math.sin( elapsed * 0.5 ) * 0.15;
+	headGroup.position.y = 2 + Math.sin( elapsed * 0.8 ) * 0.3;
+
+	// Pulse wireframe
+	const pulse = 0.3 + Math.abs( Math.sin( elapsed * 2 ) ) * 0.4;
+	wireframeHead.material.opacity = pulse;
+
+	// Animate floating shapes
+	for ( const obj of floatingShapes ) {
+
+		const m = obj.mesh;
+		const spd = obj.speed;
+
+		if ( obj.axis === 'x' ) m.rotation.x += spd * dt;
+		if ( obj.axis === 'y' ) m.rotation.y += spd * dt;
+		if ( obj.axis === 'z' ) m.rotation.z += spd * dt;
+
+		if ( obj.bobAmt > 0 && obj.baseY !== undefined ) {
+
+			m.position.y = obj.baseY + Math.sin( elapsed * obj.bobSpeed + ( obj.phase || 0 ) ) * obj.bobAmt;
+
+		}
+
+	}
+
+	// Update matrix rain
+	updateMatrixRain( dt );
+
+	// Constant glitch mode: force a trigger every few frames
+	if ( params.constantGlitch && glitchPass._curF % 3 === 0 ) {
+
+		glitchPass._curF = 0;
+		glitchPass._randX = 1;
+
+	}
+
+	// ── Split-screen render ─────────────────────────────────
+	const w = window.innerWidth;
+	const h = window.innerHeight;
+	const halfW = Math.floor( w / 2 );
+
+	camera.aspect = halfW / h;
+	camera.updateProjectionMatrix();
+
+	// Left: clean render
+	renderer.setScissorTest( true );
+	renderer.setViewport( 0, 0, halfW, h );
+	renderer.setScissor( 0, 0, halfW, h );
+	renderer.render( scene, camera );
+
+	// Right: glitch pass
+	renderer.setScissorTest( false );
+	composerGlitch.setSize( halfW, h );
+	composerGlitch.render();
+
+	// Blit glitch result to right half
+	renderer.setScissorTest( true );
+	renderer.setViewport( halfW, 0, w - halfW, h );
+	renderer.setScissor( halfW, 0, w - halfW, h );
+	renderer.setRenderTarget( null );
+
+	quadMesh.material.map = composerGlitch.readBuffer.texture;
+	renderer.render( quadScene, quadCam );
+
+	renderer.setScissorTest( false );
+
+}
+</script>
+<script src="../shared/demo-nav.js"></script>
+</body>
+</html>

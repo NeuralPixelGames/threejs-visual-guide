@@ -1,0 +1,952 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<title>Bloom -- Three.js Encyclopedia v2</title>
+	<meta charset="utf-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<link rel="stylesheet" href="../shared/demo-base.css">
+	<style>
+		.style-panel {
+			position: fixed;
+			left: 22px;
+			bottom: 22px;
+			z-index: 50;
+			max-width: 290px;
+			background: linear-gradient(135deg, rgba(8, 4, 20, 0.92) 0%, rgba(12, 8, 28, 0.88) 100%);
+			backdrop-filter: blur(20px);
+			-webkit-backdrop-filter: blur(20px);
+			border: 1px solid rgba(255, 0, 180, 0.2);
+			border-radius: 14px;
+			padding: 18px 22px;
+			color: #e0e5f0;
+			font-family: 'Inter', system-ui, sans-serif;
+			font-size: 13px;
+			box-shadow: 0 8px 40px rgba(0, 0, 0, 0.5), 0 0 60px rgba(255, 0, 180, 0.06);
+			animation: fadeInUp 0.6s ease-out both;
+			animation-delay: 0.4s;
+		}
+
+		.style-kicker {
+			display: inline-block;
+			font-size: 10px;
+			font-weight: 600;
+			text-transform: uppercase;
+			letter-spacing: 0.12em;
+			color: #ff00b4;
+			margin-bottom: 6px;
+		}
+
+		.style-panel h3 {
+			margin: 0 0 8px;
+			font-size: 15px;
+			font-weight: 600;
+			color: #f8fbff;
+			letter-spacing: 0.01em;
+		}
+
+		.style-panel p {
+			margin: 0 0 12px;
+			color: rgba(230, 236, 245, 0.78);
+			line-height: 1.55;
+			font-size: 12px;
+		}
+
+		.style-chips {
+			display: flex;
+			flex-wrap: wrap;
+			gap: 6px;
+		}
+
+		.style-chip {
+			display: inline-block;
+			background: rgba(255, 0, 180, 0.1);
+			border: 1px solid rgba(255, 0, 180, 0.25);
+			border-radius: 100px;
+			padding: 3px 10px;
+			font-size: 10px;
+			color: #ff6bd6;
+			font-family: 'Inter', system-ui, sans-serif;
+			letter-spacing: 0.03em;
+			white-space: nowrap;
+		}
+
+		.style-chip.cyan {
+			background: rgba(0, 255, 255, 0.08);
+			border-color: rgba(0, 255, 255, 0.25);
+			color: #00e5ff;
+		}
+
+		.style-chip.gold {
+			background: rgba(255, 200, 0, 0.08);
+			border-color: rgba(255, 200, 0, 0.25);
+			color: #ffc800;
+		}
+
+		@media (max-width: 900px) {
+			.style-panel {
+				left: 10px;
+				right: 10px;
+				bottom: 10px;
+				max-width: none;
+				padding: 14px 16px;
+			}
+		}
+	</style>
+</head>
+<body>
+
+<a href="../index.html" id="back-btn">&larr; Hub</a>
+<div id="info"><strong>Bloom</strong> -- Left: raw render | Right: UnrealBloomPass -- neon glow that sells the cyberpunk</div>
+
+<div class="split-divider"></div>
+<div class="split-label split-label-left"><strong>No Bloom</strong> (flat emissive)</div>
+<div class="split-label split-label-right"><strong>Bloom Enabled</strong> (HDR glow)</div>
+
+<section class="style-panel">
+	<div class="style-kicker">Post-Processing</div>
+	<h3>Bloom Effect</h3>
+	<p>UnrealBloomPass creates photorealistic glow by extracting bright areas above a luminance threshold, applying gaussian blur at multiple scales, then additively blending back onto the image.</p>
+	<div class="style-chips">
+		<span class="style-chip">HDR threshold</span>
+		<span class="style-chip cyan">gaussian blur</span>
+		<span class="style-chip gold">additive blend</span>
+	</div>
+</section>
+
+<script type="importmap">
+{
+	"imports": {
+		"three": "https://cdn.jsdelivr.net/npm/three@0.183.0/build/three.module.js",
+		"three/addons/": "https://cdn.jsdelivr.net/npm/three@0.183.0/examples/jsm/"
+	}
+}
+</script>
+
+<script type="module">
+import * as THREE from 'three';
+import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+import { GUI } from 'three/addons/libs/lil-gui.module.min.js';
+import { EffectComposer } from 'three/addons/postprocessing/EffectComposer.js';
+import { RenderPass } from 'three/addons/postprocessing/RenderPass.js';
+import { UnrealBloomPass } from 'three/addons/postprocessing/UnrealBloomPass.js';
+import { OutputPass } from 'three/addons/postprocessing/OutputPass.js';
+
+let renderer, scene, camera, controls;
+let composerBloom;
+let neonObjects = [];
+let particleSystem;
+let clock;
+let quadScene, quadCam, quadMesh;
+
+const params = {
+	bloomStrength: 1.5,
+	bloomThreshold: 0.15,
+	bloomRadius: 0.85,
+	exposure: 1.0,
+	neonIntensity: 2.22
+};
+
+init();
+
+function init() {
+
+	clock = new THREE.Clock();
+
+	renderer = new THREE.WebGLRenderer( { antialias: true } );
+	renderer.setPixelRatio( window.devicePixelRatio );
+	renderer.setSize( window.innerWidth, window.innerHeight );
+	renderer.toneMapping = THREE.ACESFilmicToneMapping;
+	renderer.toneMappingExposure = params.exposure;
+	renderer.shadowMap.enabled = true;
+	renderer.shadowMap.type = THREE.PCFShadowMap;
+	document.body.appendChild( renderer.domElement );
+
+	scene = new THREE.Scene();
+	scene.background = new THREE.Color( 0x020208 );
+	scene.fog = new THREE.FogExp2( 0x020208, 0.04 );
+
+	camera = new THREE.PerspectiveCamera( 55, window.innerWidth / window.innerHeight, 0.1, 100 );
+	camera.position.set( 0, 3.5, 12 );
+
+	controls = new OrbitControls( camera, renderer.domElement );
+	controls.enableDamping = true;
+	controls.dampingFactor = 0.06;
+	controls.target.set( 0, 2.5, 0 );
+	controls.maxPolarAngle = Math.PI * 0.65;
+	controls.minDistance = 4;
+	controls.maxDistance = 20;
+	controls.update();
+
+	buildCyberpunkScene();
+	setupComposer();
+	setupGUI();
+	setupQuadBlit();
+
+	window.addEventListener( 'resize', onResize );
+	renderer.setAnimationLoop( animate );
+
+}
+
+
+// ─── Scene Construction ──────────────────────────────────────
+
+function buildCyberpunkScene() {
+
+	// ── Ground ───────────────────────────────────────────────
+	const groundGeo = new THREE.PlaneGeometry( 30, 40 );
+	const groundMat = new THREE.MeshStandardMaterial( {
+		color: 0x0a0a12,
+		roughness: 0.15,
+		metalness: 0.9,
+		envMapIntensity: 0.3
+	} );
+	const ground = new THREE.Mesh( groundGeo, groundMat );
+	ground.rotation.x = - Math.PI / 2;
+	ground.receiveShadow = true;
+	scene.add( ground );
+
+	// ── Walls ────────────────────────────────────────────────
+	const wallMat = new THREE.MeshStandardMaterial( {
+		color: 0x080810,
+		roughness: 0.7,
+		metalness: 0.3
+	} );
+
+	const leftWall = new THREE.Mesh( new THREE.BoxGeometry( 0.4, 12, 30 ), wallMat );
+	leftWall.position.set( - 5, 6, - 3 );
+	leftWall.receiveShadow = true;
+	scene.add( leftWall );
+
+	const rightWall = new THREE.Mesh( new THREE.BoxGeometry( 0.4, 12, 30 ), wallMat );
+	rightWall.position.set( 5, 6, - 3 );
+	rightWall.receiveShadow = true;
+	scene.add( rightWall );
+
+	const backWall = new THREE.Mesh( new THREE.BoxGeometry( 10.8, 12, 0.4 ), wallMat );
+	backWall.position.set( 0, 6, - 18 );
+	backWall.receiveShadow = true;
+	scene.add( backWall );
+
+	// ── Ceiling ──────────────────────────────────────────────
+	const ceiling = new THREE.Mesh(
+		new THREE.PlaneGeometry( 10.4, 30 ),
+		new THREE.MeshStandardMaterial( { color: 0x050508, roughness: 0.9 } )
+	);
+	ceiling.rotation.x = Math.PI / 2;
+	ceiling.position.set( 0, 12, - 3 );
+	scene.add( ceiling );
+
+	// ── Neon Signs ───────────────────────────────────────────
+
+	// "BLOOM" sign - main hero
+	createNeonText( 'BLOOM', new THREE.Vector3( - 4.6, 6.5, - 5 ), 0xff00aa, 1.2, Math.PI / 2 );
+
+	// "NEON" sign on right wall
+	createNeonText( 'NEON', new THREE.Vector3( 4.6, 4.5, - 2 ), 0x00ffff, 0.9, - Math.PI / 2 );
+
+	// "HDR" sign on back wall
+	createNeonText( 'HDR', new THREE.Vector3( 0, 8, - 17.6 ), 0xffaa00, 1.0, 0 );
+
+	// ── Large neon accent bars ───────────────────────────────
+	createNeonBar( new THREE.Vector3( - 4.6, 2, 2 ), 8, 0xff0066, Math.PI / 2, 'vertical' );
+	createNeonBar( new THREE.Vector3( 4.6, 2, - 8 ), 10, 0x00aaff, - Math.PI / 2, 'vertical' );
+	createNeonBar( new THREE.Vector3( - 4.6, 10, 0 ), 14, 0xaa00ff, Math.PI / 2, 'horizontal' );
+	createNeonBar( new THREE.Vector3( 4.6, 10.5, - 4 ), 12, 0x00ffaa, - Math.PI / 2, 'horizontal' );
+
+	// ── Horizontal neon tubes along ceiling edges ────────────
+	createNeonTube( new THREE.Vector3( - 4.8, 11.8, - 3 ), 28, 0xff0088, 'z' );
+	createNeonTube( new THREE.Vector3( 4.8, 11.8, - 3 ), 28, 0x0088ff, 'z' );
+
+	// ── Neon pipes along floor edges ────────────────────────
+	createNeonTube( new THREE.Vector3( - 4.5, 0.15, - 3 ), 24, 0xff4400, 'z' );
+	createNeonTube( new THREE.Vector3( 4.5, 0.15, - 3 ), 24, 0x4400ff, 'z' );
+
+	// ── Glowing window panels on walls ──────────────────────
+	const windowColors = [ 0xff0066, 0x00ffcc, 0xffaa00, 0x0066ff, 0xff00ff, 0x00ff66 ];
+	for ( let i = 0; i < 6; i ++ ) {
+
+		const y = 3 + Math.random() * 5;
+		const z = - 2 - i * 2.2;
+		const side = i % 2 === 0 ? - 4.55 : 4.55;
+		const rotY = i % 2 === 0 ? Math.PI / 2 : - Math.PI / 2;
+		createWindowPanel( new THREE.Vector3( side, y, z ), windowColors[ i ], rotY );
+
+	}
+
+	// ── Emissive accent boxes (scattered small cubes) ───────
+	for ( let i = 0; i < 20; i ++ ) {
+
+		const hue = Math.random();
+		const color = new THREE.Color().setHSL( hue, 1, 0.5 );
+		const size = 0.08 + Math.random() * 0.15;
+		const mat = new THREE.MeshBasicMaterial( { color } );
+		const mesh = new THREE.Mesh( new THREE.BoxGeometry( size, size, size ), mat );
+		mesh.position.set(
+			( Math.random() - 0.5 ) * 9,
+			0.5 + Math.random() * 8,
+			- Math.random() * 16
+		);
+		mesh.rotation.set( Math.random() * Math.PI, Math.random() * Math.PI, 0 );
+		scene.add( mesh );
+		neonObjects.push( { mesh, baseIntensity: 1, flickerSpeed: 0, flickerAmt: 0 } );
+
+	}
+
+	// ── Puddles on ground ────────────────────────────────────
+	for ( let i = 0; i < 8; i ++ ) {
+
+		const puddleGeo = new THREE.CircleGeometry( 0.5 + Math.random() * 1.2, 32 );
+		const puddleMat = new THREE.MeshStandardMaterial( {
+			color: 0x0a0a1a,
+			roughness: 0.02,
+			metalness: 1.0,
+			envMapIntensity: 1.5
+		} );
+		const puddle = new THREE.Mesh( puddleGeo, puddleMat );
+		puddle.rotation.x = - Math.PI / 2;
+		puddle.position.set(
+			( Math.random() - 0.5 ) * 7,
+			0.005,
+			2 - i * 2.2
+		);
+		scene.add( puddle );
+
+	}
+
+	// ── Neon kanji / symbol decorations (small sign clusters) ─
+	createNeonRect( new THREE.Vector3( - 4.55, 7.5, - 10 ), 0.8, 1.2, 0xff3366, Math.PI / 2 );
+	createNeonRect( new THREE.Vector3( - 4.55, 5.5, - 10 ), 0.6, 0.6, 0x33ff66, Math.PI / 2 );
+	createNeonRect( new THREE.Vector3( 4.55, 6, - 6 ), 1.0, 0.5, 0xff9900, - Math.PI / 2 );
+	createNeonRect( new THREE.Vector3( 4.55, 7.5, - 12 ), 0.7, 1.0, 0x9900ff, - Math.PI / 2 );
+
+	// ── Cross-shaped neon decoration ────────────────────────
+	createNeonCross( new THREE.Vector3( 0, 9, - 17.5 ), 0xff0044, 0 );
+
+	// ── Ground-level steam vents (particle systems) ─────────
+	createSteamParticles();
+
+	// ── Lighting ─────────────────────────────────────────────
+	const ambient = new THREE.AmbientLight( 0x101020, 0.3 );
+	scene.add( ambient );
+
+	// Magenta spot from left
+	const spotPink = new THREE.SpotLight( 0xff0088, 4, 30, Math.PI / 5, 0.6, 1 );
+	spotPink.position.set( - 4, 10, 2 );
+	spotPink.target.position.set( 0, 0, - 3 );
+	spotPink.castShadow = true;
+	spotPink.shadow.mapSize.set( 1024, 1024 );
+	scene.add( spotPink );
+	scene.add( spotPink.target );
+
+	// Cyan spot from right
+	const spotCyan = new THREE.SpotLight( 0x00aaff, 3, 30, Math.PI / 5, 0.6, 1 );
+	spotCyan.position.set( 4, 10, - 5 );
+	spotCyan.target.position.set( 0, 0, - 5 );
+	spotCyan.castShadow = true;
+	spotCyan.shadow.mapSize.set( 1024, 1024 );
+	scene.add( spotCyan );
+	scene.add( spotCyan.target );
+
+	// Warm overhead
+	const spotWarm = new THREE.SpotLight( 0xff6600, 2, 25, Math.PI / 4, 0.5, 1 );
+	spotWarm.position.set( 0, 11, - 10 );
+	spotWarm.target.position.set( 0, 0, - 10 );
+	scene.add( spotWarm );
+	scene.add( spotWarm.target );
+
+	// Point lights to brighten neon reflections
+	const ptPink = new THREE.PointLight( 0xff0088, 2, 15 );
+	ptPink.position.set( - 4, 6, - 5 );
+	scene.add( ptPink );
+
+	const ptCyan = new THREE.PointLight( 0x00ffff, 1.5, 15 );
+	ptCyan.position.set( 4, 4, - 2 );
+	scene.add( ptCyan );
+
+	const ptGold = new THREE.PointLight( 0xffaa00, 1.5, 12 );
+	ptGold.position.set( 0, 8, - 16 );
+	scene.add( ptGold );
+
+	// Floor-level neon bounce lights
+	const ptFloor1 = new THREE.PointLight( 0xff4400, 0.8, 8 );
+	ptFloor1.position.set( - 4, 0.3, 0 );
+	scene.add( ptFloor1 );
+
+	const ptFloor2 = new THREE.PointLight( 0x4400ff, 0.8, 8 );
+	ptFloor2.position.set( 4, 0.3, 0 );
+	scene.add( ptFloor2 );
+
+}
+
+
+// ─── Neon Helpers ────────────────────────────────────────────
+
+function createNeonText( text, position, color, scale, rotationY ) {
+
+	const group = new THREE.Group();
+	group.position.copy( position );
+	group.rotation.y = rotationY;
+
+	const letterSpacing = 1.1 * scale;
+	const startX = - ( text.length - 1 ) * letterSpacing / 2;
+
+	const letterDefs = {
+		'B': [
+			[ 0, 0, 0, 1.6 ], [ 0, 1.6, 0.7, 0 ], [ 0.7, 1.6, 0, - 0.7 ],
+			[ 0.7, 0.9, - 0.7, 0 ], [ 0, 0.9, 0.8, 0 ], [ 0.8, 0.9, 0, - 0.9 ],
+			[ 0.8, 0, - 0.8, 0 ]
+		],
+		'L': [
+			[ 0, 0, 0, 1.6 ], [ 0, 0, 0.7, 0 ]
+		],
+		'O': [
+			[ 0.1, 0, 0, 1.4 ], [ 0.1, 1.4, 0.6, 0 ], [ 0.7, 1.4, 0, - 1.4 ], [ 0.1, 0, 0.6, 0 ]
+		],
+		'M': [
+			[ 0, 0, 0, 1.6 ], [ 0, 1.6, 0.4, - 0.8 ], [ 0.4, 0.8, 0.4, 0.8 ], [ 0.8, 1.6, 0, - 1.6 ]
+		],
+		'N': [
+			[ 0, 0, 0, 1.6 ], [ 0, 1.6, 0.7, - 1.6 ], [ 0.7, 0, 0, 1.6 ]
+		],
+		'E': [
+			[ 0, 0, 0, 1.6 ], [ 0, 1.6, 0.7, 0 ], [ 0, 0.8, 0.5, 0 ], [ 0, 0, 0.7, 0 ]
+		],
+		'H': [
+			[ 0, 0, 0, 1.6 ], [ 0.7, 0, 0, 1.6 ], [ 0, 0.8, 0.7, 0 ]
+		],
+		'D': [
+			[ 0, 0, 0, 1.6 ], [ 0, 1.6, 0.5, 0 ], [ 0.5, 1.6, 0.2, - 0.3 ],
+			[ 0.7, 1.3, 0, - 1.0 ], [ 0.7, 0.3, - 0.2, - 0.3 ], [ 0.5, 0, - 0.5, 0 ]
+		],
+		'R': [
+			[ 0, 0, 0, 1.6 ], [ 0, 1.6, 0.6, 0 ], [ 0.6, 1.6, 0.1, - 0.35 ],
+			[ 0.7, 1.25, - 0.1, - 0.35 ], [ 0.6, 0.9, - 0.6, 0 ], [ 0.3, 0.9, 0.5, - 0.9 ]
+		]
+	};
+
+	for ( let i = 0; i < text.length; i ++ ) {
+
+		const ch = text[ i ];
+		const segments = letterDefs[ ch ];
+		if ( ! segments ) continue;
+
+		const x = startX + i * letterSpacing;
+
+		for ( const seg of segments ) {
+
+			const sx = seg[ 0 ] * scale;
+			const sy = seg[ 1 ] * scale;
+			const dx = seg[ 2 ] * scale;
+			const dy = seg[ 3 ] * scale;
+			const len = Math.sqrt( dx * dx + dy * dy );
+
+			if ( len < 0.01 ) continue;
+
+			const tubeRadius = 0.04 * scale;
+			const tubeGeo = new THREE.CylinderGeometry( tubeRadius, tubeRadius, len, 6, 1 );
+			const tubeMat = new THREE.MeshBasicMaterial( { color } );
+			const tube = new THREE.Mesh( tubeGeo, tubeMat );
+
+			tube.position.set( x + sx + dx / 2, sy + dy / 2, 0 );
+			const angle = Math.atan2( dx, dy );
+			tube.rotation.z = - angle;
+
+			group.add( tube );
+
+		}
+
+		// Add a glow box behind each letter
+		const glowMat = new THREE.MeshBasicMaterial( {
+			color,
+			transparent: true,
+			opacity: 0.08
+		} );
+		const glowBox = new THREE.Mesh(
+			new THREE.PlaneGeometry( 1.0 * scale, 2.0 * scale ),
+			glowMat
+		);
+		glowBox.position.set( x + 0.35 * scale, 0.8 * scale, - 0.05 );
+		group.add( glowBox );
+
+	}
+
+	scene.add( group );
+
+	// Add glow point light near the sign
+	const glowLight = new THREE.PointLight( color, 1.5, 8 );
+	glowLight.position.copy( position );
+	scene.add( glowLight );
+
+	const flickerSpeed = 2 + Math.random() * 4;
+	const flickerAmt = 0.15 + Math.random() * 0.25;
+
+	group.children.forEach( child => {
+
+		if ( child.material && ! child.material.transparent ) {
+
+			neonObjects.push( {
+				mesh: child,
+				baseIntensity: 1,
+				flickerSpeed,
+				flickerAmt,
+				phase: Math.random() * Math.PI * 2
+			} );
+
+		}
+
+	} );
+
+	neonObjects.push( {
+		mesh: { material: glowLight },
+		isLight: true,
+		baseIntensity: 1.5,
+		flickerSpeed,
+		flickerAmt,
+		phase: Math.random() * Math.PI * 2
+	} );
+
+}
+
+
+function createNeonBar( position, length, color, rotationY, orientation ) {
+
+	const radius = 0.035;
+	const geo = new THREE.CylinderGeometry( radius, radius, length, 8, 1 );
+	const mat = new THREE.MeshBasicMaterial( { color } );
+	const bar = new THREE.Mesh( geo, mat );
+	bar.position.copy( position );
+	bar.rotation.y = rotationY;
+
+	if ( orientation === 'horizontal' ) {
+
+		bar.rotation.z = Math.PI / 2;
+
+	}
+
+	scene.add( bar );
+
+	neonObjects.push( {
+		mesh: bar,
+		baseIntensity: 1,
+		flickerSpeed: 1 + Math.random() * 2,
+		flickerAmt: 0.05 + Math.random() * 0.1,
+		phase: Math.random() * Math.PI * 2
+	} );
+
+}
+
+
+function createNeonTube( position, length, color, axis ) {
+
+	const radius = 0.025;
+	const geo = new THREE.CylinderGeometry( radius, radius, length, 6, 1 );
+	const mat = new THREE.MeshBasicMaterial( { color } );
+	const tube = new THREE.Mesh( geo, mat );
+	tube.position.copy( position );
+
+	if ( axis === 'x' ) {
+
+		tube.rotation.z = Math.PI / 2;
+
+	} else if ( axis === 'z' ) {
+
+		tube.rotation.x = Math.PI / 2;
+
+	}
+
+	scene.add( tube );
+
+	neonObjects.push( {
+		mesh: tube,
+		baseIntensity: 1,
+		flickerSpeed: 0.5 + Math.random(),
+		flickerAmt: 0.03,
+		phase: Math.random() * Math.PI * 2
+	} );
+
+}
+
+
+function createWindowPanel( position, color, rotationY ) {
+
+	const w = 0.6 + Math.random() * 0.8;
+	const h = 0.8 + Math.random() * 1.2;
+
+	// Window frame (dark border)
+	const frameMat = new THREE.MeshStandardMaterial( { color: 0x111118, roughness: 0.5 } );
+	const frame = new THREE.Mesh( new THREE.BoxGeometry( 0.05, h + 0.1, w + 0.1 ), frameMat );
+	frame.position.copy( position );
+	frame.rotation.y = rotationY;
+	scene.add( frame );
+
+	// Glowing panel behind
+	const panelMat = new THREE.MeshBasicMaterial( {
+		color,
+		transparent: true,
+		opacity: 0.6
+	} );
+	const panel = new THREE.Mesh( new THREE.PlaneGeometry( w, h ), panelMat );
+	panel.position.copy( position );
+	panel.rotation.y = rotationY;
+	const offset = rotationY > 0 ? 0.04 : - 0.04;
+	panel.position.x += offset;
+	scene.add( panel );
+
+	neonObjects.push( {
+		mesh: panel,
+		baseIntensity: 0.6,
+		flickerSpeed: 3 + Math.random() * 5,
+		flickerAmt: 0.1 + Math.random() * 0.15,
+		phase: Math.random() * Math.PI * 2,
+		isWindow: true
+	} );
+
+}
+
+
+function createNeonRect( position, width, height, color, rotationY ) {
+
+	const thickness = 0.03;
+	const mat = new THREE.MeshBasicMaterial( { color } );
+
+	const group = new THREE.Group();
+	group.position.copy( position );
+	group.rotation.y = rotationY;
+
+	// Top
+	const top = new THREE.Mesh( new THREE.BoxGeometry( width, thickness, thickness ), mat );
+	top.position.set( 0, height / 2, 0 );
+	group.add( top );
+
+	// Bottom
+	const bottom = new THREE.Mesh( new THREE.BoxGeometry( width, thickness, thickness ), mat );
+	bottom.position.set( 0, - height / 2, 0 );
+	group.add( bottom );
+
+	// Left
+	const left = new THREE.Mesh( new THREE.BoxGeometry( thickness, height, thickness ), mat );
+	left.position.set( - width / 2, 0, 0 );
+	group.add( left );
+
+	// Right
+	const right = new THREE.Mesh( new THREE.BoxGeometry( thickness, height, thickness ), mat );
+	right.position.set( width / 2, 0, 0 );
+	group.add( right );
+
+	// Inner cross
+	if ( Math.random() > 0.4 ) {
+
+		const cross1 = new THREE.Mesh( new THREE.BoxGeometry( width * 0.6, thickness * 0.7, thickness ), mat );
+		cross1.position.set( 0, 0, 0 );
+		group.add( cross1 );
+
+	}
+
+	scene.add( group );
+
+	const flickerSpeed = 4 + Math.random() * 6;
+	const flickerAmt = 0.2 + Math.random() * 0.3;
+	group.children.forEach( child => {
+
+		neonObjects.push( {
+			mesh: child,
+			baseIntensity: 1,
+			flickerSpeed,
+			flickerAmt,
+			phase: Math.random() * Math.PI * 2
+		} );
+
+	} );
+
+}
+
+
+function createNeonCross( position, color, rotationY ) {
+
+	const mat = new THREE.MeshBasicMaterial( { color } );
+	const group = new THREE.Group();
+	group.position.copy( position );
+	group.rotation.y = rotationY;
+
+	const h = new THREE.Mesh( new THREE.BoxGeometry( 2.0, 0.06, 0.06 ), mat );
+	group.add( h );
+
+	const v = new THREE.Mesh( new THREE.BoxGeometry( 0.06, 2.0, 0.06 ), mat );
+	group.add( v );
+
+	scene.add( group );
+
+	group.children.forEach( child => {
+
+		neonObjects.push( {
+			mesh: child,
+			baseIntensity: 1,
+			flickerSpeed: 6,
+			flickerAmt: 0.4,
+			phase: Math.random() * Math.PI * 2
+		} );
+
+	} );
+
+}
+
+
+function createSteamParticles() {
+
+	const particleCount = 400;
+	const positions = new Float32Array( particleCount * 3 );
+	const velocities = new Float32Array( particleCount * 3 );
+	const lifetimes = new Float32Array( particleCount );
+	const maxLifetimes = new Float32Array( particleCount );
+
+	// Vent positions along the alley floor
+	const ventPositions = [
+		new THREE.Vector3( - 2, 0, 1 ),
+		new THREE.Vector3( 1, 0, - 3 ),
+		new THREE.Vector3( - 1, 0, - 7 ),
+		new THREE.Vector3( 2, 0, - 11 ),
+		new THREE.Vector3( - 3, 0, - 5 ),
+		new THREE.Vector3( 0, 0, - 14 )
+	];
+
+	for ( let i = 0; i < particleCount; i ++ ) {
+
+		const vent = ventPositions[ i % ventPositions.length ];
+		positions[ i * 3 ] = vent.x + ( Math.random() - 0.5 ) * 0.8;
+		positions[ i * 3 + 1 ] = Math.random() * 4;
+		positions[ i * 3 + 2 ] = vent.z + ( Math.random() - 0.5 ) * 0.8;
+
+		velocities[ i * 3 ] = ( Math.random() - 0.5 ) * 0.15;
+		velocities[ i * 3 + 1 ] = 0.3 + Math.random() * 0.5;
+		velocities[ i * 3 + 2 ] = ( Math.random() - 0.5 ) * 0.15;
+
+		maxLifetimes[ i ] = 2 + Math.random() * 3;
+		lifetimes[ i ] = Math.random() * maxLifetimes[ i ];
+
+	}
+
+	const geometry = new THREE.BufferGeometry();
+	geometry.setAttribute( 'position', new THREE.BufferAttribute( positions, 3 ) );
+
+	const spriteMat = new THREE.PointsMaterial( {
+		color: 0xaabbcc,
+		size: 0.12,
+		transparent: true,
+		opacity: 0.25,
+		depthWrite: false,
+		blending: THREE.AdditiveBlending
+	} );
+
+	particleSystem = new THREE.Points( geometry, spriteMat );
+	particleSystem.userData.velocities = velocities;
+	particleSystem.userData.lifetimes = lifetimes;
+	particleSystem.userData.maxLifetimes = maxLifetimes;
+	particleSystem.userData.ventPositions = ventPositions;
+	scene.add( particleSystem );
+
+}
+
+
+function updateParticles( dt ) {
+
+	if ( ! particleSystem ) return;
+
+	const positions = particleSystem.geometry.attributes.position.array;
+	const velocities = particleSystem.userData.velocities;
+	const lifetimes = particleSystem.userData.lifetimes;
+	const maxLifetimes = particleSystem.userData.maxLifetimes;
+	const vents = particleSystem.userData.ventPositions;
+	const count = positions.length / 3;
+
+	for ( let i = 0; i < count; i ++ ) {
+
+		lifetimes[ i ] += dt;
+
+		if ( lifetimes[ i ] >= maxLifetimes[ i ] ) {
+
+			// Respawn at a vent
+			const vent = vents[ Math.floor( Math.random() * vents.length ) ];
+			positions[ i * 3 ] = vent.x + ( Math.random() - 0.5 ) * 0.8;
+			positions[ i * 3 + 1 ] = 0;
+			positions[ i * 3 + 2 ] = vent.z + ( Math.random() - 0.5 ) * 0.8;
+
+			velocities[ i * 3 ] = ( Math.random() - 0.5 ) * 0.15;
+			velocities[ i * 3 + 1 ] = 0.3 + Math.random() * 0.5;
+			velocities[ i * 3 + 2 ] = ( Math.random() - 0.5 ) * 0.15;
+
+			maxLifetimes[ i ] = 2 + Math.random() * 3;
+			lifetimes[ i ] = 0;
+
+		}
+
+		positions[ i * 3 ] += velocities[ i * 3 ] * dt;
+		positions[ i * 3 + 1 ] += velocities[ i * 3 + 1 ] * dt;
+		positions[ i * 3 + 2 ] += velocities[ i * 3 + 2 ] * dt;
+
+		// Gentle drift
+		velocities[ i * 3 ] += ( Math.random() - 0.5 ) * 0.05 * dt;
+		velocities[ i * 3 + 2 ] += ( Math.random() - 0.5 ) * 0.05 * dt;
+
+	}
+
+	particleSystem.geometry.attributes.position.needsUpdate = true;
+
+}
+
+
+// ─── Composer Setup ──────────────────────────────────────────
+
+function setupComposer() {
+
+	const res = new THREE.Vector2( window.innerWidth, window.innerHeight );
+	composerBloom = new EffectComposer( renderer );
+	composerBloom.renderToScreen = false;
+	composerBloom.addPass( new RenderPass( scene, camera ) );
+	composerBloom.addPass( new UnrealBloomPass( res, params.bloomStrength, params.bloomRadius, params.bloomThreshold ) );
+	composerBloom.addPass( new OutputPass() );
+
+}
+
+
+function setupQuadBlit() {
+
+	quadScene = new THREE.Scene();
+	quadCam = new THREE.OrthographicCamera( - 1, 1, 1, - 1, 0, 1 );
+	quadMesh = new THREE.Mesh(
+		new THREE.PlaneGeometry( 2, 2 ),
+		new THREE.MeshBasicMaterial()
+	);
+	quadScene.add( quadMesh );
+
+}
+
+
+// ─── GUI ─────────────────────────────────────────────────────
+
+function setupGUI() {
+
+	const gui = new GUI();
+	const bloomFolder = gui.addFolder( 'Bloom' );
+	bloomFolder.add( params, 'bloomStrength', 0, 3, 0.01 ).name( 'Strength' ).onChange( v => {
+
+		composerBloom.passes[ 1 ].strength = v;
+
+	} );
+	bloomFolder.add( params, 'bloomThreshold', 0, 1, 0.01 ).name( 'Threshold' ).onChange( v => {
+
+		composerBloom.passes[ 1 ].threshold = v;
+
+	} );
+	bloomFolder.add( params, 'bloomRadius', 0, 2, 0.01 ).name( 'Radius' ).onChange( v => {
+
+		composerBloom.passes[ 1 ].radius = v;
+
+	} );
+	bloomFolder.open();
+
+	const sceneFolder = gui.addFolder( 'Scene' );
+	sceneFolder.add( params, 'exposure', 0.05, 5, 0.05 ).name( 'Exposure' ).onChange( v => {
+
+		renderer.toneMappingExposure = v;
+
+	} );
+	sceneFolder.add( params, 'neonIntensity', 0.5, 5, 0.01 ).name( 'Neon Intensity' );
+	sceneFolder.open();
+
+}
+
+
+// ─── Resize ──────────────────────────────────────────────────
+
+function onResize() {
+
+	const w = window.innerWidth;
+	const h = window.innerHeight;
+	const halfW = Math.floor( w / 2 );
+	camera.aspect = halfW / h;
+	camera.updateProjectionMatrix();
+	renderer.setSize( w, h );
+	composerBloom.setSize( halfW, h );
+
+}
+
+
+// ─── Animation Loop ─────────────────────────────────────────
+
+function animate() {
+
+	const dt = clock.getDelta();
+	const elapsed = clock.getElapsedTime();
+
+	controls.update();
+
+	// Update neon flicker
+	for ( const obj of neonObjects ) {
+
+		if ( obj.flickerSpeed === 0 ) continue;
+
+		const phase = obj.phase || 0;
+		const flicker = 1 - obj.flickerAmt * 0.5 * (
+			Math.sin( elapsed * obj.flickerSpeed + phase ) +
+			Math.sin( elapsed * obj.flickerSpeed * 2.3 + phase * 1.7 ) * 0.3 +
+			( Math.random() > 0.995 ? 0.5 : 0 )  // rare random spike
+		);
+		const intensity = obj.baseIntensity * flicker * params.neonIntensity / 2.22;
+
+		if ( obj.isLight ) {
+
+			obj.mesh.material.intensity = intensity;
+
+		} else if ( obj.isWindow ) {
+
+			obj.mesh.material.opacity = Math.min( 1, intensity * 0.6 );
+
+		} else {
+
+			const c = obj.mesh.material.color;
+			const hsl = {};
+			c.getHSL( hsl );
+			c.setHSL( hsl.h, hsl.s, Math.min( 1, 0.5 * intensity ) );
+
+		}
+
+	}
+
+	// Update particles
+	updateParticles( dt );
+
+	// ── Split-screen render ─────────────────────────────────
+	const w = window.innerWidth;
+	const h = window.innerHeight;
+	const halfW = Math.floor( w / 2 );
+
+	camera.aspect = halfW / h;
+	camera.updateProjectionMatrix();
+
+	// Left: raw render (no bloom)
+	renderer.setScissorTest( true );
+	renderer.setViewport( 0, 0, halfW, h );
+	renderer.setScissor( 0, 0, halfW, h );
+	renderer.render( scene, camera );
+
+	// Right: bloom pass
+	renderer.setScissorTest( false );
+	composerBloom.setSize( halfW, h );
+	composerBloom.render();
+
+	// Blit bloom result to right half
+	renderer.setScissorTest( true );
+	renderer.setViewport( halfW, 0, w - halfW, h );
+	renderer.setScissor( halfW, 0, w - halfW, h );
+	renderer.setRenderTarget( null );
+
+	quadMesh.material.map = composerBloom.readBuffer.texture;
+	renderer.render( quadScene, quadCam );
+
+	renderer.setScissorTest( false );
+
+}
+</script>
+<script src="../shared/demo-nav.js"></script>
+</body>
+</html>

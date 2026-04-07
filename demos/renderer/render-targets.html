@@ -1,0 +1,372 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<title>Render Targets - Three.js Encyclopedia</title>
+	<meta charset="utf-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<link rel="stylesheet" href="../shared/demo-base.css">
+</head>
+<body>
+<a href="../index.html" id="back-btn">&larr; Hub</a>
+<div id="info">
+	<strong>Render Targets (Scene-in-a-TV)</strong><br>
+	A secondary scene is rendered to a texture, then displayed on screens in the main scene
+</div>
+<div id="container"></div>
+
+<script type="importmap">
+{
+	"imports": {
+		"three": "https://cdn.jsdelivr.net/npm/three@0.183.0/build/three.module.js",
+		"three/addons/": "https://cdn.jsdelivr.net/npm/three@0.183.0/examples/jsm/"
+	}
+}
+</script>
+
+<script type="module">
+import * as THREE from 'three';
+import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+import { GUI } from 'three/addons/libs/lil-gui.module.min.js';
+
+const container = document.getElementById( 'container' );
+const renderer = new THREE.WebGLRenderer( { antialias: true } );
+renderer.setPixelRatio( window.devicePixelRatio );
+renderer.setSize( window.innerWidth, window.innerHeight );
+renderer.toneMapping = THREE.ACESFilmicToneMapping;
+renderer.toneMappingExposure = 1.2;
+renderer.shadowMap.enabled = true;
+renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+container.appendChild( renderer.domElement );
+
+// --- Main scene ---
+const mainScene = new THREE.Scene();
+mainScene.background = new THREE.Color( 0x0a0e1a );
+mainScene.fog = new THREE.FogExp2( 0x0a0e1a, 0.015 );
+
+const mainCamera = new THREE.PerspectiveCamera( 50, window.innerWidth / window.innerHeight, 0.1, 200 );
+mainCamera.position.set( 8, 5, 10 );
+
+const controls = new OrbitControls( mainCamera, renderer.domElement );
+controls.enableDamping = true;
+controls.dampingFactor = 0.08;
+controls.target.set( 0, 2, 0 );
+
+// --- Render target ---
+let rtWidth = 512, rtHeight = 512;
+let renderTarget = new THREE.WebGLRenderTarget( rtWidth, rtHeight, {
+	minFilter: THREE.LinearFilter,
+	magFilter: THREE.LinearFilter,
+	format: THREE.RGBAFormat,
+	type: THREE.UnsignedByteType
+} );
+
+// --- Secondary scene (rendered to texture) ---
+const subScene = new THREE.Scene();
+subScene.background = new THREE.Color( 0x050818 );
+
+const subCamera = new THREE.PerspectiveCamera( 60, 1, 0.1, 100 );
+subCamera.position.set( 5, 4, 6 );
+subCamera.lookAt( 0, 0, 0 );
+
+// Sub-scene lights
+const subAmbient = new THREE.AmbientLight( 0x404060, 0.5 );
+subScene.add( subAmbient );
+
+const subLight1 = new THREE.PointLight( 0xff4488, 4, 20 );
+subLight1.position.set( 3, 4, 3 );
+subScene.add( subLight1 );
+
+const subLight2 = new THREE.PointLight( 0x44aaff, 4, 20 );
+subLight2.position.set( - 3, 3, - 2 );
+subScene.add( subLight2 );
+
+const subLight3 = new THREE.PointLight( 0x44ff88, 3, 15 );
+subLight3.position.set( 0, 5, - 3 );
+subScene.add( subLight3 );
+
+// Sub-scene objects
+const knotGeo = new THREE.TorusKnotGeometry( 1.0, 0.35, 128, 32, 2, 3 );
+const knotMat = new THREE.MeshStandardMaterial( {
+	color: 0xff6644,
+	roughness: 0.15,
+	metalness: 0.85
+} );
+const subKnot = new THREE.Mesh( knotGeo, knotMat );
+subScene.add( subKnot );
+
+// Orbiting spheres in sub-scene
+const subSpheres = [];
+const subSphereGeo = new THREE.SphereGeometry( 0.3, 24, 16 );
+const subColors = [ 0xff4488, 0x44aaff, 0x44ff88, 0xffaa44, 0xaa44ff ];
+for ( let i = 0; i < 5; i ++ ) {
+
+	const mat = new THREE.MeshStandardMaterial( {
+		color: subColors[ i ],
+		emissive: subColors[ i ],
+		emissiveIntensity: 0.5,
+		roughness: 0.2,
+		metalness: 0.7
+	} );
+	const sphere = new THREE.Mesh( subSphereGeo, mat );
+	subScene.add( sphere );
+	subSpheres.push( sphere );
+
+}
+
+// Sub-scene starfield
+const starGeo = new THREE.BufferGeometry();
+const starPositions = new Float32Array( 600 * 3 );
+for ( let i = 0; i < 600; i ++ ) {
+
+	starPositions[ i * 3 ] = ( Math.random() - 0.5 ) * 40;
+	starPositions[ i * 3 + 1 ] = ( Math.random() - 0.5 ) * 40;
+	starPositions[ i * 3 + 2 ] = ( Math.random() - 0.5 ) * 40;
+
+}
+starGeo.setAttribute( 'position', new THREE.BufferAttribute( starPositions, 3 ) );
+const starMat = new THREE.PointsMaterial( { color: 0xffffff, size: 0.08 } );
+subScene.add( new THREE.Points( starGeo, starMat ) );
+
+// --- Main scene lighting ---
+const mainAmbient = new THREE.AmbientLight( 0x303850, 0.5 );
+mainScene.add( mainAmbient );
+
+const mainDirLight = new THREE.DirectionalLight( 0xffeedd, 2.5 );
+mainDirLight.position.set( 8, 12, 6 );
+mainDirLight.castShadow = true;
+mainDirLight.shadow.mapSize.set( 2048, 2048 );
+mainDirLight.shadow.camera.left = - 10;
+mainDirLight.shadow.camera.right = 10;
+mainDirLight.shadow.camera.top = 10;
+mainDirLight.shadow.camera.bottom = - 10;
+mainDirLight.shadow.bias = - 0.001;
+mainScene.add( mainDirLight );
+
+const mainFill = new THREE.DirectionalLight( 0x4488ff, 0.4 );
+mainFill.position.set( - 5, 5, - 3 );
+mainScene.add( mainFill );
+
+// --- Main scene ground ---
+const ground = new THREE.Mesh(
+	new THREE.PlaneGeometry( 60, 60 ),
+	new THREE.MeshStandardMaterial( { color: 0x0d1220, roughness: 0.85, metalness: 0.15 } )
+);
+ground.rotation.x = - Math.PI / 2;
+ground.receiveShadow = true;
+mainScene.add( ground );
+
+const grid = new THREE.GridHelper( 30, 30, 0x1a2540, 0x111a2e );
+grid.position.y = 0.01;
+mainScene.add( grid );
+
+// --- TV / Monitor screens in main scene ---
+const screenMat = new THREE.MeshBasicMaterial( { map: renderTarget.texture } );
+
+// Main large screen (flat panel TV)
+const tvGroup = new THREE.Group();
+
+// TV frame
+const frameMat = new THREE.MeshStandardMaterial( { color: 0x1a1a2e, roughness: 0.4, metalness: 0.8 } );
+
+// Back panel
+const backPanel = new THREE.Mesh(
+	new THREE.BoxGeometry( 4.4, 3.0, 0.15 ),
+	frameMat
+);
+backPanel.position.z = - 0.1;
+tvGroup.add( backPanel );
+
+// Screen
+const tvScreen = new THREE.Mesh(
+	new THREE.PlaneGeometry( 4, 2.6 ),
+	screenMat
+);
+tvScreen.position.z = 0.01;
+tvGroup.add( tvScreen );
+
+// Bezel glow
+const bezelGeo = new THREE.EdgesGeometry( new THREE.BoxGeometry( 4.2, 2.8, 0.05 ) );
+const bezelMat = new THREE.LineBasicMaterial( { color: 0x4a9eff } );
+const bezel = new THREE.LineSegments( bezelGeo, bezelMat );
+bezel.position.z = 0.01;
+tvGroup.add( bezel );
+
+// Stand
+const standPole = new THREE.Mesh(
+	new THREE.CylinderGeometry( 0.08, 0.08, 1.5, 8 ),
+	frameMat
+);
+standPole.position.set( 0, - 2.0, - 0.05 );
+tvGroup.add( standPole );
+
+const standBase = new THREE.Mesh(
+	new THREE.CylinderGeometry( 0.6, 0.7, 0.1, 16 ),
+	frameMat
+);
+standBase.position.set( 0, - 2.75, 0 );
+tvGroup.add( standBase );
+
+tvGroup.position.set( 0, 3.5, - 3 );
+tvGroup.castShadow = true;
+mainScene.add( tvGroup );
+
+// Side monitor (angled)
+const sideMonitor = new THREE.Group();
+const sideScreen = new THREE.Mesh(
+	new THREE.PlaneGeometry( 2.2, 1.6 ),
+	screenMat
+);
+sideMonitor.add( sideScreen );
+
+const sideFrame = new THREE.Mesh(
+	new THREE.BoxGeometry( 2.5, 1.9, 0.1 ),
+	frameMat
+);
+sideFrame.position.z = - 0.08;
+sideMonitor.add( sideFrame );
+
+const sideBezel = new THREE.LineSegments(
+	new THREE.EdgesGeometry( new THREE.BoxGeometry( 2.3, 1.7, 0.04 ) ),
+	new THREE.LineBasicMaterial( { color: 0x22c55e } )
+);
+sideMonitor.add( sideBezel );
+
+sideMonitor.position.set( - 5, 2.5, - 1 );
+sideMonitor.rotation.y = Math.PI / 5;
+mainScene.add( sideMonitor );
+
+// Floating screen cube
+const cubeScreenMat = new THREE.MeshBasicMaterial( { map: renderTarget.texture } );
+const cubeSideMat = new THREE.MeshStandardMaterial( { color: 0x151c2e, roughness: 0.4, metalness: 0.7 } );
+const cubeScreen = new THREE.Mesh(
+	new THREE.BoxGeometry( 1.8, 1.8, 1.8 ),
+	[
+		cubeScreenMat, cubeScreenMat,
+		cubeSideMat, cubeSideMat,
+		cubeScreenMat, cubeScreenMat
+	]
+);
+cubeScreen.position.set( 5, 3, 0 );
+cubeScreen.castShadow = true;
+mainScene.add( cubeScreen );
+
+// Decorative elements in main scene
+const pedestalGeo = new THREE.CylinderGeometry( 0.4, 0.5, 0.8, 16 );
+const pedestalMat = new THREE.MeshStandardMaterial( { color: 0x151c2e, roughness: 0.5, metalness: 0.5 } );
+
+for ( let i = 0; i < 3; i ++ ) {
+
+	const pedestal = new THREE.Mesh( pedestalGeo, pedestalMat );
+	pedestal.position.set( - 2 + i * 2, 0.4, 2 );
+	pedestal.castShadow = true;
+	pedestal.receiveShadow = true;
+	mainScene.add( pedestal );
+
+	const orbGeo = new THREE.SphereGeometry( 0.2, 16, 12 );
+	const orbMat = new THREE.MeshStandardMaterial( {
+		color: subColors[ i ],
+		emissive: subColors[ i ],
+		emissiveIntensity: 0.6,
+		roughness: 0.1,
+		metalness: 0.9
+	} );
+	const orb = new THREE.Mesh( orbGeo, orbMat );
+	orb.position.set( - 2 + i * 2, 1.0, 2 );
+	mainScene.add( orb );
+
+}
+
+// --- GUI ---
+const params = {
+	resolution: 512,
+	autoRotate: true
+};
+
+const gui = new GUI();
+gui.title( 'Render Target' );
+
+gui.add( params, 'resolution', { '128x128': 128, '256x256': 256, '512x512': 512, '1024x1024': 1024, '2048x2048': 2048 } ).name( 'RT Resolution' ).onChange( v => {
+
+	rtWidth = v;
+	rtHeight = v;
+	renderTarget.dispose();
+	renderTarget = new THREE.WebGLRenderTarget( rtWidth, rtHeight, {
+		minFilter: THREE.LinearFilter,
+		magFilter: THREE.LinearFilter,
+		format: THREE.RGBAFormat
+	} );
+	screenMat.map = renderTarget.texture;
+	screenMat.needsUpdate = true;
+	cubeScreenMat.map = renderTarget.texture;
+	cubeScreenMat.needsUpdate = true;
+
+} );
+
+gui.add( params, 'autoRotate' ).name( 'Auto Rotate' );
+
+// --- Animate ---
+const clock = new THREE.Clock();
+
+function animate() {
+
+	requestAnimationFrame( animate );
+	const elapsed = clock.getElapsedTime();
+
+	// Animate sub-scene
+	subKnot.rotation.y = elapsed * 0.5;
+	subKnot.rotation.x = elapsed * 0.25;
+
+	subSpheres.forEach( ( s, i ) => {
+
+		const angle = elapsed * 0.6 + ( i / 5 ) * Math.PI * 2;
+		const r = 2.5;
+		s.position.set(
+			Math.cos( angle ) * r,
+			Math.sin( elapsed * 1.2 + i ) * 0.8,
+			Math.sin( angle ) * r
+		);
+
+	} );
+
+	subLight1.position.x = Math.sin( elapsed * 0.7 ) * 4;
+	subLight1.position.z = Math.cos( elapsed * 0.7 ) * 4;
+	subLight2.position.x = Math.cos( elapsed * 0.5 ) * 3;
+
+	// Animate sub-scene camera orbit
+	subCamera.position.x = Math.sin( elapsed * 0.2 ) * 6;
+	subCamera.position.z = Math.cos( elapsed * 0.2 ) * 6;
+	subCamera.position.y = 3 + Math.sin( elapsed * 0.15 ) * 1.5;
+	subCamera.lookAt( 0, 0, 0 );
+
+	// Render sub-scene to render target
+	renderer.setRenderTarget( renderTarget );
+	renderer.render( subScene, subCamera );
+	renderer.setRenderTarget( null );
+
+	// Animate main scene
+	if ( params.autoRotate ) {
+
+		cubeScreen.rotation.y = elapsed * 0.3;
+		cubeScreen.rotation.x = Math.sin( elapsed * 0.4 ) * 0.2;
+		cubeScreen.position.y = 3 + Math.sin( elapsed * 0.8 ) * 0.3;
+
+	}
+
+	controls.update();
+	renderer.render( mainScene, mainCamera );
+
+}
+
+animate();
+
+window.addEventListener( 'resize', () => {
+
+	mainCamera.aspect = window.innerWidth / window.innerHeight;
+	mainCamera.updateProjectionMatrix();
+	renderer.setSize( window.innerWidth, window.innerHeight );
+
+} );
+</script>
+<script src="../shared/demo-nav.js"></script>
+</body>
+</html>

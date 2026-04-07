@@ -1,0 +1,557 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="utf-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1">
+	<title>God Rays - Three.js Demo</title>
+	<link rel="stylesheet" href="../shared/demo-base.css">
+</head>
+<body>
+	<a id="back-btn" href="../index.html">Back</a>
+	<div id="info">
+		<strong>Volumetric God Rays</strong><br>
+		Light shafts emanating from a bright source behind silhouetted objects.
+	</div>
+	<div id="loading-overlay" style="position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(10,14,26,0.95);display:flex;align-items:center;justify-content:center;z-index:1000;color:#4a9eff;font-family:Inter,system-ui,sans-serif;font-size:16px;">Loading model...</div>
+	<div id="container"></div>
+
+	<script type="importmap">
+	{
+		"imports": {
+			"three": "https://cdn.jsdelivr.net/npm/three@0.183.0/build/three.module.js",
+			"three/addons/": "https://cdn.jsdelivr.net/npm/three@0.183.0/examples/jsm/"
+		}
+	}
+	</script>
+
+	<script type="module">
+		import * as THREE from 'three';
+		import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+		import { EffectComposer } from 'three/addons/postprocessing/EffectComposer.js';
+		import { RenderPass } from 'three/addons/postprocessing/RenderPass.js';
+		import { ShaderPass } from 'three/addons/postprocessing/ShaderPass.js';
+		import { OutputPass } from 'three/addons/postprocessing/OutputPass.js';
+		import { Pass, FullScreenQuad } from 'three/addons/postprocessing/Pass.js';
+		import { GUI } from 'three/addons/libs/lil-gui.module.min.js';
+		import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
+		import { DRACOLoader } from 'three/addons/loaders/DRACOLoader.js';
+
+		// Volumetric scattering shader (screen-space radial blur)
+		const VolumetricLightShader = {
+			uniforms: {
+				tDiffuse: { value: null },
+				lightPosition: { value: new THREE.Vector2( 0.5, 0.5 ) },
+				exposure: { value: 0.3 },
+				decay: { value: 0.95 },
+				density: { value: 0.8 },
+				weight: { value: 0.5 },
+				samples: { value: 50 }
+			},
+			vertexShader: `
+				varying vec2 vUv;
+				void main() {
+					vUv = uv;
+					gl_Position = projectionMatrix * modelViewMatrix * vec4( position, 1.0 );
+				}
+			`,
+			fragmentShader: `
+				varying vec2 vUv;
+				uniform sampler2D tDiffuse;
+				uniform vec2 lightPosition;
+				uniform float exposure;
+				uniform float decay;
+				uniform float density;
+				uniform float weight;
+				uniform int samples;
+
+				const int MAX_SAMPLES = 100;
+
+				void main() {
+					vec2 texCoord = vUv;
+					vec2 deltaTexCoord = ( texCoord - lightPosition );
+					deltaTexCoord *= 1.0 / float( samples ) * density;
+
+					float illuminationDecay = 1.0;
+					vec4 fragColor = vec4( 0.0 );
+
+					for ( int i = 0; i < MAX_SAMPLES; i++ ) {
+						if ( i >= samples ) break;
+						texCoord -= deltaTexCoord;
+						vec4 texSample = texture2D( tDiffuse, texCoord );
+						texSample *= illuminationDecay * weight;
+						fragColor += texSample;
+						illuminationDecay *= decay;
+					}
+
+					fragColor *= exposure;
+					gl_FragColor = fragColor;
+				}
+			`
+		};
+
+		// Additive blend shader
+		const AdditiveBlendShader = {
+			uniforms: {
+				tDiffuse: { value: null },
+				tAdd: { value: null },
+				fIntensity: { value: 1.0 }
+			},
+			vertexShader: `
+				varying vec2 vUv;
+				void main() {
+					vUv = uv;
+					gl_Position = projectionMatrix * modelViewMatrix * vec4( position, 1.0 );
+				}
+			`,
+			fragmentShader: `
+				varying vec2 vUv;
+				uniform sampler2D tDiffuse;
+				uniform sampler2D tAdd;
+				uniform float fIntensity;
+
+				void main() {
+					vec4 base = texture2D( tDiffuse, vUv );
+					vec4 add = texture2D( tAdd, vUv );
+					gl_FragColor = base + add * fIntensity;
+				}
+			`
+		};
+
+		// Custom pass: renders occlusion scene, applies volumetric blur, stores result
+		class GodRaysPass extends Pass {
+
+			constructor( occlusionScene, camera, sunRef ) {
+
+				super();
+
+				this.occlusionScene = occlusionScene;
+				this.camera = camera;
+				this.sunRef = sunRef;
+
+				const w = window.innerWidth;
+				const h = window.innerHeight;
+
+				this.occlusionRT = new THREE.WebGLRenderTarget( w / 2, h / 2 );
+				this.godRaysRT = new THREE.WebGLRenderTarget( w / 2, h / 2 );
+
+				this.volumetricMaterial = new THREE.ShaderMaterial( {
+					uniforms: THREE.UniformsUtils.clone( VolumetricLightShader.uniforms ),
+					vertexShader: VolumetricLightShader.vertexShader,
+					fragmentShader: VolumetricLightShader.fragmentShader
+				} );
+
+				this.blendMaterial = new THREE.ShaderMaterial( {
+					uniforms: THREE.UniformsUtils.clone( AdditiveBlendShader.uniforms ),
+					vertexShader: AdditiveBlendShader.vertexShader,
+					fragmentShader: AdditiveBlendShader.fragmentShader
+				} );
+
+				this.fsQuadVolumetric = new FullScreenQuad( this.volumetricMaterial );
+				this.fsQuadBlend = new FullScreenQuad( this.blendMaterial );
+
+				this.params = {
+					exposure: 0.3,
+					decay: 0.95,
+					density: 0.8,
+					weight: 0.5,
+					intensity: 1.0,
+					samples: 60
+				};
+
+			}
+
+			render( renderer, writeBuffer, readBuffer ) {
+
+				// Project sun to screen space
+				const pos = this.sunRef.position.clone();
+				pos.project( this.camera );
+				const sunScreen = new THREE.Vector2( ( pos.x + 1 ) / 2, ( pos.y + 1 ) / 2 );
+
+				// 1. Render occlusion scene
+				renderer.setRenderTarget( this.occlusionRT );
+				renderer.render( this.occlusionScene, this.camera );
+
+				// 2. Apply volumetric light scatter
+				this.volumetricMaterial.uniforms.tDiffuse.value = this.occlusionRT.texture;
+				this.volumetricMaterial.uniforms.lightPosition.value.copy( sunScreen );
+				this.volumetricMaterial.uniforms.exposure.value = this.params.exposure;
+				this.volumetricMaterial.uniforms.decay.value = this.params.decay;
+				this.volumetricMaterial.uniforms.density.value = this.params.density;
+				this.volumetricMaterial.uniforms.weight.value = this.params.weight;
+				this.volumetricMaterial.uniforms.samples.value = this.params.samples;
+
+				renderer.setRenderTarget( this.godRaysRT );
+				this.fsQuadVolumetric.render( renderer );
+
+				// 3. Blend god rays with the scene
+				this.blendMaterial.uniforms.tDiffuse.value = readBuffer.texture;
+				this.blendMaterial.uniforms.tAdd.value = this.godRaysRT.texture;
+				this.blendMaterial.uniforms.fIntensity.value = this.params.intensity;
+
+				if ( this.renderToScreen ) {
+
+					renderer.setRenderTarget( null );
+
+				} else {
+
+					renderer.setRenderTarget( writeBuffer );
+
+				}
+
+				this.fsQuadBlend.render( renderer );
+
+			}
+
+			setSize( w, h ) {
+
+				this.occlusionRT.setSize( w / 2, h / 2 );
+				this.godRaysRT.setSize( w / 2, h / 2 );
+
+			}
+
+			dispose() {
+
+				this.occlusionRT.dispose();
+				this.godRaysRT.dispose();
+				this.volumetricMaterial.dispose();
+				this.blendMaterial.dispose();
+				this.fsQuadVolumetric.dispose();
+				this.fsQuadBlend.dispose();
+
+			}
+
+		}
+
+		// -- Renderer --
+		const renderer = new THREE.WebGLRenderer( { antialias: true } );
+		renderer.setPixelRatio( window.devicePixelRatio );
+		renderer.setSize( window.innerWidth, window.innerHeight );
+		renderer.toneMapping = THREE.ACESFilmicToneMapping;
+		renderer.toneMappingExposure = 1.0;
+		document.getElementById( 'container' ).appendChild( renderer.domElement );
+
+		// -- Main scene --
+		const scene = new THREE.Scene();
+		scene.background = new THREE.Color( 0x000510 );
+		scene.fog = new THREE.FogExp2( 0x000510, 0.025 );
+
+		// -- Occlusion scene (black silhouettes, bright light source) --
+		const occlusionScene = new THREE.Scene();
+		occlusionScene.background = new THREE.Color( 0x000000 );
+		const blackMat = new THREE.MeshBasicMaterial( { color: 0x000000 } );
+
+		// -- Camera --
+		const camera = new THREE.PerspectiveCamera( 50, window.innerWidth / window.innerHeight, 0.1, 200 );
+		camera.position.set( 0, 3, 12 );
+
+		// -- Controls --
+		const controls = new OrbitControls( camera, renderer.domElement );
+		controls.target.set( 0, 2, 0 );
+		controls.enableDamping = true;
+		controls.dampingFactor = 0.05;
+		controls.update();
+
+		// -- Lights for main scene --
+		scene.add( new THREE.AmbientLight( 0x101025, 0.8 ) );
+
+		const dirLight = new THREE.DirectionalLight( 0xffdda0, 1.5 );
+		dirLight.position.set( 0, 8, -10 );
+		scene.add( dirLight );
+
+		const backLight = new THREE.PointLight( 0xffcc77, 2.0, 30 );
+		backLight.position.set( 0, 6, -8 );
+		scene.add( backLight );
+
+		// -- Sun / light source (behind scene) --
+		const sunGeo = new THREE.SphereGeometry( 2.0, 32, 32 );
+		const sunMat = new THREE.MeshBasicMaterial( { color: 0xffddaa } );
+		const sun = new THREE.Mesh( sunGeo, sunMat );
+		sun.position.set( 0, 5, -12 );
+		scene.add( sun );
+
+		// Sun glow halos for atmospheric bloom
+		const innerGlowGeo = new THREE.SphereGeometry( 4.0, 16, 16 );
+		const innerGlowMat = new THREE.MeshBasicMaterial( {
+			color: 0xffee88,
+			transparent: true,
+			opacity: 0.15,
+			depthWrite: false
+		} );
+		sun.add( new THREE.Mesh( innerGlowGeo, innerGlowMat ) );
+
+		const outerGlowGeo = new THREE.SphereGeometry( 7.0, 16, 16 );
+		const outerGlowMat = new THREE.MeshBasicMaterial( {
+			color: 0xffdd66,
+			transparent: true,
+			opacity: 0.06,
+			depthWrite: false
+		} );
+		sun.add( new THREE.Mesh( outerGlowGeo, outerGlowMat ) );
+
+		// Occlusion sun (bright)
+		const occlusionSun = new THREE.Mesh( sunGeo, new THREE.MeshBasicMaterial( { color: 0xffffee } ) );
+		occlusionSun.position.copy( sun.position );
+		occlusionScene.add( occlusionSun );
+
+		// -- Ground --
+		const ground = new THREE.Mesh(
+			new THREE.PlaneGeometry( 50, 50 ),
+			new THREE.MeshStandardMaterial( { color: 0x0a0e1a, roughness: 0.9, metalness: 0.1 } )
+		);
+		ground.rotation.x = -Math.PI / 2;
+		scene.add( ground );
+
+		const occGround = new THREE.Mesh( new THREE.PlaneGeometry( 50, 50 ), blackMat );
+		occGround.rotation.x = -Math.PI / 2;
+		occlusionScene.add( occGround );
+
+		// -- Silhouette objects --
+		function addSilhouetteObject( geo, pos, rot ) {
+
+			const mainMesh = new THREE.Mesh( geo,
+				new THREE.MeshStandardMaterial( { color: 0x0a0e1a, roughness: 0.9, metalness: 0.0 } )
+			);
+			mainMesh.position.copy( pos );
+			if ( rot ) mainMesh.rotation.copy( rot );
+			scene.add( mainMesh );
+
+			const occMesh = new THREE.Mesh( geo, blackMat );
+			occMesh.position.copy( pos );
+			if ( rot ) occMesh.rotation.copy( rot );
+			occlusionScene.add( occMesh );
+
+			return { main: mainMesh, occ: occMesh };
+
+		}
+
+		// Pillars
+		for ( let i = -3; i <= 3; i++ ) {
+
+			if ( i === 0 ) continue;
+			addSilhouetteObject(
+				new THREE.CylinderGeometry( 0.3, 0.35, 6, 16 ),
+				new THREE.Vector3( i * 2.5, 3, -4 )
+			);
+
+		}
+
+		// Central arch
+		addSilhouetteObject(
+			new THREE.BoxGeometry( 8, 0.8, 0.6 ),
+			new THREE.Vector3( 0, 6, -4 )
+		);
+
+		// Tree-like structures on sides
+		addSilhouetteObject(
+			new THREE.ConeGeometry( 1.5, 5, 8 ),
+			new THREE.Vector3( -8, 2.5, -6 )
+		);
+		addSilhouetteObject(
+			new THREE.ConeGeometry( 1.2, 4, 8 ),
+			new THREE.Vector3( -7, 2.0, -5 )
+		);
+		addSilhouetteObject(
+			new THREE.ConeGeometry( 1.5, 5, 8 ),
+			new THREE.Vector3( 8, 2.5, -6 )
+		);
+		addSilhouetteObject(
+			new THREE.ConeGeometry( 1.0, 3.5, 8 ),
+			new THREE.Vector3( 7, 1.75, -5 )
+		);
+
+		// Floating cross
+		const crossGroup = new THREE.Group();
+		const crossMat = new THREE.MeshStandardMaterial( { color: 0x0a0e1a, roughness: 0.9 } );
+		const vBar = new THREE.Mesh( new THREE.BoxGeometry( 0.4, 4, 0.4 ), crossMat );
+		const hBar = new THREE.Mesh( new THREE.BoxGeometry( 2.5, 0.4, 0.4 ), crossMat );
+		hBar.position.y = 0.8;
+		crossGroup.add( vBar, hBar );
+		crossGroup.position.set( 0, 5, -6 );
+		scene.add( crossGroup );
+
+		const occCrossGroup = new THREE.Group();
+		const vBarOcc = new THREE.Mesh( new THREE.BoxGeometry( 0.4, 4, 0.4 ), blackMat );
+		const hBarOcc = new THREE.Mesh( new THREE.BoxGeometry( 2.5, 0.4, 0.4 ), blackMat );
+		hBarOcc.position.y = 0.8;
+		occCrossGroup.add( vBarOcc, hBarOcc );
+		occCrossGroup.position.set( 0, 5, -6 );
+		occlusionScene.add( occCrossGroup );
+
+		// -- Load God Rays Demo Model --
+		const dracoLoader = new DRACOLoader();
+		dracoLoader.setDecoderPath( '../../examples/jsm/libs/draco/gltf/' );
+		const gltfLoader = new GLTFLoader();
+		gltfLoader.setDRACOLoader( dracoLoader );
+
+		gltfLoader.load( '../../examples/models/gltf/godrays_demo.glb', ( gltf ) => {
+
+			const model = gltf.scene;
+
+			const box = new THREE.Box3().setFromObject( model );
+			const size = box.getSize( new THREE.Vector3() );
+			const center = box.getCenter( new THREE.Vector3() );
+			const maxDim = Math.max( size.x, size.y, size.z );
+			const scale = 6 / maxDim;
+			model.scale.setScalar( scale );
+			model.position.set( - center.x * scale, - box.min.y * scale, - center.z * scale - 2 );
+
+			model.traverse( ( child ) => {
+
+				if ( child.isMesh ) {
+
+					child.castShadow = true;
+					child.receiveShadow = true;
+
+				}
+
+			} );
+			scene.add( model );
+
+			// Also add a black silhouette version to the occlusion scene
+			const occModel = model.clone( true );
+			occModel.traverse( ( child ) => {
+
+				if ( child.isMesh ) {
+
+					child.material = blackMat;
+
+				}
+
+			} );
+			occlusionScene.add( occModel );
+
+			const overlay = document.getElementById( 'loading-overlay' );
+			if ( overlay ) overlay.style.display = 'none';
+
+		} );
+
+		// -- Floating dust particles --
+		const dustCount = 500;
+		const dustPositions = new Float32Array( dustCount * 3 );
+		const dustVelocities = new Float32Array( dustCount * 3 );
+		const dustPhases = new Float32Array( dustCount );
+
+		for ( let i = 0; i < dustCount; i++ ) {
+
+			dustPositions[ i * 3 ] = ( Math.random() - 0.5 ) * 30;
+			dustPositions[ i * 3 + 1 ] = 0.5 + Math.random() * 12;
+			dustPositions[ i * 3 + 2 ] = ( Math.random() - 0.5 ) * 30;
+
+			dustVelocities[ i * 3 ] = ( Math.random() - 0.5 ) * 0.08;
+			dustVelocities[ i * 3 + 1 ] = ( Math.random() - 0.5 ) * 0.02;
+			dustVelocities[ i * 3 + 2 ] = ( Math.random() - 0.5 ) * 0.08;
+
+			dustPhases[ i ] = Math.random() * Math.PI * 2;
+
+		}
+
+		const dustGeometry = new THREE.BufferGeometry();
+		dustGeometry.setAttribute( 'position', new THREE.BufferAttribute( dustPositions, 3 ) );
+
+		const dustMaterial = new THREE.PointsMaterial( {
+			color: 0xffe8a0,
+			size: 0.08,
+			transparent: true,
+			opacity: 0.5,
+			depthWrite: false,
+			blending: THREE.AdditiveBlending,
+			sizeAttenuation: true
+		} );
+
+		const dustParticles = new THREE.Points( dustGeometry, dustMaterial );
+		scene.add( dustParticles );
+
+		function updateDustMotes( elapsed, dt ) {
+
+			const positions = dustGeometry.attributes.position.array;
+
+			for ( let i = 0; i < dustCount; i++ ) {
+
+				const phase = dustPhases[ i ];
+
+				positions[ i * 3 ] += dustVelocities[ i * 3 ] * dt + Math.sin( elapsed * 0.3 + phase ) * 0.003;
+				positions[ i * 3 + 1 ] += dustVelocities[ i * 3 + 1 ] * dt + Math.sin( elapsed * 0.5 + phase * 1.3 ) * 0.002;
+				positions[ i * 3 + 2 ] += dustVelocities[ i * 3 + 2 ] * dt + Math.cos( elapsed * 0.4 + phase * 0.7 ) * 0.003;
+
+				if ( positions[ i * 3 ] > 15 ) positions[ i * 3 ] = -15;
+				if ( positions[ i * 3 ] < -15 ) positions[ i * 3 ] = 15;
+				if ( positions[ i * 3 + 1 ] > 13 ) positions[ i * 3 + 1 ] = 0.5;
+				if ( positions[ i * 3 + 1 ] < 0.5 ) positions[ i * 3 + 1 ] = 13;
+				if ( positions[ i * 3 + 2 ] > 15 ) positions[ i * 3 + 2 ] = -15;
+				if ( positions[ i * 3 + 2 ] < -15 ) positions[ i * 3 + 2 ] = 15;
+
+			}
+
+			dustGeometry.attributes.position.needsUpdate = true;
+
+		}
+
+		// -- Post-processing --
+		const composer = new EffectComposer( renderer );
+		composer.addPass( new RenderPass( scene, camera ) );
+
+		const godRaysPass = new GodRaysPass( occlusionScene, camera, sun );
+		composer.addPass( godRaysPass );
+
+		composer.addPass( new OutputPass() );
+
+		// -- GUI --
+		const gui = new GUI( { title: 'God Rays Controls' } );
+
+		gui.add( godRaysPass.params, 'exposure', 0.0, 1.0, 0.01 ).name( 'Exposure' );
+		gui.add( godRaysPass.params, 'decay', 0.8, 1.0, 0.001 ).name( 'Decay' );
+		gui.add( godRaysPass.params, 'density', 0.0, 2.0, 0.01 ).name( 'Density' );
+		gui.add( godRaysPass.params, 'weight', 0.0, 1.5, 0.01 ).name( 'Weight' );
+		gui.add( godRaysPass.params, 'intensity', 0.0, 3.0, 0.01 ).name( 'Ray Intensity' );
+		gui.add( godRaysPass.params, 'samples', 10, 100, 1 ).name( 'Samples' );
+
+		const sunParams = { color: '#ffddaa' };
+		gui.addColor( sunParams, 'color' ).name( 'Sun Color' ).onChange( v => {
+			sun.material.color.set( v );
+			occlusionSun.material.color.set( v );
+		} );
+
+		// -- Animation --
+		const clock = new THREE.Clock();
+		let prevTime = 0;
+
+		function animate() {
+
+			requestAnimationFrame( animate );
+			const t = clock.getElapsedTime();
+			const dt = t - prevTime;
+			prevTime = t;
+
+			// Update dust particles
+			updateDustMotes( t, dt );
+
+			// Gentle sun movement
+			sun.position.x = Math.sin( t * 0.1 ) * 2;
+			sun.position.y = 5 + Math.sin( t * 0.15 ) * 1.5;
+			occlusionSun.position.copy( sun.position );
+			backLight.position.set( sun.position.x, sun.position.y, sun.position.z + 2 );
+
+			// Update cross rotation
+			crossGroup.rotation.y = Math.sin( t * 0.2 ) * 0.3;
+			occCrossGroup.rotation.y = crossGroup.rotation.y;
+
+			controls.update();
+			composer.render();
+
+		}
+
+		animate();
+
+		// -- Resize --
+		window.addEventListener( 'resize', () => {
+
+			camera.aspect = window.innerWidth / window.innerHeight;
+			camera.updateProjectionMatrix();
+			renderer.setSize( window.innerWidth, window.innerHeight );
+			composer.setSize( window.innerWidth, window.innerHeight );
+
+		} );
+	</script>
+<script src="../shared/demo-nav.js"></script>
+</body>
+</html>

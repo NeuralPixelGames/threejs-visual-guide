@@ -1,0 +1,483 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<title>Anti-Aliasing — Three.js Encyclopedia</title>
+	<meta charset="utf-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<link rel="stylesheet" href="../shared/demo-base.css">
+	<script type="importmap">
+	{
+		"imports": {
+			"three": "https://cdn.jsdelivr.net/npm/three@0.183.0/build/three.module.js",
+			"three/addons/": "https://cdn.jsdelivr.net/npm/three@0.183.0/examples/jsm/"
+		}
+	}
+	</script>
+</head>
+<body>
+
+<a href="../index.html" id="back-btn">&larr; Hub</a>
+
+<!-- 3-panel labels -->
+<div class="multi-panel-grid grid-3x1">
+	<div class="panel-label"><span><strong>No AA</strong> — Raw jagged edges</span></div>
+	<div class="panel-label"><span><strong>FXAA</strong> — Fast approximate</span></div>
+	<div class="panel-label"><span><strong>MSAA 4x</strong> — Hardware multisampling</span></div>
+</div>
+
+<div class="panel-divider-v" style="left:33.33%"></div>
+<div class="panel-divider-v" style="left:66.66%"></div>
+
+<!-- Style panel -->
+<div class="style-panel">
+	<span class="style-kicker">Renderer</span>
+	<h3>Anti-Aliasing</h3>
+	<p>Three methods compared on identical high-contrast geometry designed to expose staircase artifacts.</p>
+	<div class="style-actions">
+		<span class="style-chip">MSAA</span>
+		<span class="style-chip purple">FXAA</span>
+		<span class="style-chip pink">edge smoothing</span>
+	</div>
+</div>
+
+<script type="module">
+import * as THREE from 'three';
+import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+import { EffectComposer } from 'three/addons/postprocessing/EffectComposer.js';
+import { RenderPass } from 'three/addons/postprocessing/RenderPass.js';
+import { ShaderPass } from 'three/addons/postprocessing/ShaderPass.js';
+import { FXAAShader } from 'three/addons/shaders/FXAAShader.js';
+import { OutputPass } from 'three/addons/postprocessing/OutputPass.js';
+import { GUI } from 'three/addons/libs/lil-gui.module.min.js';
+
+// ── Shared scene ─────────────────────────────────────────────────────
+// High-contrast black & white geometry with lots of thin edges
+// to make aliasing artifacts maximally visible
+
+const scene = new THREE.Scene();
+scene.background = new THREE.Color( 0x111111 );
+
+// -- Lighting: strong directional for hard shadows and high contrast --
+const dirLight = new THREE.DirectionalLight( 0xffffff, 2.5 );
+dirLight.position.set( 5, 8, 4 );
+scene.add( dirLight );
+
+const fillLight = new THREE.DirectionalLight( 0x6688cc, 0.6 );
+fillLight.position.set( - 3, 2, - 4 );
+scene.add( fillLight );
+
+const ambientLight = new THREE.AmbientLight( 0x222233, 0.4 );
+scene.add( ambientLight );
+
+// Materials: high contrast black and white
+const whiteMat = new THREE.MeshStandardMaterial( {
+	color: 0xffffff, roughness: 0.3, metalness: 0.0
+} );
+const blackMat = new THREE.MeshStandardMaterial( {
+	color: 0x000000, roughness: 0.4, metalness: 0.1
+} );
+const wireMat = new THREE.MeshBasicMaterial( { color: 0xffffff } );
+const darkWireMat = new THREE.MeshBasicMaterial( { color: 0x000000 } );
+
+// -- Ground: checkerboard pattern (high contrast edges) --
+const checkerSize = 16;
+const checkerGeo = new THREE.PlaneGeometry( checkerSize, checkerSize );
+const checkerCanvas = document.createElement( 'canvas' );
+checkerCanvas.width = 256;
+checkerCanvas.height = 256;
+const ctx = checkerCanvas.getContext( '2d' );
+const tileCount = 16;
+const tileSize = 256 / tileCount;
+
+for ( let y = 0; y < tileCount; y ++ ) {
+
+	for ( let x = 0; x < tileCount; x ++ ) {
+
+		ctx.fillStyle = ( x + y ) % 2 === 0 ? '#ffffff' : '#000000';
+		ctx.fillRect( x * tileSize, y * tileSize, tileSize, tileSize );
+
+	}
+
+}
+
+const checkerTex = new THREE.CanvasTexture( checkerCanvas );
+checkerTex.wrapS = THREE.RepeatWrapping;
+checkerTex.wrapT = THREE.RepeatWrapping;
+checkerTex.repeat.set( 2, 2 );
+checkerTex.magFilter = THREE.NearestFilter;
+checkerTex.minFilter = THREE.NearestFilter;
+
+const groundMat = new THREE.MeshStandardMaterial( {
+	map: checkerTex, roughness: 0.7, metalness: 0.0
+} );
+const ground = new THREE.Mesh( checkerGeo, groundMat );
+ground.rotation.x = - Math.PI / 2;
+ground.position.y = - 0.01;
+scene.add( ground );
+
+// -- Wireframe grid lines (thin geometry on ground) --
+const gridLineGeo = new THREE.BoxGeometry( 0.006, 0.005, checkerSize );
+
+for ( let i = - 8; i <= 8; i ++ ) {
+
+	const lineX = new THREE.Mesh( gridLineGeo, wireMat );
+	lineX.position.set( i, 0.003, 0 );
+	scene.add( lineX );
+
+	const lineZ = new THREE.Mesh( gridLineGeo, wireMat );
+	lineZ.position.set( 0, 0.003, i );
+	lineZ.rotation.y = Math.PI / 2;
+	scene.add( lineZ );
+
+}
+
+// -- Diagonal lines at various angles (worst case for aliasing) --
+const diagGeo = new THREE.BoxGeometry( 0.012, 0.012, 14 );
+
+for ( let i = 0; i < 12; i ++ ) {
+
+	const angle = ( i / 12 ) * Math.PI;
+	const mat = i % 2 === 0 ? wireMat : darkWireMat;
+	const diag = new THREE.Mesh( diagGeo, mat );
+	diag.position.set( 0, 2.5 + ( i - 6 ) * 0.15, 0 );
+	diag.rotation.y = angle;
+	diag.rotation.z = Math.PI * 0.12 * ( i % 3 === 0 ? 1 : - 1 );
+	scene.add( diag );
+
+}
+
+// -- Near-horizontal thin lines (extremely aliasing-prone) --
+for ( let i = 0; i < 8; i ++ ) {
+
+	const hairline = new THREE.Mesh(
+		new THREE.BoxGeometry( 0.008, 0.008, 10 ),
+		wireMat
+	);
+	hairline.position.set( ( i - 3.5 ) * 0.6, 4.5 + i * 0.08, - 2 );
+	hairline.rotation.x = Math.PI * 0.02;
+	hairline.rotation.y = Math.PI * 0.05 * ( i % 2 === 0 ? 1 : - 1 );
+	scene.add( hairline );
+
+}
+
+// -- Geodesic sphere with wireframe (lots of visible edges) --
+const icoGeo = new THREE.IcosahedronGeometry( 1.2, 2 );
+const icoMesh = new THREE.Mesh( icoGeo, whiteMat );
+icoMesh.position.set( - 2.5, 1.5, - 1 );
+scene.add( icoMesh );
+
+const icoWireGeo = new THREE.IcosahedronGeometry( 1.21, 2 );
+const icoWire = new THREE.Mesh(
+	icoWireGeo,
+	new THREE.MeshBasicMaterial( { color: 0x000000, wireframe: true } )
+);
+icoWire.position.copy( icoMesh.position );
+scene.add( icoWire );
+
+// -- Thin vertical poles (antenna-like) --
+for ( let i = 0; i < 10; i ++ ) {
+
+	const pole = new THREE.Mesh(
+		new THREE.CylinderGeometry( 0.012, 0.012, 5 + Math.random() * 2, 4 ),
+		i % 2 === 0 ? whiteMat : blackMat
+	);
+	const angle = ( i / 10 ) * Math.PI * 2;
+	const radius = 4 + Math.random();
+	pole.position.set(
+		Math.cos( angle ) * radius,
+		2.5,
+		Math.sin( angle ) * radius
+	);
+	pole.rotation.z = Math.PI * 0.04 * ( i % 2 === 0 ? 1 : - 1 );
+	scene.add( pole );
+
+}
+
+// -- Small text-like thin geometry (simulated with thin boxes) --
+const textGroup = new THREE.Group();
+textGroup.position.set( 2.5, 2.0, - 1.5 );
+textGroup.rotation.y = - 0.4;
+
+const letterShapes = [
+	// "A" shape
+	[ [ 0, 0, 0.01, 0.8 ], [ 0.15, 0, 0.01, 0.8 ], [ 0, 0.4, 0.16, 0.01 ] ],
+	// "A" shape 2
+	[ [ 0.25, 0, 0.01, 0.8 ], [ 0.4, 0, 0.01, 0.8 ], [ 0.25, 0.7, 0.16, 0.01 ], [ 0.25, 0.4, 0.16, 0.01 ] ],
+	// "I" shape
+	[ [ 0.5, 0, 0.01, 0.8 ], [ 0.45, 0.79, 0.12, 0.01 ], [ 0.45, 0, 0.12, 0.01 ] ],
+	// "T" shape
+	[ [ 0.68, 0, 0.01, 0.8 ], [ 0.6, 0.79, 0.18, 0.01 ] ],
+	// "H" shape
+	[ [ 0.85, 0, 0.01, 0.8 ], [ 1.0, 0, 0.01, 0.8 ], [ 0.85, 0.4, 0.16, 0.01 ] ]
+];
+
+letterShapes.forEach( ( letter ) => {
+
+	letter.forEach( ( seg ) => {
+
+		const box = new THREE.Mesh(
+			new THREE.BoxGeometry( seg[ 2 ], seg[ 3 ], 0.01 ),
+			whiteMat
+		);
+		box.position.set( seg[ 0 ] + seg[ 2 ] / 2, seg[ 1 ] + seg[ 3 ] / 2, 0 );
+		textGroup.add( box );
+
+	} );
+
+} );
+
+scene.add( textGroup );
+
+// -- Torus knot (curved silhouette edges) --
+const torusKnot = new THREE.Mesh(
+	new THREE.TorusKnotGeometry( 0.6, 0.06, 200, 6 ),
+	new THREE.MeshStandardMaterial( { color: 0xffffff, roughness: 0.2, metalness: 0.8 } )
+);
+torusKnot.position.set( 0, 1.5, 2 );
+scene.add( torusKnot );
+
+// -- Concentric rings (Moire-like patterns at distance) --
+for ( let r = 0; r < 6; r ++ ) {
+
+	const ring = new THREE.Mesh(
+		new THREE.TorusGeometry( 0.5 + r * 0.3, 0.008, 4, 64 ),
+		r % 2 === 0 ? whiteMat : blackMat
+	);
+	ring.position.set( 0, 3.5, - 3 );
+	ring.rotation.x = Math.PI * 0.15;
+	scene.add( ring );
+
+}
+
+// -- Staircase pattern (worst case for jaggies) --
+for ( let s = 0; s < 20; s ++ ) {
+
+	const step = new THREE.Mesh(
+		new THREE.BoxGeometry( 0.5, 0.08, 0.5 ),
+		s % 2 === 0 ? whiteMat : blackMat
+	);
+	step.position.set( - 5 + s * 0.25, 0.04 + s * 0.08, 3 );
+	scene.add( step );
+
+}
+
+// -- Fine fence/grating (parallel thin lines) --
+for ( let f = 0; f < 30; f ++ ) {
+
+	const bar = new THREE.Mesh(
+		new THREE.BoxGeometry( 0.008, 1.5, 0.008 ),
+		whiteMat
+	);
+	bar.position.set( - 5 + f * 0.16, 0.75, - 5 );
+	scene.add( bar );
+
+}
+
+// Horizontal bar across the fence
+const fenceTop = new THREE.Mesh(
+	new THREE.BoxGeometry( 4.8, 0.015, 0.015 ),
+	whiteMat
+);
+fenceTop.position.set( - 2.6, 1.5, - 5 );
+scene.add( fenceTop );
+
+const fenceMid = new THREE.Mesh(
+	new THREE.BoxGeometry( 4.8, 0.015, 0.015 ),
+	whiteMat
+);
+fenceMid.position.set( - 2.6, 0.75, - 5 );
+scene.add( fenceMid );
+
+// ── Camera ───────────────────────────────────────────────────────────
+
+const camera = new THREE.PerspectiveCamera( 45, 1, 0.1, 200 );
+camera.position.set( 1.2, 2.2, 4.0 );
+camera.lookAt( - 0.5, 2.0, 0 );
+
+// ── Renderers ────────────────────────────────────────────────────────
+
+// Panel 1: No AA
+const rendererNoAA = new THREE.WebGLRenderer( { antialias: false } );
+rendererNoAA.setPixelRatio( 1 );
+rendererNoAA.setSize( window.innerWidth, window.innerHeight );
+rendererNoAA.toneMapping = THREE.ACESFilmicToneMapping;
+rendererNoAA.setScissorTest( true );
+rendererNoAA.domElement.style.position = 'absolute';
+rendererNoAA.domElement.style.top = '0';
+rendererNoAA.domElement.style.left = '0';
+document.body.appendChild( rendererNoAA.domElement );
+
+// Panel 2: FXAA (post-process on non-AA renderer)
+const rendererFXAA = new THREE.WebGLRenderer( { antialias: false, alpha: true } );
+rendererFXAA.setPixelRatio( 1 );
+rendererFXAA.setSize( window.innerWidth, window.innerHeight );
+rendererFXAA.toneMapping = THREE.ACESFilmicToneMapping;
+rendererFXAA.domElement.style.position = 'absolute';
+rendererFXAA.domElement.style.top = '0';
+rendererFXAA.domElement.style.left = '0';
+rendererFXAA.domElement.style.pointerEvents = 'none';
+document.body.appendChild( rendererFXAA.domElement );
+
+// Panel 3: MSAA (hardware multisampling)
+const rendererMSAA = new THREE.WebGLRenderer( { antialias: true, alpha: true } );
+rendererMSAA.setPixelRatio( 1 );
+rendererMSAA.setSize( window.innerWidth, window.innerHeight );
+rendererMSAA.toneMapping = THREE.ACESFilmicToneMapping;
+rendererMSAA.setScissorTest( true );
+rendererMSAA.domElement.style.position = 'absolute';
+rendererMSAA.domElement.style.top = '0';
+rendererMSAA.domElement.style.left = '0';
+rendererMSAA.domElement.style.pointerEvents = 'none';
+document.body.appendChild( rendererMSAA.domElement );
+
+// ── FXAA Composer ────────────────────────────────────────────────────
+
+const composerFXAA = new EffectComposer( rendererFXAA );
+composerFXAA.renderToScreen = false;
+
+const renderPassFXAA = new RenderPass( scene, camera );
+composerFXAA.addPass( renderPassFXAA );
+
+const fxaaPass = new ShaderPass( FXAAShader );
+composerFXAA.addPass( fxaaPass );
+
+const outputPass = new OutputPass();
+composerFXAA.addPass( outputPass );
+
+// Quad for blitting FXAA result into the scissored panel
+const quadScene = new THREE.Scene();
+const quadCam = new THREE.OrthographicCamera( - 1, 1, 1, - 1, 0, 1 );
+const quadMat = new THREE.MeshBasicMaterial( { map: null } );
+const quadMesh = new THREE.Mesh( new THREE.PlaneGeometry( 2, 2 ), quadMat );
+quadScene.add( quadMesh );
+
+// ── Controls ─────────────────────────────────────────────────────────
+
+const controls = new OrbitControls( camera, rendererNoAA.domElement );
+controls.enableDamping = true;
+controls.dampingFactor = 0.05;
+controls.target.set( - 0.5, 2.0, 0 );
+controls.update();
+
+// ── GUI ──────────────────────────────────────────────────────────────
+
+const params = {
+	zoom: 1.5,
+	rotate: true
+};
+
+camera.zoom = params.zoom;
+camera.updateProjectionMatrix();
+
+const gui = new GUI();
+gui.add( params, 'zoom', 0.4, 3.0, 0.01 ).name( 'Zoom Level' ).onChange( ( v ) => {
+
+	camera.zoom = v;
+	camera.updateProjectionMatrix();
+
+} );
+gui.add( params, 'rotate' ).name( 'Rotate Scene' );
+
+// ── Resize ───────────────────────────────────────────────────────────
+
+function onResize() {
+
+	const w = window.innerWidth;
+	const h = window.innerHeight;
+	const panelW = Math.floor( w / 3 );
+
+	camera.aspect = panelW / h;
+	camera.updateProjectionMatrix();
+
+	rendererNoAA.setSize( w, h );
+	rendererFXAA.setSize( w, h );
+	rendererMSAA.setSize( w, h );
+
+	composerFXAA.setSize( panelW, h );
+	fxaaPass.material.uniforms[ 'resolution' ].value.set( 1 / panelW, 1 / h );
+
+}
+
+window.addEventListener( 'resize', onResize );
+onResize();
+
+// ── Render loop ──────────────────────────────────────────────────────
+
+function animate( time ) {
+
+	requestAnimationFrame( animate );
+	controls.update();
+
+	const t = time * 0.001;
+
+	if ( params.rotate ) {
+
+		torusKnot.rotation.y = t * 0.4;
+		torusKnot.rotation.x = t * 0.25;
+		icoMesh.rotation.y = t * 0.2;
+		icoWire.rotation.y = t * 0.2;
+
+	}
+
+	const w = window.innerWidth;
+	const h = window.innerHeight;
+	const panelW = Math.floor( w / 3 );
+
+	camera.aspect = panelW / h;
+	camera.updateProjectionMatrix();
+
+	// Panel 1: No AA — direct render with scissor
+	rendererNoAA.setViewport( 0, 0, panelW, h );
+	rendererNoAA.setScissor( 0, 0, panelW, h );
+	rendererNoAA.render( scene, camera );
+
+	// Clear the other two panels on the NoAA canvas
+	rendererNoAA.setViewport( panelW, 0, w - panelW, h );
+	rendererNoAA.setScissor( panelW, 0, w - panelW, h );
+	rendererNoAA.setClearColor( 0x0a0e1a );
+	rendererNoAA.clearColor();
+
+	// Panel 2: FXAA — render through composer, then blit to panel
+	rendererFXAA.setScissorTest( false );
+	composerFXAA.setSize( panelW, h );
+	fxaaPass.material.uniforms[ 'resolution' ].value.set( 1 / panelW, 1 / h );
+	composerFXAA.render();
+
+	// Blit FXAA result into the middle panel via scissor
+	rendererFXAA.setScissorTest( true );
+	rendererFXAA.setViewport( panelW, 0, panelW, h );
+	rendererFXAA.setScissor( panelW, 0, panelW, h );
+	rendererFXAA.setRenderTarget( null );
+
+	quadMat.map = composerFXAA.readBuffer.texture;
+	rendererFXAA.render( quadScene, quadCam );
+
+	// Clear everything else on the FXAA canvas
+	rendererFXAA.setViewport( 0, 0, panelW, h );
+	rendererFXAA.setScissor( 0, 0, panelW, h );
+	rendererFXAA.setClearAlpha( 0 );
+	rendererFXAA.clear();
+
+	rendererFXAA.setViewport( panelW * 2, 0, w - panelW * 2, h );
+	rendererFXAA.setScissor( panelW * 2, 0, w - panelW * 2, h );
+	rendererFXAA.clear();
+
+	// Panel 3: MSAA — hardware multisampled render
+	rendererMSAA.setViewport( panelW * 2, 0, w - panelW * 2, h );
+	rendererMSAA.setScissor( panelW * 2, 0, w - panelW * 2, h );
+	rendererMSAA.render( scene, camera );
+
+	// Clear other panels on the MSAA canvas
+	rendererMSAA.setViewport( 0, 0, panelW * 2, h );
+	rendererMSAA.setScissor( 0, 0, panelW * 2, h );
+	rendererMSAA.setClearAlpha( 0 );
+	rendererMSAA.clear();
+
+}
+
+animate( 0 );
+</script>
+
+<script src="../shared/demo-nav.js"></script>
+</body>
+</html>
