@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-	<title>WebGL vs WebGPU - Three.js Encyclopedia</title>
+	<title>WebGL vs WebGPU — Three.js Encyclopedia</title>
 	<meta charset="utf-8">
 	<meta name="viewport" content="width=device-width, initial-scale=1.0">
 	<link rel="stylesheet" href="../shared/demo-base.css">
@@ -15,418 +15,598 @@
 			position: relative;
 		}
 
-		.panel {
+		.pane {
 			flex: 1;
 			position: relative;
 			overflow: hidden;
 		}
 
-		.panel canvas {
-			width: 100% !important;
-			height: 100% !important;
-		}
-
-		.panel-label {
-			position: absolute;
-			bottom: 16px;
-			left: 50%;
-			transform: translateX(-50%);
-			z-index: 10;
-			background: rgba(10, 14, 26, 0.85);
-			backdrop-filter: blur(8px);
-			border: 1px solid rgba(74, 158, 255, 0.3);
-			border-radius: 8px;
-			padding: 8px 18px;
-			font-size: 14px;
-			font-weight: 600;
-			color: #e0e5f0;
-			pointer-events: none;
-			white-space: nowrap;
-		}
-
-		.panel-label .fps {
-			color: #4a9eff;
-			font-variant-numeric: tabular-nums;
-		}
-
-		.divider {
-			width: 3px;
-			background: linear-gradient(180deg, rgba(74, 158, 255, 0.0) 0%, rgba(74, 158, 255, 0.6) 30%, rgba(74, 158, 255, 0.6) 70%, rgba(74, 158, 255, 0.0) 100%);
-			z-index: 5;
-			flex-shrink: 0;
+		.pane canvas {
+			display: block;
+			width: 100%;
+			height: 100%;
 		}
 
 		#webgpu-fallback {
 			display: none;
 			position: absolute;
-			top: 50%;
-			left: 50%;
-			transform: translate(-50%, -50%);
-			background: rgba(255, 60, 60, 0.15);
-			border: 1px solid rgba(255, 60, 60, 0.4);
-			border-radius: 12px;
-			padding: 24px 32px;
+			inset: 0;
+			background: #0a0e1a;
+			align-items: center;
+			justify-content: center;
+			flex-direction: column;
+			gap: 16px;
+			color: #e0e5f0;
+			font-family: 'Inter', system-ui, sans-serif;
 			text-align: center;
-			color: #ff6b6b;
-			z-index: 20;
-			font-size: 14px;
-			max-width: 320px;
+			padding: 32px;
+		}
+
+		#webgpu-fallback.visible {
+			display: flex;
+		}
+
+		#webgpu-fallback .fallback-icon {
+			font-size: 48px;
+			opacity: 0.5;
 		}
 
 		#webgpu-fallback h3 {
-			margin: 0 0 8px;
-			color: #ff8888;
+			font-size: 18px;
+			font-weight: 600;
+			color: #ef4444;
+			margin: 0;
+		}
+
+		#webgpu-fallback p {
+			font-size: 13px;
+			color: #8899bb;
+			max-width: 320px;
+			line-height: 1.6;
+			margin: 0;
+		}
+
+		#webgpu-fallback code {
+			background: rgba(74, 158, 255, 0.1);
+			border: 1px solid rgba(74, 158, 255, 0.2);
+			border-radius: 4px;
+			padding: 2px 6px;
+			font-size: 12px;
+			color: #4a9eff;
+		}
+
+		#comparison-panel {
+			position: fixed;
+			top: 50px;
+			right: 16px;
+			width: 380px;
+			max-height: calc(100vh - 80px);
+			overflow-y: auto;
+			background: rgba(10, 14, 26, 0.92);
+			backdrop-filter: blur(12px);
+			border: 1px solid rgba(74, 158, 255, 0.25);
+			border-radius: 12px;
+			padding: 20px;
+			z-index: 50;
+			font-family: 'Inter', system-ui, sans-serif;
+			scrollbar-width: thin;
+			scrollbar-color: #1e2740 transparent;
+		}
+		#comparison-panel h2 {
+			font-size: 16px;
+			color: #fff;
+			margin: 0 0 4px 0;
+			font-weight: 600;
+		}
+		#comparison-panel .subtitle {
+			font-size: 11px;
+			color: #6b7394;
+			margin-bottom: 16px;
+		}
+		.feature-table {
+			width: 100%;
+			border-collapse: collapse;
+		}
+		.feature-table th {
+			text-align: left;
+			font-size: 11px;
+			text-transform: uppercase;
+			letter-spacing: 1px;
+			color: #6b7394;
+			padding: 8px 6px;
+			border-bottom: 1px solid rgba(74, 158, 255, 0.15);
+		}
+		.feature-table td {
+			padding: 7px 6px;
+			font-size: 12px;
+			color: #b0b8cc;
+			border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+		}
+		.feature-table tr:last-child td {
+			border-bottom: none;
+		}
+		.feature-table td:first-child {
+			color: #e0e5f0;
+			font-weight: 500;
+		}
+		.check { color: #22c55e; font-weight: bold; }
+		.cross { color: #ef4444; font-weight: bold; }
+		.partial { color: #fbbf24; font-weight: bold; }
+		.section-label {
+			font-size: 10px;
+			text-transform: uppercase;
+			letter-spacing: 1.5px;
+			color: #4a9eff;
+			font-weight: 600;
+			padding: 12px 6px 4px;
+		}
+		.note-box {
+			margin-top: 16px;
+			background: rgba(74, 158, 255, 0.08);
+			border: 1px solid rgba(74, 158, 255, 0.2);
+			border-radius: 8px;
+			padding: 10px 12px;
+			font-size: 11px;
+			color: #8899bb;
+			line-height: 1.5;
+		}
+		.note-box strong { color: #4a9eff; }
+
+		@media (max-width: 800px) {
+			#split-container {
+				flex-direction: column;
+			}
+			#comparison-panel {
+				position: fixed;
+				top: auto;
+				bottom: 0;
+				left: 0;
+				right: 0;
+				width: 100%;
+				max-height: 50vh;
+				border-radius: 12px 12px 0 0;
+			}
 		}
 	</style>
+	<script type="importmap">
+	{
+		"imports": {
+			"three": "https://cdn.jsdelivr.net/npm/three@0.183.0/build/three.module.js",
+			"three/addons/": "https://cdn.jsdelivr.net/npm/three@0.183.0/examples/jsm/",
+			"three/webgpu": "https://cdn.jsdelivr.net/npm/three@0.183.0/build/three.webgpu.js"
+		}
+	}
+	</script>
 </head>
 <body>
+
 <a href="../index.html" id="back-btn">&larr; Hub</a>
-<div id="info">
-	<strong>WebGL vs WebGPU</strong><br>
-	Side-by-side InstancedMesh performance comparison
-</div>
 
 <div id="split-container">
-	<div class="panel" id="panel-webgl">
-		<div class="panel-label">WebGL &mdash; <span class="fps" id="fps-webgl">0</span> FPS</div>
+	<div class="pane" id="pane-left">
+		<div class="split-label split-label-left"><strong>WebGL 2</strong></div>
 	</div>
-	<div class="divider"></div>
-	<div class="panel" id="panel-webgpu">
-		<div class="panel-label">WebGPU &mdash; <span class="fps" id="fps-webgpu">0</span> FPS</div>
+	<div class="split-divider"></div>
+	<div class="pane" id="pane-right">
+		<div class="split-label split-label-right"><strong>WebGPU</strong></div>
 		<div id="webgpu-fallback">
+			<div class="fallback-icon">&#9888;</div>
 			<h3>WebGPU Not Available</h3>
-			<p>Your browser does not support WebGPU. Try Chrome 113+ or Edge 113+ with WebGPU flags enabled.</p>
+			<p>Your browser does not support WebGPU. Try Chrome 113+, Edge 113+, or Firefox Nightly with <code>dom.webgpu.enabled</code> flag.</p>
 		</div>
 	</div>
 </div>
 
-<script type="importmap">
-{
-	"imports": {
-		"three": "https://cdn.jsdelivr.net/npm/three@0.183.0/build/three.module.js",
-		"three/webgpu": "https://cdn.jsdelivr.net/npm/three@0.183.0/build/three.webgpu.js",
-		"three/addons/": "https://cdn.jsdelivr.net/npm/three@0.183.0/examples/jsm/"
-	}
-}
-</script>
+<div id="comparison-panel">
+	<h2>WebGL vs WebGPU</h2>
+	<div class="subtitle">Feature Comparison for Three.js</div>
+
+	<table class="feature-table">
+		<tr>
+			<th>Feature</th>
+			<th>WebGL</th>
+			<th>WebGPU</th>
+		</tr>
+
+		<tr><td colspan="3" class="section-label">Rendering</td></tr>
+		<tr>
+			<td>Standard Materials</td>
+			<td class="check">&#10003;</td>
+			<td class="check">&#10003;</td>
+		</tr>
+		<tr>
+			<td>PBR Rendering</td>
+			<td class="check">&#10003;</td>
+			<td class="check">&#10003;</td>
+		</tr>
+		<tr>
+			<td>Shadow Maps</td>
+			<td class="check">&#10003;</td>
+			<td class="check">&#10003;</td>
+		</tr>
+		<tr>
+			<td>Post-Processing</td>
+			<td class="check">&#10003;</td>
+			<td class="check">&#10003;</td>
+		</tr>
+		<tr>
+			<td>Instanced Rendering</td>
+			<td class="check">&#10003;</td>
+			<td class="check">&#10003;</td>
+		</tr>
+
+		<tr><td colspan="3" class="section-label">GPU Compute</td></tr>
+		<tr>
+			<td>Compute Shaders</td>
+			<td class="cross">&#10007;</td>
+			<td class="check">&#10003;</td>
+		</tr>
+		<tr>
+			<td>GPGPU (Native)</td>
+			<td class="partial">~</td>
+			<td class="check">&#10003;</td>
+		</tr>
+		<tr>
+			<td>Storage Buffers</td>
+			<td class="cross">&#10007;</td>
+			<td class="check">&#10003;</td>
+		</tr>
+		<tr>
+			<td>Indirect Draw</td>
+			<td class="cross">&#10007;</td>
+			<td class="check">&#10003;</td>
+		</tr>
+
+		<tr><td colspan="3" class="section-label">Shading</td></tr>
+		<tr>
+			<td>TSL (Node Material)</td>
+			<td class="partial">~</td>
+			<td class="check">&#10003;</td>
+		</tr>
+		<tr>
+			<td>Custom GLSL</td>
+			<td class="check">&#10003;</td>
+			<td class="cross">&#10007;</td>
+		</tr>
+		<tr>
+			<td>Custom WGSL</td>
+			<td class="cross">&#10007;</td>
+			<td class="check">&#10003;</td>
+		</tr>
+		<tr>
+			<td>Bindless Textures</td>
+			<td class="cross">&#10007;</td>
+			<td class="check">&#10003;</td>
+		</tr>
+
+		<tr><td colspan="3" class="section-label">Performance</td></tr>
+		<tr>
+			<td>Pipeline Caching</td>
+			<td class="cross">&#10007;</td>
+			<td class="check">&#10003;</td>
+		</tr>
+		<tr>
+			<td>Reduced CPU Overhead</td>
+			<td class="partial">~</td>
+			<td class="check">&#10003;</td>
+		</tr>
+		<tr>
+			<td>Multi-Draw</td>
+			<td class="partial">~</td>
+			<td class="check">&#10003;</td>
+		</tr>
+
+		<tr><td colspan="3" class="section-label">Compatibility</td></tr>
+		<tr>
+			<td>Browser Support</td>
+			<td class="check">99%</td>
+			<td class="partial">~70%</td>
+		</tr>
+		<tr>
+			<td>Mobile Support</td>
+			<td class="check">&#10003;</td>
+			<td class="partial">Android</td>
+		</tr>
+		<tr>
+			<td>iOS / Safari</td>
+			<td class="check">&#10003;</td>
+			<td class="partial">Preview</td>
+		</tr>
+	</table>
+
+	<div class="note-box">
+		<strong>Note:</strong> Three.js r170+ supports both backends.
+		Use <code>three.webgpu.js</code> for WebGPU with automatic
+		WebGL fallback. The WebGPU renderer unlocks compute shaders,
+		TSL node materials, and better draw call batching.
+	</div>
+</div>
 
 <script type="module">
 import * as THREE from 'three';
 import { WebGPURenderer } from 'three/webgpu';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
-import { GUI } from 'three/addons/libs/lil-gui.module.min.js';
 
-const params = {
-	instances: 2000,
-	autoRotate: true
-};
+const paneLeft = document.getElementById( 'pane-left' );
+const paneRight = document.getElementById( 'pane-right' );
+const fallbackEl = document.getElementById( 'webgpu-fallback' );
 
-const panelGL = document.getElementById( 'panel-webgl' );
-const panelGPU = document.getElementById( 'panel-webgpu' );
-const fpsGL = document.getElementById( 'fps-webgl' );
-const fpsGPU = document.getElementById( 'fps-webgpu' );
+const hasWebGPU = ( navigator.gpu !== undefined );
 
-const colors = [ 0x4a9eff, 0x22c55e, 0xa855f7, 0xf97316, 0xf43f5e, 0x06b6d4, 0xeab308, 0x8b5cf6 ];
+const accentColors = [ 0x4a9eff, 0x22c55e, 0xa855f7, 0xf97316, 0xf43f5e, 0x06b6d4 ];
 
-// --- FPS counter helper ---
-class FPSCounter {
+function createScene() {
 
-	constructor() {
-
-		this.frames = 0;
-		this.lastTime = performance.now();
-		this.fps = 0;
-
-	}
-
-	tick() {
-
-		this.frames ++;
-		const now = performance.now();
-		if ( now - this.lastTime >= 500 ) {
-
-			this.fps = Math.round( ( this.frames * 1000 ) / ( now - this.lastTime ) );
-			this.frames = 0;
-			this.lastTime = now;
-
-		}
-
-		return this.fps;
-
-	}
-
-}
-
-// --- Build shared scene content ---
-function buildScene( scene ) {
-
+	const scene = new THREE.Scene();
 	scene.background = new THREE.Color( 0x0a0e1a );
-	scene.fog = new THREE.FogExp2( 0x0a0e1a, 0.008 );
+	scene.fog = new THREE.FogExp2( 0x0a0e1a, 0.02 );
 
-	const ambientLight = new THREE.AmbientLight( 0x303850, 0.5 );
-	scene.add( ambientLight );
+	// Floor
+	const floor = new THREE.Mesh(
+		new THREE.PlaneGeometry( 30, 30 ),
+		new THREE.MeshStandardMaterial( { color: 0x080b14, roughness: 0.08, metalness: 0.92 } )
+	);
+	floor.rotation.x = - Math.PI / 2;
+	floor.receiveShadow = true;
+	scene.add( floor );
 
-	const dirLight = new THREE.DirectionalLight( 0xffeedd, 2.5 );
-	dirLight.position.set( 8, 16, 6 );
-	scene.add( dirLight );
+	// Platform
+	const platform = new THREE.Mesh(
+		new THREE.CylinderGeometry( 3, 3.2, 0.15, 64 ),
+		new THREE.MeshStandardMaterial( { color: 0x1a1e2e, roughness: 0.3, metalness: 0.7 } )
+	);
+	platform.position.y = 0.075;
+	platform.receiveShadow = true;
+	scene.add( platform );
 
-	const fillLight = new THREE.DirectionalLight( 0x4488ff, 0.5 );
-	fillLight.position.set( - 6, 6, - 4 );
-	scene.add( fillLight );
+	// Sphere
+	const sphere = new THREE.Mesh(
+		new THREE.SphereGeometry( 0.6, 48, 48 ),
+		new THREE.MeshStandardMaterial( { color: 0x4a9eff, roughness: 0.1, metalness: 0.9 } )
+	);
+	sphere.position.set( 0, 1.2, 0 );
+	sphere.castShadow = true;
+	scene.add( sphere );
 
-	const groundGeo = new THREE.PlaneGeometry( 200, 200 );
-	const groundMat = new THREE.MeshStandardMaterial( { color: 0x111825, roughness: 0.9 } );
-	const ground = new THREE.Mesh( groundGeo, groundMat );
-	ground.rotation.x = - Math.PI / 2;
-	scene.add( ground );
+	// Torus knot
+	const torusKnot = new THREE.Mesh(
+		new THREE.TorusKnotGeometry( 0.5, 0.15, 100, 16 ),
+		new THREE.MeshStandardMaterial( { color: 0xff6644, roughness: 0.2, metalness: 0.7 } )
+	);
+	torusKnot.position.set( - 2, 1.2, - 1 );
+	torusKnot.castShadow = true;
+	scene.add( torusKnot );
 
-	const gridHelper = new THREE.GridHelper( 60, 60, 0x1a2540, 0x111a2e );
-	gridHelper.position.y = 0.01;
-	scene.add( gridHelper );
+	// Octahedron
+	const octahedron = new THREE.Mesh(
+		new THREE.OctahedronGeometry( 0.6, 0 ),
+		new THREE.MeshStandardMaterial( { color: 0x22cc88, roughness: 0.15, metalness: 0.85 } )
+	);
+	octahedron.position.set( 2, 1.0, - 0.5 );
+	octahedron.castShadow = true;
+	scene.add( octahedron );
 
-}
+	// Dodecahedron
+	const dodecahedron = new THREE.Mesh(
+		new THREE.DodecahedronGeometry( 0.5, 0 ),
+		new THREE.MeshStandardMaterial( { color: 0xffaa22, roughness: 0.25, metalness: 0.75 } )
+	);
+	dodecahedron.position.set( 1, 1.0, 2 );
+	dodecahedron.castShadow = true;
+	scene.add( dodecahedron );
 
-// --- Build instanced mesh ---
-function buildInstances( scene, count ) {
+	// Cylinder
+	const cylinder = new THREE.Mesh(
+		new THREE.CylinderGeometry( 0.3, 0.3, 1.5, 16 ),
+		new THREE.MeshStandardMaterial( { color: 0xaa44ff, roughness: 0.2, metalness: 0.8 } )
+	);
+	cylinder.position.set( - 1.5, 0.95, 1.5 );
+	cylinder.castShadow = true;
+	scene.add( cylinder );
 
-	// Remove old instanced meshes
-	const toRemove = [];
-	scene.traverse( child => {
-
-		if ( child.isInstancedMesh ) toRemove.push( child );
-
-	} );
-	toRemove.forEach( m => {
-
-		m.geometry.dispose();
-		m.material.dispose();
-		scene.remove( m );
-
-	} );
-
-	const geo = new THREE.IcosahedronGeometry( 0.4, 1 );
-	const mat = new THREE.MeshStandardMaterial( {
-		roughness: 0.3,
-		metalness: 0.6
-	} );
-
-	const mesh = new THREE.InstancedMesh( geo, mat, count );
-	mesh.frustumCulled = false;
-
+	// Instanced cubes
+	const count = 200;
 	const dummy = new THREE.Object3D();
-	const color = new THREE.Color();
-	const spread = Math.cbrt( count ) * 1.2;
+	const instancedMesh = new THREE.InstancedMesh(
+		new THREE.BoxGeometry( 0.15, 0.15, 0.15 ),
+		new THREE.MeshStandardMaterial( { color: 0x6677ff, roughness: 0.4, metalness: 0.6 } ),
+		count
+	);
 
 	for ( let i = 0; i < count; i ++ ) {
 
+		const angle = ( i / count ) * Math.PI * 2 * 3;
+		const r = 3 + Math.sin( i * 0.1 );
 		dummy.position.set(
-			( Math.random() - 0.5 ) * spread,
-			Math.random() * spread * 0.5 + 0.5,
-			( Math.random() - 0.5 ) * spread
+			Math.cos( angle ) * r,
+			0.3 + Math.sin( i * 0.3 ) * 0.3,
+			Math.sin( angle ) * r
 		);
-		dummy.rotation.set(
-			Math.random() * Math.PI * 2,
-			Math.random() * Math.PI * 2,
-			Math.random() * Math.PI * 2
-		);
-		const s = 0.5 + Math.random() * 0.8;
-		dummy.scale.setScalar( s );
+		dummy.rotation.set( Math.random(), Math.random(), Math.random() );
 		dummy.updateMatrix();
-		mesh.setMatrixAt( i, dummy.matrix );
-
-		color.setHex( colors[ i % colors.length ] );
-		mesh.setColorAt( i, color );
+		instancedMesh.setMatrixAt( i, dummy.matrix );
 
 	}
 
-	scene.add( mesh );
-	return mesh;
+	instancedMesh.castShadow = true;
+	scene.add( instancedMesh );
+
+	// Lights
+	const dirLight = new THREE.DirectionalLight( 0xfff0d6, 3.0 );
+	dirLight.position.set( 5, 8, 6 );
+	dirLight.castShadow = true;
+	dirLight.shadow.mapSize.setScalar( 1024 );
+	dirLight.shadow.camera.near = 0.5;
+	dirLight.shadow.camera.far = 30;
+	dirLight.shadow.camera.left = - 8;
+	dirLight.shadow.camera.right = 8;
+	dirLight.shadow.camera.top = 8;
+	dirLight.shadow.camera.bottom = - 8;
+	dirLight.shadow.bias = - 0.001;
+	scene.add( dirLight );
+
+	const ambient = new THREE.AmbientLight( 0x1a1e30, 0.4 );
+	scene.add( ambient );
+
+	const hemi = new THREE.HemisphereLight( 0x1a2744, 0x080c16, 0.3 );
+	scene.add( hemi );
+
+	return { scene, sphere, torusKnot, octahedron, dodecahedron };
 
 }
 
-// ============================
-// WebGL Side
-// ============================
-const sceneGL = new THREE.Scene();
-buildScene( sceneGL );
-let meshGL = buildInstances( sceneGL, params.instances );
+function getPaneSize( pane ) {
 
-const cameraGL = new THREE.PerspectiveCamera( 50, 1, 0.1, 500 );
-cameraGL.position.set( 10, 8, 14 );
+	return { width: pane.clientWidth, height: pane.clientHeight };
 
-const rendererGL = new THREE.WebGLRenderer( { antialias: true } );
-rendererGL.setPixelRatio( window.devicePixelRatio );
-rendererGL.toneMapping = THREE.ACESFilmicToneMapping;
-panelGL.appendChild( rendererGL.domElement );
+}
 
-const controlsGL = new OrbitControls( cameraGL, rendererGL.domElement );
-controlsGL.enableDamping = true;
-controlsGL.dampingFactor = 0.08;
-controlsGL.target.set( 0, 2, 0 );
+// WebGL side (left) — uses WebGPURenderer with forceWebGL backend
+const glScene = createScene();
 
-const fpsCounterGL = new FPSCounter();
+const glCanvas = document.createElement( 'canvas' );
+paneLeft.insertBefore( glCanvas, paneLeft.firstChild );
 
-// ============================
-// WebGPU Side
-// ============================
-let rendererGPU = null;
-let controlsGPU = null;
-let meshGPU = null;
-const fpsCounterGPU = new FPSCounter();
+const glRenderer = new WebGPURenderer( { canvas: glCanvas, antialias: true, forceWebGL: true } );
+glRenderer.setPixelRatio( window.devicePixelRatio );
+glRenderer.toneMapping = THREE.ACESFilmicToneMapping;
+glRenderer.toneMappingExposure = 1.0;
 
-const sceneGPU = new THREE.Scene();
-buildScene( sceneGPU );
+const glSize = getPaneSize( paneLeft );
+glRenderer.setSize( glSize.width, glSize.height );
 
-const cameraGPU = new THREE.PerspectiveCamera( 50, 1, 0.1, 500 );
-cameraGPU.position.set( 10, 8, 14 );
+const glCamera = new THREE.PerspectiveCamera( 50, glSize.width / glSize.height, 0.1, 100 );
+glCamera.position.set( 5, 4, 8 );
 
-let webgpuAvailable = false;
+const glControls = new OrbitControls( glCamera, glCanvas );
+glControls.enableDamping = true;
+glControls.dampingFactor = 0.05;
+glControls.target.set( 0, 0.5, 0 );
+glControls.autoRotate = true;
+glControls.autoRotateSpeed = 0.5;
+glControls.update();
 
-async function initWebGPU() {
+// WebGPU side (right) — real WebGPU renderer, or fallback message
+let gpuRenderer = null;
+let gpuCamera = null;
+let gpuScene = null;
+let gpuControls = null;
 
-	if ( ! navigator.gpu ) {
+if ( hasWebGPU ) {
 
-		document.getElementById( 'webgpu-fallback' ).style.display = 'block';
-		return;
+	gpuScene = createScene();
+
+	const gpuCanvas = document.createElement( 'canvas' );
+	paneRight.insertBefore( gpuCanvas, paneRight.firstChild );
+
+	gpuRenderer = new WebGPURenderer( { canvas: gpuCanvas, antialias: true } );
+	gpuRenderer.setPixelRatio( window.devicePixelRatio );
+	gpuRenderer.toneMapping = THREE.ACESFilmicToneMapping;
+	gpuRenderer.toneMappingExposure = 1.0;
+
+	const gpuSize = getPaneSize( paneRight );
+	gpuRenderer.setSize( gpuSize.width, gpuSize.height );
+
+	gpuCamera = new THREE.PerspectiveCamera( 50, gpuSize.width / gpuSize.height, 0.1, 100 );
+	gpuCamera.position.set( 5, 4, 8 );
+
+	gpuControls = new OrbitControls( gpuCamera, gpuCanvas );
+	gpuControls.enableDamping = true;
+	gpuControls.dampingFactor = 0.05;
+	gpuControls.target.set( 0, 0.5, 0 );
+	gpuControls.autoRotate = true;
+	gpuControls.autoRotateSpeed = 0.5;
+	gpuControls.update();
+
+} else {
+
+	fallbackEl.classList.add( 'visible' );
+
+}
+
+// Initialize renderers (WebGPURenderer requires async init)
+async function initRenderers() {
+
+	await glRenderer.init();
+
+	if ( gpuRenderer ) {
+
+		await gpuRenderer.init();
 
 	}
 
-	try {
+	animate( 0 );
 
-		rendererGPU = new WebGPURenderer( { antialias: true } );
-		rendererGPU.setPixelRatio( window.devicePixelRatio );
-		panelGPU.appendChild( rendererGPU.domElement );
+}
 
-		await rendererGPU.init();
+function animateObjects( sceneData, t ) {
 
-		controlsGPU = new OrbitControls( cameraGPU, rendererGPU.domElement );
-		controlsGPU.enableDamping = true;
-		controlsGPU.dampingFactor = 0.08;
-		controlsGPU.target.set( 0, 2, 0 );
+	sceneData.torusKnot.rotation.y = t * 0.5;
+	sceneData.torusKnot.rotation.x = t * 0.3;
+	sceneData.octahedron.rotation.y = t * 0.4;
+	sceneData.octahedron.rotation.z = t * 0.2;
+	sceneData.dodecahedron.rotation.x = t * 0.3;
+	sceneData.dodecahedron.rotation.y = t * 0.5;
+	sceneData.sphere.position.y = 1.2 + Math.sin( t * 1.5 ) * 0.2;
 
-		meshGPU = buildInstances( sceneGPU, params.instances );
-		webgpuAvailable = true;
+}
 
-	} catch ( e ) {
+function syncCamera( source, target ) {
 
-		console.warn( 'WebGPU init failed:', e );
-		document.getElementById( 'webgpu-fallback' ).style.display = 'block';
+	target.position.copy( source.position );
+	target.quaternion.copy( source.quaternion );
+
+}
+
+function animate( time ) {
+
+	requestAnimationFrame( animate );
+
+	const t = time * 0.001;
+
+	glControls.update();
+	animateObjects( glScene, t );
+	glRenderer.render( glScene.scene, glCamera );
+
+	if ( gpuRenderer && gpuCamera ) {
+
+		syncCamera( glCamera, gpuCamera );
+
+		if ( gpuControls ) {
+
+			gpuControls.target.copy( glControls.target );
+			gpuControls.update();
+
+		}
+
+		animateObjects( gpuScene, t );
+		gpuRenderer.render( gpuScene.scene, gpuCamera );
 
 	}
 
 }
 
-// --- Sync cameras ---
-function syncCameras() {
+window.addEventListener( 'resize', () => {
 
-	cameraGPU.position.copy( cameraGL.position );
-	cameraGPU.quaternion.copy( cameraGL.quaternion );
-	if ( controlsGPU ) {
+	const glSize = getPaneSize( paneLeft );
+	glCamera.aspect = glSize.width / glSize.height;
+	glCamera.updateProjectionMatrix();
+	glRenderer.setSize( glSize.width, glSize.height );
 
-		controlsGPU.target.copy( controlsGL.target );
-		controlsGPU.update();
+	if ( gpuRenderer && gpuCamera ) {
 
-	}
-
-}
-
-// --- GUI ---
-const gui = new GUI();
-gui.title( 'Comparison Controls' );
-
-gui.add( params, 'instances', [ 500, 1000, 2000, 5000, 10000, 20000, 50000 ] ).name( 'Instances' ).onChange( v => {
-
-	meshGL = buildInstances( sceneGL, v );
-	if ( webgpuAvailable ) {
-
-		meshGPU = buildInstances( sceneGPU, v );
+		const gpuSize = getPaneSize( paneRight );
+		gpuCamera.aspect = gpuSize.width / gpuSize.height;
+		gpuCamera.updateProjectionMatrix();
+		gpuRenderer.setSize( gpuSize.width, gpuSize.height );
 
 	}
 
 } );
 
-gui.add( params, 'autoRotate' ).name( 'Auto Rotate' );
-
-// --- Resize ---
-function onResize() {
-
-	const wGL = panelGL.clientWidth;
-	const wGPU = panelGPU.clientWidth;
-	const h = window.innerHeight;
-
-	cameraGL.aspect = wGL / h;
-	cameraGL.updateProjectionMatrix();
-	rendererGL.setSize( wGL, h );
-
-	if ( webgpuAvailable && rendererGPU ) {
-
-		cameraGPU.aspect = wGPU / h;
-		cameraGPU.updateProjectionMatrix();
-		rendererGPU.setSize( wGPU, h );
-
-	}
-
-}
-
-window.addEventListener( 'resize', onResize );
-
-// --- Animate ---
-const clock = new THREE.Clock();
-const dummy = new THREE.Object3D();
-
-function animateInstances( mesh, elapsed ) {
-
-	if ( ! mesh || ! params.autoRotate ) return;
-
-	const count = mesh.count;
-	for ( let i = 0; i < count; i ++ ) {
-
-		mesh.getMatrixAt( i, dummy.matrix );
-		dummy.matrix.decompose( dummy.position, dummy.quaternion, dummy.scale );
-		dummy.rotation.x += 0.002;
-		dummy.rotation.y += 0.003;
-		dummy.position.y += Math.sin( elapsed * 2 + i * 0.01 ) * 0.002;
-		dummy.updateMatrix();
-		mesh.setMatrixAt( i, dummy.matrix );
-
-	}
-
-	mesh.instanceMatrix.needsUpdate = true;
-
-}
-
-function animate() {
-
-	requestAnimationFrame( animate );
-	const elapsed = clock.getElapsedTime();
-
-	controlsGL.update();
-
-	// Animate both sides identically
-	animateInstances( meshGL, elapsed );
-	animateInstances( meshGPU, elapsed );
-
-	syncCameras();
-
-	// Render WebGL
-	rendererGL.render( sceneGL, cameraGL );
-	fpsGL.textContent = fpsCounterGL.tick();
-
-	// Render WebGPU
-	if ( webgpuAvailable && rendererGPU ) {
-
-		rendererGPU.render( sceneGPU, cameraGPU );
-		fpsGPU.textContent = fpsCounterGPU.tick();
-
-	}
-
-}
-
-// --- Init ---
-await initWebGPU();
-onResize();
-animate();
+initRenderers();
 </script>
+
 <script src="../shared/demo-nav.js"></script>
 </body>
 </html>
