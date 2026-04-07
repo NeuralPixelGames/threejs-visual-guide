@@ -471,4 +471,38 @@
 	thumbScript.defer = true;
 	document.head.appendChild( thumbScript );
 
+	/* -- Release WebGL contexts on page unload to prevent context exhaustion -- */
+
+	window.addEventListener( 'beforeunload', function () {
+
+		document.querySelectorAll( 'canvas' ).forEach( function ( canvas ) {
+
+			var gl = canvas.getContext( 'webgl2' ) || canvas.getContext( 'webgl' );
+			if ( gl ) {
+
+				var ext = gl.getExtension( 'WEBGL_lose_context' );
+				if ( ext ) ext.loseContext();
+
+			}
+
+		} );
+
+	} );
+
+	window.addEventListener( 'pagehide', function () {
+
+		document.querySelectorAll( 'canvas' ).forEach( function ( canvas ) {
+
+			var gl = canvas.getContext( 'webgl2' ) || canvas.getContext( 'webgl' );
+			if ( gl ) {
+
+				var ext = gl.getExtension( 'WEBGL_lose_context' );
+				if ( ext ) ext.loseContext();
+
+			}
+
+		} );
+
+	} );
+
 } )();
